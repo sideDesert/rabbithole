@@ -1,0 +1,63 @@
+from datetime import datetime
+from typing import Literal
+
+from pydantic import BaseModel
+
+from app.models.base import MongoBase, utcnow
+
+
+class ConceptMastery(MongoBase):
+    user_id: str
+    concept_name: str
+    mastery_score: float = 0.0
+    attempts: int = 0
+    last_reviewed: datetime | None = None
+    last_score: float = 0.0
+    score_history: list[float] = []
+    weak_subconcepts: list[str] = []
+    strength_trend: Literal["improving", "stable", "declining"] = "stable"
+    related_concepts: list[str] = []
+
+
+class ReviewSchedule(MongoBase):
+    user_id: str
+    concept_id: str
+    scheduled_for: datetime
+    status: Literal["pending", "triggered", "completed", "skipped"] = "pending"
+    triggered_at: datetime | None = None
+    completed_at: datetime | None = None
+    result_score: float | None = None
+
+
+class TestScores(BaseModel):
+    clarity: float
+    accuracy: float
+    depth: float
+    transferability: float
+
+
+class TestResult(MongoBase):
+    user_id: str
+    concept_id: str
+    thread_id: str
+    test_type: Literal["feynman", "conceptual", "application"]
+    question: str
+    user_response: str
+    scores: TestScores
+    overall_score: float
+    feedback: str
+
+
+class LearningSession(MongoBase):
+    user_id: str
+    root_thread_id: str
+    title: str
+    started_at: datetime = None  # type: ignore[assignment]
+    ended_at: datetime | None = None
+    concepts_covered: list[str] = []
+    summary: str | None = None
+
+    def __init__(self, **data):
+        if "started_at" not in data:
+            data["started_at"] = utcnow()
+        super().__init__(**data)
