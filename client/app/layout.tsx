@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Raleway } from "next/font/google";
 import "./globals.css";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { ThemeProvider } from "@/components/theme-provider";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { TopBar } from "@/components/top-bar";
+import { Tabs } from "@/components/ui/tabs";
 
 const raleway = Raleway({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -42,11 +43,10 @@ export default function RootLayout({
           <SidebarProvider>
             <AppSidebar />
             <main className="grow grid grid-rows-[auto_1fr]">
-              <div className="flex items-center justify-between p-2">
-                <SidebarTrigger />
-                <ThemeToggle />
-              </div>
-              {children}
+              <Tabs>
+                <TopBar />
+                {children}
+              </Tabs>
             </main>
           </SidebarProvider>
         </ThemeProvider>
