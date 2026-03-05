@@ -1,5 +1,5 @@
 """Quick test script to inspect OpenRouter API response shapes."""
-# pyright: reportCallIssue=false, reportArgumentType=false
+# pyright: reportCallIssue=false, reportArgumentType=false, reportPossiblyUnboundVariable=false
 import os
 import json
 from dotenv import load_dotenv

@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Literal
+from typing import Any, Literal
 
 
 from app.models.base import MongoBase
@@ -19,3 +19,6 @@ class Thread(MongoBase):
     evermemos_group_id: str
     closed_at: datetime | None = None
     pending_test: str | None = None  # concept name if a test is pending
+    phase: Literal["interview", "planning", "teaching"] = "interview"
+    interview_context: dict[str, Any] = {}
+    current_concept: str | None = None
