@@ -32,7 +32,9 @@ export interface Message {
 
 // ── Thread APIs ──────────────────────────────────────────────────────────
 
-export async function createThread(content: string): Promise<{ thread_id: string; phase: string }> {
+export async function createThread(
+  content: string,
+): Promise<{ thread_id: string; phase: string }> {
   const res = await fetch(`${API_BASE}/threads`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -46,7 +48,9 @@ export async function getThread(threadId: string): Promise<Thread> {
   return res.json();
 }
 
-export async function getMessages(threadId: string): Promise<{ messages: Message[] }> {
+export async function getMessages(
+  threadId: string,
+): Promise<{ messages: Message[] }> {
   const res = await fetch(`${API_BASE}/threads/${threadId}/messages`);
   return res.json();
 }

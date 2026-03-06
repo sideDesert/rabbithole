@@ -22,3 +22,5 @@ class Thread(MongoBase):
     phase: Literal["interview", "planning", "teaching"] = "interview"
     interview_context: dict[str, Any] = {}
     current_concept: str | None = None
+    parent_summary: str | None = None   # LLM-compacted summary of parent conversation
+    branch_text: str | None = None      # highlighted text / branch topic

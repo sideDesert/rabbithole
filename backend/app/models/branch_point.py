@@ -14,5 +14,5 @@ class BranchPoint(MongoBase):
     thread_id: str
     message_id: str
     position: TextPosition | None = None
-    type: Literal["highlight", "explore", "feynman"]
+    type: Literal["highlight", "explore", "suggested"]
     child_thread_id: str

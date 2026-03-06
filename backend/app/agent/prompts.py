@@ -179,6 +179,8 @@ def build_phase_prompt(
     current_concept: str | None = None,
     memory_context: str | None = None,
     interview_context: str | None = None,
+    parent_summary: str | None = None,
+    branch_text: str | None = None,
 ) -> str:
     """Return a system prompt tailored to the current agent phase.
 
@@ -196,6 +198,17 @@ def build_phase_prompt(
         raise ValueError(f"Unknown phase: {phase!r}. Must be one of {list(prompts)}")
 
     sections: list[str] = [base]
+
+    if parent_summary:
+        sections.append(f"\n## Parent Conversation Context\n{parent_summary}\n")
+
+    if branch_text:
+        sections.append(
+            f"\n## Branch Focus\nThe learner branched from the parent conversation "
+            f"to explore this specific point:\n> {branch_text}\n\n"
+            f"Start by addressing this specific topic. You can reference the parent "
+            f"context above but focus on this branch point.\n"
+        )
 
     if plan_context:
         sections.append(f"\n## Current Plan\n{plan_context}\n")

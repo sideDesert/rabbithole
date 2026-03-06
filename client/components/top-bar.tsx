@@ -10,11 +10,16 @@ import {
   MessageCircle,
   NetworkIcon,
   Pen,
-  StepBackIcon,
 } from "lucide-react";
 import { Button } from "./ui/button";
 
-export function TopBar() {
+interface TopBarInterface {
+  config?: {
+    back?: boolean;
+    title?: string;
+  };
+}
+export function TopBar({ config }: TopBarInterface) {
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -33,10 +38,14 @@ export function TopBar() {
       <SidebarTrigger />
       <div className="flex w-full justify-between px-2">
         <div className="flex flex-row justify-center items-center gap-4">
-          <Button variant="outline">
-            <ChevronLeft /> Back to Root
-          </Button>
-          <h2 className="font-medium">Title of Chat</h2>
+          {config && config?.back && (
+            <Button variant="outline">
+              <ChevronLeft /> Back to Root
+            </Button>
+          )}
+          {config && config?.title && (
+            <h2 className="font-medium">{config.title}</h2>
+          )}
         </div>
         <TabsList>
           <TabsTrigger value="chat-mode">

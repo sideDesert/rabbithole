@@ -3,13 +3,33 @@ import React from "react";
 import { Streamdown } from "streamdown";
 
 export const ROLE_USER = "user";
-export const ROLE_AI = "ai";
+export const ROLE_AI = "assistant";
 
 interface ChatMessageInterface {
   id: string;
   content: React.ReactNode;
   role: typeof ROLE_USER | typeof ROLE_AI;
   className?: string;
+  isLast?: boolean;
+  waiting?: boolean;
+  streaming?: boolean;
+}
+
+function lastMessageRef(id: string) {
+  return (el: HTMLElement | null) => {
+    if (!el) return;
+
+    const parts = id.split("-");
+    const index = parseInt(parts[1], 10);
+    if (isNaN(index) || index < 1) return;
+
+    const prevMsgId = `msg-${index - 1}`;
+    const prevEl = document.querySelector(`[data-message-id="${prevMsgId}"]`);
+    if (!prevEl) return;
+
+    const h0 = prevEl.getBoundingClientRect().height;
+    el.style.minHeight = `calc(100vh - 220px - ${h0}px)`;
+  };
 }
 
 export function ChatMessage({
@@ -17,6 +37,8 @@ export function ChatMessage({
   content,
   role,
   className,
+  isLast,
+  waiting,
 }: ChatMessageInterface) {
   if (role === ROLE_USER) {
     return (
@@ -33,12 +55,23 @@ export function ChatMessage({
   }
   if (role === ROLE_AI) {
     return (
-      <div
-        className="chat-message max-w-full overflow-auto streamdown"
-        data-message-id={id}
-      >
-        <Streamdown>{content as string}</Streamdown>
-      </div>
+      <>
+        <article
+          className={`chat-message max-w-full overflow-auto streamdown`}
+          data-message-id={id}
+          ref={(el) => {
+            if (!el) return;
+            if (isLast) {
+              lastMessageRef(id)(el);
+            } else {
+              el.style.minHeight = "";
+            }
+          }}
+        >
+          {waiting && <span>Waiting...</span>}
+          <Streamdown>{content as string}</Streamdown>
+        </article>
+      </>
     );
   }
 

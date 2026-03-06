@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Raleway } from "next/font/google";
 import "./globals.css";
-import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
-import { ThemeProvider } from "@/components/theme-provider";
+import { Providers } from "@/components/providers";
 import { TopBar } from "@/components/top-bar";
 import { Tabs } from "@/components/ui/tabs";
 
@@ -34,22 +33,15 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background`}
       >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <SidebarProvider>
-            <AppSidebar />
+        <Providers>
+          <AppSidebar />
+          <Tabs className={"w-full"}>
             <main className="grow grid grid-rows-[auto_1fr]">
-              <Tabs>
-                <TopBar />
-                {children}
-              </Tabs>
+              <TopBar />
+              {children}
             </main>
-          </SidebarProvider>
-        </ThemeProvider>
+          </Tabs>
+        </Providers>
       </body>
     </html>
   );
