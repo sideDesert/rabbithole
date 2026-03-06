@@ -17,6 +17,7 @@ interface ChatMessage {
 
 interface UseChatOptions {
   threadId?: string | null;
+  onThreadCreated?: (threadId: string) => void;
 }
 
 interface UseChatReturn {
@@ -30,6 +31,7 @@ interface UseChatReturn {
 
 export function useChat({
   threadId: initialThreadId = null,
+  onThreadCreated,
 }: UseChatOptions = {}): UseChatReturn {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [phase, setPhase] = useState("interview");
@@ -53,7 +55,7 @@ export function useChat({
       );
       return existing;
     },
-    enabled: !!threadId,
+    enabled: !!initialThreadId,
     staleTime: Infinity,
   });
 
@@ -79,6 +81,7 @@ export function useChat({
         const { thread_id } = await createThreadMutation.mutateAsync(content);
         currentThreadId = thread_id;
         setThreadId(thread_id);
+        onThreadCreated?.(thread_id);
       }
 
       const aiMsgId = `msg-${++msgCounter.current}`;
@@ -119,7 +122,7 @@ export function useChat({
 
       setIsStreaming(false);
     },
-    [threadId, isStreaming, createThreadMutation],
+    [threadId, isStreaming, createThreadMutation, onThreadCreated],
   );
 
   return { messages, phase, isStreaming, isWaiting, threadId, send };

@@ -39,6 +39,7 @@ export function ChatMessage({
   className,
   isLast,
   waiting,
+  streaming,
 }: ChatMessageInterface) {
   if (role === ROLE_USER) {
     return (
@@ -68,8 +69,14 @@ export function ChatMessage({
             }
           }}
         >
-          {waiting && <span>Waiting...</span>}
+          {isLast && waiting && <div className="thinking-orb" />}
           <Streamdown>{content as string}</Streamdown>
+          {isLast && !waiting && streaming && (
+            <div className="gap-2 justify-center items-center mt-2 inline-flex">
+              <div className="gradient-spinner " />{" "}
+              <span className="text-muted-foreground text-sm">Streaming</span>
+            </div>
+          )}
         </article>
       </>
     );

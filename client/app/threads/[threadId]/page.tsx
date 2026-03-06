@@ -5,7 +5,7 @@ import { PromptInput } from "@/components/prompt-input";
 import { TextSelectionMenu } from "@/components/text-selection-menu";
 import { useChat } from "@/hooks/use-chat";
 import { useTextSelectionMenu } from "@/hooks/use-text-selection-menu";
-import { use, useEffect } from "react";
+import { use } from "react";
 
 export default function Page({
   params,
