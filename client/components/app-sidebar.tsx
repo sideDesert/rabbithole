@@ -68,7 +68,10 @@ export function AppSidebar() {
           <SidebarMenu>
             {tools.map((tool) => (
               <SidebarMenuItem key={tool.name}>
-                <SidebarMenuButton isActive={path.includes(tool.href)}>
+                <SidebarMenuButton
+                  isActive={path.includes(tool.href)}
+                  render={tool.href ? <Link href={tool.href} /> : undefined}
+                >
                   <tool.icon className="h-4 w-4" />
                   <span>{tool.name}</span>
                 </SidebarMenuButton>

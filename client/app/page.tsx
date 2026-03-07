@@ -6,13 +6,8 @@ import { TextSelectionMenu } from "@/components/text-selection-menu";
 import { useTextSelectionMenu } from "@/hooks/use-text-selection-menu";
 
 export default function Page() {
-  const {
-    selectedText,
-    messageId,
-    menuPosition,
-    isVisible,
-    clearSelection,
-  } = useTextSelectionMenu();
+  const { selectedText, messageId, menuPosition, isVisible, clearSelection } =
+    useTextSelectionMenu();
 
   const handleQuote = (data: { messageId: string; text: string }) => {
     console.log("Quote:", data);
@@ -134,7 +129,7 @@ export default function Page() {
           className="w-fit self-start"
         />
       </div>
-      <PromptInput className="sticky! bottom-0 z-50" />
+      <PromptInput mode="interview" className="sticky! bottom-0 z-50" />
       <TextSelectionMenu
         visible={isVisible}
         position={menuPosition}

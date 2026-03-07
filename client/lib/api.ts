@@ -17,10 +17,24 @@ export type SSEEvent =
   | { type: "error"; content: string };
 
 export interface Thread {
-  id: string;
+  created_at: string;
+  updated_at: string;
+  user_id: string;
   title: string;
-  phase: string;
   topic_slug: string;
+  summary: string | null;
+  status: string;
+  depth: number;
+  parent_thread_id: string | null;
+  root_thread_id: string | null;
+  branch_point_id: string | null;
+  agent: string;
+  evermemos_group_id: string;
+  closed_at: string | null;
+  pending_test: string | null;
+  phase: string;
+  interview_context: unknown;
+  current_concept: string | null;
 }
 
 export interface Message {
@@ -39,6 +53,18 @@ export async function createThread(
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ content }),
+  });
+  return res.json();
+}
+
+export async function listThreads(): Promise<{ threads: Thread[] }> {
+  const res = await fetch(`${API_BASE}/threads`);
+  return res.json();
+}
+
+export async function deleteThread(threadId: string): Promise<{ deleted: boolean }> {
+  const res = await fetch(`${API_BASE}/threads/${threadId}`, {
+    method: "DELETE",
   });
   return res.json();
 }

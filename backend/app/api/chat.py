@@ -209,6 +209,18 @@ def list_threads():
     return {"threads": docs}
 
 
+@router.delete("/threads/{thread_id}")
+def delete_thread(thread_id: str):
+    """Delete a thread and its messages."""
+    doc = mongo.threads().find_one({"_id": thread_id})
+    if not doc:
+        return {"error": "not found"}
+    mongo.messages().delete_many({"thread_id": thread_id})
+    mongo.branch_points().delete_many({"$or": [{"parent_thread_id": thread_id}, {"child_thread_id": thread_id}]})
+    mongo.threads().delete_one({"_id": thread_id})
+    return {"deleted": True}
+
+
 @router.get("/threads/{thread_id}")
 def get_thread(thread_id: str):
     """Get thread details."""
