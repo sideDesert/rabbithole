@@ -4,13 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Memory-Native Learning OS — an AI education companion that builds a persistent cognitive model of the learner. Three-layer architecture: Next.js frontend → FastAPI backend → EverMemOS (external memory service at localhost:1995).
+Memory-Native Learning OS — an AI education companion that builds a persistent cognitive model of the learner. Three-layer architecture: Next.js frontend → FastAPI backend → EverMemOS Cloud (hosted memory service at api.evermind.ai).
 
-The backend implements an agent loop: receive message → detect intent → retrieve memories from EverMemOS → assemble context → call LLM → process response (store memories, update mastery, manage conversation tree). Full design docs live in `docs/plans/`.
+The backend uses the **OpenAI Agents SDK** to run a phase-based agent loop: receive message → build phase-specific Agent (interview/planning/teaching) → `Runner.run_streamed()` handles LLM + tool-calling loop → stream SSE events to client → persist response and check phase transitions.
 
 ## Current State
 
-The project is early-stage with comprehensive design docs but minimal implementation. `backend/main.py` has a basic FastAPI health endpoint. `client/` is empty. All architecture, data models, and MVP phases are documented in `docs/plans/`.
+Working prototype with a functional agent loop, SSE streaming chat, branching conversation threads, and markdown learning plans. The frontend has thread management, chat UI, and plan viewing. Mastery scoring and spaced repetition are defined in schemas but not yet wired into the agent loop.
 
 ## Commands
 
@@ -31,15 +31,18 @@ uv run pytest
 # Run a single test
 uv run pytest tests/test_foo.py::test_bar -v
 
-# Linting and formatting (once ruff is added)
+# Run tool integration tests
+uv run python test_tools.py
+
+# Linting and formatting
 uv run ruff check .
 uv run ruff format .
 
-# Type checking (once pyright is added)
+# Type checking
 uv run pyright
 ```
 
-### Frontend (from `client/`, once scaffolded)
+### Frontend (from `client/`)
 ```bash
 pnpm install
 pnpm dev          # localhost:3000
@@ -49,70 +52,102 @@ pnpm lint
 
 ## Architecture
 
-### Agent Loop (5 steps per user message)
-1. **Intent Detection** — classify as: learn / test / explore sub-concept / return to parent / resume session / general question. Planned approach: LLM function-calling with tools like `explore_concept()`, `return_to_parent()`, `administer_test()`.
-2. **Context Retrieval** — load current ConversationNode, query EverMemOS (episodes, event logs, foresights), load mastery scores, check spaced repetition schedule.
-3. **Prompt Assembly** — system prompt + retrieved memories + node context + mastery data + branch-scoped conversation history.
-4. **LLM Call** — through provider-agnostic abstraction (must support OpenAI, Anthropic, Google, Groq, Ollama).
-5. **Response Processing** — store to EverMemOS, update ConversationNode, score tests, update mastery/spaced repetition, create child nodes if branching.
+### Agent Harness (OpenAI Agents SDK)
+
+The agent is built on the `openai-agents` SDK. Per user message:
+
+1. **Load thread** from MongoDB — get phase, topic_slug, user_id, group_id.
+2. **Build context** — load the learning plan, find current uncompleted concept.
+3. **Build Agent** via `build_agent(phase=...)` — selects tools and system prompt for the current phase.
+4. **Run streamed** — `Runner.run_streamed(agent, input=history+message, context=agent_ctx)`. The SDK owns the tool-calling loop (LLM → tool calls → tool results → LLM → repeat until final text).
+5. **Stream SSE** — text deltas, tool call notifications, and tool results forwarded to client.
+6. **Persist** — save response to MongoDB and EverMemOS Cloud.
+7. **Phase transitions** — check if tools triggered a state change (e.g., `create_plan` → interview→planning).
+
+### Phase System
+
+Three phases, each with different tools and system prompts:
+
+| Phase | Tools | Trigger to next |
+|-------|-------|-----------------|
+| **interview** | `recall_memory`, `store_memory`, `create_plan` | Agent calls `create_plan` → planning |
+| **planning** | `recall_memory`, `store_memory`, `create_plan` | User approves plan → teaching |
+| **teaching** | `recall_memory`, `store_memory`, `suggest_branches`, `read_plan`, `update_plan_progress` | — |
+
+### Tools (`app/tools_impl.py`)
+
+All tools use `@function_tool` from the Agents SDK and receive `AgentContext` (user_id, thread_id, topic_slug, group_id) via `RunContextWrapper`.
+
+| Tool | What it does |
+|------|-------------|
+| `recall_memory` | Semantic search over EverMemOS Cloud |
+| `store_memory` | Persist an observation about the learner |
+| `create_plan` | Generate a markdown learning plan via a second LLM call, save to `backend/plans/<slug>/plan.md` |
+| `read_plan` | Read plan from disk, report progress and next concept |
+| `update_plan_progress` | Mark a concept as completed in the plan markdown |
+| `suggest_branches` | Ask the LLM for 2-3 sub-topics worth exploring |
 
 ### Conversation Tree
-Branching topic exploration with ConversationNode parent-child relationships. Each node has its own EverMemOS `group_id`. Users can drill into sub-concepts and navigate back to parents. Nodes track status (active/explored/mastered) and depth level.
+Branching topic exploration with Thread parent-child relationships. Each thread has its own EverMemOS `group_id`. Users can branch from any assistant message into a sub-topic. Branch creation compacts the parent conversation into a summary via LLM.
 
-### Mastery System
+### Mastery System (schemas defined, not yet wired)
 Feynman tests scored on 4 dimensions (clarity, accuracy, depth, transferability) → 0.0-1.0 mastery score. Tiers drive spaced repetition scheduling:
 - 0.0–0.4 Weak → review in 1-2 days
 - 0.4–0.7 Medium → review in 5-7 days
 - 0.7–0.9 Strong → review in 2-3 weeks
 - 0.9–1.0 Mastered → occasional recall
 
-### Planned Backend Structure
+### Backend Structure
 ```
 backend/app/
-├── agent/       # Agent loop, intent detection, context assembly, response routing
-├── learning/    # Mastery scorer, test generator, spaced repetition, branching
-├── memory/      # EverMemOS HTTP client (httpx)
-├── llm/         # LLM provider abstraction (Protocol-based)
-├── models/      # SQLAlchemy async models (SQLite MVP → Postgres later)
-├── api/         # FastAPI route handlers
-├── schemas/     # Pydantic v2 request/response schemas
-└── config.py    # App configuration
+├── agent/         # Phase prompts (prompts.py) and transition logic (phases.py)
+├── agent_core.py  # Agent factory: build_agent() creates phase-specific Agents
+├── tools_impl.py  # All @function_tool implementations + AgentContext dataclass
+├── plan_parser.py # Parse markdown plans into PlanTree/PlanPhase/PlanConcept
+├── memory/        # EverMemOS Cloud HTTP client (httpx)
+├── models/        # Pydantic models for MongoDB docs (thread, message, branch_point, mastery)
+├── schemas/       # Pydantic schemas (scoring, plans)
+├── db/            # MongoDB client + index setup
+├── api/           # FastAPI route handlers (chat.py has SSE streaming + CRUD)
+└── config.py      # App configuration (OpenRouter, MongoDB, EverMemOS)
 ```
 
 ### Key Data Models
-- **ConversationNode** — tree node with topic, parent_id, children, status, depth, evermemos_group_id
-- **ConceptMastery** — per-concept mastery score (0-1), score history, weak subconcepts, strength trend
-- **ReviewSchedule** — spaced repetition entries (pending/triggered/completed)
-- **TestResult** — test responses with 4-dimension scoring
-- **LearningSession** — groups conversation nodes under a session
+- **Thread** — conversation thread with phase, topic_slug, parent/child relationships, depth, evermemos_group_id
+- **Message** — chat message with role, content, type (text/markdown/plan_card/tool_call/tool_result)
+- **BranchPoint** — links parent thread + message to child thread, with optional text position
+- **ConceptMastery** — per-concept mastery score (0-1), score history, weak subconcepts
 
-### EverMemOS Integration
-External service at `http://localhost:1995`. Key endpoints:
-- `POST /api/v1/memories` — store conversation messages (returns "accumulated" or "extracted")
-- `GET /api/v1/memories/search?user_id=X&query=Y&retrieve_method=rrf&top_k=10` — semantic search (rrf recommended)
-- `GET /api/v1/memories?user_id=X&memory_type=episode` — fetch by type (episode/event_log/foresight/profile)
-- `POST /api/v1/memories/conversation-meta` — set conversation metadata (scene: "assistant" for 1:1)
+### EverMemOS Cloud Integration
+Hosted service at `https://api.evermind.ai`. Authenticated via Bearer token (`EVERMEMOS_API` env var). API version: `/api/v0/`.
 
-EverMemOS is NOT a library — it's a separate Docker service with its own MongoDB, Elasticsearch, Milvus, and Redis.
+Key endpoints:
+- `POST /api/v0/memories` — store conversation messages (returns "queued" for async extraction)
+- `GET /api/v0/memories/search?user_id=X&query=Y&retrieve_method=rrf&top_k=10` — semantic search (rrf recommended)
+- `GET /api/v0/memories?user_id=X&memory_type=episodic_memory` — fetch by type (episodic_memory/event_log/foresight/profile)
+- `POST /api/v0/memories/conversation-meta` — set conversation metadata (scene: "assistant" for 1:1)
 
-### LLM Provider Abstraction
-Protocol-based interface requiring `chat()` and `chat_structured()` methods. Config-driven provider selection. Structured output via Pydantic models for intent detection, test scoring, etc.
+EverMemOS Cloud handles memory extraction, indexing, and retrieval. No local Docker setup needed.
+
+### LLM Provider
+All LLM calls go through **OpenRouter** (`https://openrouter.ai/api/v1`) using the `openai` Python client. Model: `openrouter/hunter-alpha`. Configured in `app/config.py` — single provider, no toggle.
 
 ## Ports
 | Service | Port |
 |---------|------|
 | Next.js frontend | 3000 |
 | FastAPI backend | 8000 |
-| EverMemOS API | 1995 |
 
 ## Tech Stack
-- **Backend**: Python, FastAPI, OpenRouter
-- **Frontend**: Next.js 14+ (App Router), TypeScript, Tailwind CSS, React XYFlow, pnpm
+- **Backend**: Python 3.12, FastAPI, OpenAI Agents SDK, OpenRouter, MongoDB, httpx
+- **Frontend**: Next.js 14+ (App Router), TypeScript, Tailwind CSS, pnpm
+- **Memory**: EverMemOS Cloud (api.evermind.ai)
 - **Tooling**: Ruff (lint/format), Pyright (types), pytest + pytest-asyncio (tests)
 
-
-## Open Router
-Read https://openrouter.ai/skills/create-agent/SKILL.md and follow the instructions to build an agent using OpenRouter.
-
-## Known Discrepancy
-`backend/.python-version` says 3.9 but design docs specify Python 3.12. Resolve before adding type hints that require 3.10+ (e.g., `X | Y` union syntax).
+## Environment Variables (`backend/.env`)
+```
+OPENROUTER_API_KEY=     # OpenRouter API key
+EVERMEMOS_API=          # EverMemOS Cloud bearer token
+MONGO_USER=             # MongoDB Atlas username
+MONGO_PASSWORD=         # MongoDB Atlas password
+```

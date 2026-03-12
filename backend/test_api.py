@@ -1,4 +1,4 @@
-"""Quick test script to inspect OpenRouter API response shapes."""
+"""Quick test script to inspect LLM API response shapes (works with any provider)."""
 # pyright: reportCallIssue=false, reportArgumentType=false, reportPossiblyUnboundVariable=false
 import os
 import json
@@ -7,12 +7,14 @@ from openai import OpenAI
 
 load_dotenv()
 
+from app.config import LLM_BASE_URL, LLM_API_KEY, DEFAULT_MODEL
+
 client = OpenAI(
-    base_url="https://openrouter.ai/api/v1",
-    api_key=os.environ["OPENROUTER_API"],
+    base_url=LLM_BASE_URL,
+    api_key=LLM_API_KEY,
 )
 
-MODEL = "google/gemini-2.0-flash-001"
+MODEL = DEFAULT_MODEL
 
 # --- Test 1: Normal response ---
 print("=" * 60)
