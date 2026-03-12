@@ -8,3 +8,12 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Local configuration and editor metadata
+../.cursor/
+
+# Generated learning plans and notes
+plans/
+
+# Personal scratch space (not for version control)
+../tejadhith/
