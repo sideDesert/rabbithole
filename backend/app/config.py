@@ -8,21 +8,22 @@ load_dotenv()
 # --- Required env vars ---
 MONGO_USER = os.environ.get("MONGO_USER", "")
 MONGO_PASSWORD = os.environ.get("MONGO_PASSWORD", "")
-OPENROUTER_API = os.environ.get("OPENROUTER_API", "")
 EVERMEMOS_API = os.environ.get("EVERMEMOS_API", "")
 
 # --- Paths ---
 BACKEND_DIR = Path(__file__).resolve().parent.parent
 PLANS_DIR = BACKEND_DIR / "plans"
 
-# --- LLM ---
-OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
-DEFAULT_MODEL = "google/gemini-2.0-flash-001"
-PLANNING_MODEL = "google/gemini-2.0-flash-001"
-SCORING_MODEL = "google/gemini-2.0-flash-001"
+# --- LLM (OpenRouter) ---
+LLM_BASE_URL = "https://openrouter.ai/api/v1"
+LLM_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
+DEFAULT_MODEL = "openrouter/hunter-alpha"
+PLANNING_MODEL = "openrouter/hunter-alpha"
+SCORING_MODEL = "openrouter/hunter-alpha"
 
-# --- EverMemOS ---
-EVERMEMOS_BASE_URL = "http://localhost:1995"
+
+# --- EverMemOS Cloud ---
+EVERMEMOS_BASE_URL = "https://api.evermind.ai"
 
 # --- MongoDB ---
 MONGO_URI = f"mongodb+srv://{MONGO_USER}:{MONGO_PASSWORD}@evermemos.3ubn8os.mongodb.net/?appName=evermemos"

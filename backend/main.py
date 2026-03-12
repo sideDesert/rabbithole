@@ -3,13 +3,13 @@ import sys
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.config import MONGO_USER, MONGO_PASSWORD, OPENROUTER_API, PLANS_DIR
+from app.config import MONGO_USER, MONGO_PASSWORD, LLM_API_KEY, PLANS_DIR
 from app.db.mongo import get_client
 from app.db.indexes import ensure_indexes
 from app.api.chat import router as chat_router
 
 # --- Validate env ---
-for name, val in [("MONGO_USER", MONGO_USER), ("MONGO_PASSWORD", MONGO_PASSWORD), ("OPENROUTER_API", OPENROUTER_API)]:
+for name, val in [("MONGO_USER", MONGO_USER), ("MONGO_PASSWORD", MONGO_PASSWORD), ("OPENROUTER_API_KEY", LLM_API_KEY)]:
     if not val:
         print(f"ERROR: {name} is not set in .env")
         sys.exit(1)
