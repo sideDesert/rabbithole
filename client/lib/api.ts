@@ -7,12 +7,19 @@ const API_BASE = "http://localhost:8000/api";
 
 // ── Types ────────────────────────────────────────────────────────────────
 
+export interface InterviewQuestion {
+  question: string;
+  options: string[];
+}
+
 export type SSEEvent =
   | { type: "phase"; phase: string }
   | { type: "stream"; content: string }
   | { type: "tool_call"; name: string; args: Record<string, unknown> }
   | { type: "tool_result"; name: string; result: Record<string, unknown> }
   | { type: "phase_change"; from: string; to: string }
+  | { type: "plan_created"; topic_slug: string }
+  | { type: "interview_questions"; questions: InterviewQuestion[] }
   | { type: "end" }
   | { type: "error"; content: string };
 
@@ -78,6 +85,56 @@ export async function getMessages(
   threadId: string,
 ): Promise<{ messages: Message[] }> {
   const res = await fetch(`${API_BASE}/threads/${threadId}/messages`);
+  return res.json();
+}
+
+// ── Plan ──────────────────────────────────────────────────────────────────
+
+export interface PlanConcept {
+  name: string;
+  description: string;
+  completed: boolean;
+  order: number;
+}
+
+export interface PlanPhase {
+  title: string;
+  order: number;
+  progress: number;
+  concepts: PlanConcept[];
+}
+
+export interface PlanProgress {
+  topic: string;
+  depth: string;
+  prior_knowledge: string;
+  overall_progress: number;
+  current_concept: string | null;
+  phases: PlanPhase[];
+}
+
+export async function getPlan(
+  threadId: string,
+): Promise<{ markdown: string | null; topic_slug: string | null }> {
+  const res = await fetch(`${API_BASE}/threads/${threadId}/plan`);
+  return res.json();
+}
+
+export async function getProgress(threadId: string): Promise<PlanProgress> {
+  const res = await fetch(`${API_BASE}/threads/${threadId}/progress`);
+  return res.json();
+}
+
+export async function toggleConcept(
+  threadId: string,
+  conceptName: string,
+  completed: boolean,
+): Promise<{ toggled: boolean; overall_progress: number }> {
+  const res = await fetch(`${API_BASE}/threads/${threadId}/plan/toggle`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ concept_name: conceptName, completed }),
+  });
   return res.json();
 }
 
