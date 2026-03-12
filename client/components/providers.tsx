@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "@/components/theme-provider";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { PlanProvider } from "@/components/plan-context";
+import { AgentProvider } from "@/components/agent-context";
 
 function makeQueryClient() {
   return new QueryClient({
@@ -38,9 +39,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
         disableTransitionOnChange
       >
         <SidebarProvider>
-          <PlanProvider>
-            {children}
-          </PlanProvider>
+          <AgentProvider>
+            <PlanProvider>
+              {children}
+            </PlanProvider>
+          </AgentProvider>
         </SidebarProvider>
       </ThemeProvider>
     </QueryClientProvider>

@@ -12,6 +12,7 @@ import {
   Pen,
 } from "lucide-react";
 import { Button } from "./ui/button";
+import { AgentPill } from "@/components/agent-pill";
 
 interface TopBarInterface {
   config?: {
@@ -33,20 +34,27 @@ export function TopBar({ config }: TopBarInterface) {
 
   return (
     <div
-      className={`flex bg-background z-20 items-center justify-between p-2 sticky top-0 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-6 after:translate-y-full after:bg-gradient-to-b after:from-background after:to-transparent after:pointer-events-none after:transition-opacity ${scrolled ? "after:opacity-100" : "after:opacity-0"}`}
+      className={`relative flex bg-background z-20 items-center justify-between p-2 sticky top-0 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-6 after:translate-y-full after:bg-gradient-to-b after:from-background after:to-transparent after:pointer-events-none after:transition-opacity ${scrolled ? "after:opacity-100" : "after:opacity-0"}`}
     >
-      <SidebarTrigger />
-      <div className="flex w-full justify-between px-2">
-        <div className="flex flex-row justify-center items-center gap-4">
-          {config && config?.back && (
+      <div className="flex items-center gap-2">
+        <SidebarTrigger />
+        <div className="flex flex-row items-center gap-4">
+          {config?.back && (
             <Button variant="outline">
               <ChevronLeft /> Back to Root
             </Button>
           )}
-          {config && config?.title && (
+          {config?.title && (
             <h2 className="font-medium">{config.title}</h2>
           )}
         </div>
+      </div>
+
+      <div className="absolute left-1/2 -translate-x-1/2">
+        <AgentPill />
+      </div>
+
+      <div className="flex items-center gap-2">
         <TabsList>
           <TabsTrigger value="chat-mode">
             <MessageCircle />
@@ -61,8 +69,8 @@ export function TopBar({ config }: TopBarInterface) {
             <NetworkIcon />
           </TabsTrigger>
         </TabsList>
+        <ThemeToggle />
       </div>
-      <ThemeToggle />
     </div>
   );
 }

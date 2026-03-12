@@ -1,24 +1,27 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Rabbit, MessageSquare, Network, BrainCircuit } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import {
+  Rabbit,
+  MessageSquare,
+  Network,
+  BrainCircuit,
+  SquarePen,
+} from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
   SidebarGroup,
-  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarSeparator,
 } from "@/components/ui/sidebar";
-const agents = [
-  { name: "Ebbinghaus", image: "/agents/ebbinghaus.svg", href: "/ebbinghaus" },
-  { name: "Feynman", image: "/agents/feynman.svg", href: "/feynman" },
-] as const;
+import { useAgent } from "@/components/agent-context";
+import { usePlan } from "@/components/plan-context";
+import { useThreads } from "@/hooks/use-threads";
 
 const tools = [
   { name: "Chat Threads", icon: MessageSquare, href: "/threads" },
@@ -28,6 +31,21 @@ const tools = [
 
 export function AppSidebar() {
   const path = usePathname();
+  const router = useRouter();
+  const { activeAgent, agents } = useAgent();
+  const { setThreadId } = usePlan();
+  const { threads: threadsData } = useThreads();
+
+  const activeAgentData = agents.find((a) => a.id === activeAgent);
+
+  const allThreads = threadsData?.threads ?? [];
+  const agentThreads = allThreads.filter((t) => t.agent === activeAgent);
+
+  function handleNewChat() {
+    setThreadId(null);
+    router.push(activeAgentData?.href ?? "/feynman");
+  }
+
   return (
     <Sidebar>
       <SidebarHeader>
@@ -37,34 +55,26 @@ export function AppSidebar() {
         </div>
       </SidebarHeader>
 
-      <SidebarContent>
+      <SidebarContent className="flex flex-col overflow-hidden">
+        {/* New Chat Button */}
         <SidebarGroup>
-          <SidebarGroupLabel>Agents</SidebarGroupLabel>
           <SidebarMenu>
-            {agents.map((agent) => (
-              <SidebarMenuItem key={agent.name}>
-                <SidebarMenuButton
-                  isActive={path.includes(agent.href)}
-                  render={agent.href ? <Link href={agent.href} /> : undefined}
-                >
-                  <Image
-                    src={agent.image}
-                    alt={agent.name}
-                    width={20}
-                    height={20}
-                    className="rounded-full"
-                  />
-                  <span>{agent.name}</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            ))}
+            <SidebarMenuItem>
+              <SidebarMenuButton onClick={handleNewChat}>
+                <SquarePen className="h-4 w-4" />
+                <span>New Chat</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
           </SidebarMenu>
         </SidebarGroup>
 
         <SidebarSeparator />
 
+        {/* Tools Section */}
         <SidebarGroup>
-          <SidebarGroupLabel>Tools</SidebarGroupLabel>
+          <p className="px-2 pb-1 text-sm font-semibold text-sidebar-foreground/90">
+            Tools
+          </p>
           <SidebarMenu>
             {tools.map((tool) => (
               <SidebarMenuItem key={tool.name}>
@@ -78,6 +88,43 @@ export function AppSidebar() {
               </SidebarMenuItem>
             ))}
           </SidebarMenu>
+        </SidebarGroup>
+
+        <SidebarSeparator />
+
+        {/* History Section */}
+        <SidebarGroup className="flex-1 overflow-auto">
+          <p className="px-2 pb-1 text-sm font-semibold text-sidebar-foreground/90">
+            History
+          </p>
+          {agentThreads.length === 0 ? (
+            <p className="px-2 py-3 text-sm text-muted-foreground">
+              No conversations yet
+            </p>
+          ) : (
+            <SidebarMenu>
+              {agentThreads
+                .sort(
+                  (a, b) =>
+                    new Date(b.updated_at).getTime() -
+                    new Date(a.updated_at).getTime()
+                )
+                .map((thread) => {
+                  const threadId =
+                    thread.root_thread_id ?? thread.evermemos_group_id;
+                  return (
+                    <SidebarMenuItem key={thread.evermemos_group_id}>
+                      <SidebarMenuButton
+                        isActive={path.includes(threadId)}
+                        render={<Link href={`/threads/${threadId}`} />}
+                      >
+                        <span className="truncate">{thread.title}</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+            </SidebarMenu>
+          )}
         </SidebarGroup>
       </SidebarContent>
     </Sidebar>
