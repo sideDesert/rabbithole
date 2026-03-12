@@ -1,6 +1,16 @@
 """Parse markdown learning plans into a simple tree structure."""
 
+import re
 from dataclasses import dataclass, field
+
+
+def _strip_md(text: str) -> str:
+    """Strip common markdown inline formatting (bold, italic) from text."""
+    text = re.sub(r"\*\*(.+?)\*\*", r"\1", text)
+    text = re.sub(r"__(.+?)__", r"\1", text)
+    text = re.sub(r"\*(.+?)\*", r"\1", text)
+    text = re.sub(r"_(.+?)_", r"\1", text)
+    return text.strip()
 
 
 @dataclass
@@ -60,7 +70,7 @@ def parse_plan(markdown: str) -> PlanTree:
 
         # Topic: first H1
         if stripped.startswith("# ") and not topic:
-            topic = stripped[2:].strip()
+            topic = _strip_md(stripped[2:])
 
         # Metadata lines starting with >
         elif stripped.startswith(">"):
@@ -76,20 +86,20 @@ def parse_plan(markdown: str) -> PlanTree:
         elif stripped.startswith("## Phase"):
             # "## Phase 1: Phase Title" -> "Phase Title"
             colon_idx = stripped.find(":")
-            title = stripped[colon_idx + 1:].strip() if colon_idx != -1 else stripped[3:].strip()
-            phases.append(PlanPhase(title=title, order=len(phases) + 1))
+            raw_title = stripped[colon_idx + 1:].strip() if colon_idx != -1 else stripped[3:].strip()
+            phases.append(PlanPhase(title=_strip_md(raw_title), order=len(phases) + 1))
 
         # Concept: - [ ] Name — description  or  - [x] Name — description
         elif stripped.startswith("- [") and phases:
             completed = stripped.startswith("- [x]")
             text = stripped[6:].strip()  # skip "- [ ] " or "- [x] "
             if " — " in text:
-                name, description = text.split(" — ", 1)
+                raw_name, raw_desc = text.split(" — ", 1)
             else:
-                name, description = text, ""
+                raw_name, raw_desc = text, ""
             concept_order = len(phases[-1].concepts) + 1
             phases[-1].concepts.append(
-                PlanConcept(name=name, description=description, completed=completed, order=concept_order)
+                PlanConcept(name=_strip_md(raw_name), description=_strip_md(raw_desc), completed=completed, order=concept_order)
             )
 
     return PlanTree(topic=topic, depth=depth, prior_knowledge=prior_knowledge, phases=phases)
