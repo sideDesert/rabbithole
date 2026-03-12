@@ -3,6 +3,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "@/components/theme-provider";
 import { SidebarProvider } from "@/components/ui/sidebar";
+import { PlanProvider } from "@/components/plan-context";
 
 function makeQueryClient() {
   return new QueryClient({
@@ -37,7 +38,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
         disableTransitionOnChange
       >
         <SidebarProvider>
-          {children}
+          <PlanProvider>
+            {children}
+          </PlanProvider>
         </SidebarProvider>
       </ThemeProvider>
     </QueryClientProvider>

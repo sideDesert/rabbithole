@@ -1,8 +1,12 @@
 "use client";
 import { useState, useEffect } from "react";
 import { ChatMessage, ROLE_AI, ROLE_USER } from "@/components/chat-message";
+import { InterviewAnswersCard } from "@/components/interview-answers-card";
+import { InterviewWidget } from "@/components/interview-modal";
+import { PlanCreatedCard } from "@/components/plan-created-card";
 import { PromptInput } from "@/components/prompt-input";
 import { TextSelectionMenu } from "@/components/text-selection-menu";
+import { usePlan } from "@/components/plan-context";
 import { useTextSelectionMenu } from "@/hooks/use-text-selection-menu";
 import { useChat } from "@/hooks/use-chat";
 
@@ -33,7 +37,25 @@ export default function Page() {
   const [index, setIndex] = useState(0);
   const [visible, setVisible] = useState(true);
 
-  const { send, messages, isStreaming, isWaiting } = useChat({});
+  const { setThreadId, setTopicSlug } = usePlan();
+
+  const {
+    send,
+    messages,
+    isStreaming,
+    isWaiting,
+    threadId,
+    interviewQuestions,
+    submitInterviewAnswers,
+    dismissInterview,
+  } = useChat({
+    onThreadCreated: (id) => setThreadId(id),
+    onPlanCreated: (slug) => setTopicSlug(slug),
+  });
+
+  useEffect(() => {
+    if (threadId) setThreadId(threadId);
+  }, [threadId, setThreadId]);
 
   const chatStarted = messages.length > 0;
 
@@ -64,18 +86,38 @@ export default function Page() {
     <div className="px-10 pt-4 h-full max-w-3xl m-auto grid grid-rows-[1fr_auto]">
       {chatStarted ? (
         <div className="flex flex-col overflow-auto relative z-0 gap-4 min-h-0 pb-6">
-          {messages.map((msg, idx) => (
-            <ChatMessage
-              key={msg.id}
-              id={msg.id}
-              role={msg.role as typeof ROLE_USER | typeof ROLE_AI}
-              content={msg.content}
-              className={`${msg.role === ROLE_USER && "w-fit self-end"}`}
-              isLast={messages.length - 1 === idx}
-              streaming={isStreaming}
-              waiting={isWaiting && messages.length - 1 === idx}
-            />
-          ))}
+          {messages.map((msg, idx) => {
+            if (msg.type === "plan_card") {
+              return (
+                <PlanCreatedCard
+                  key={msg.id}
+                  topicSlug={msg.metadata?.topicSlug ?? ""}
+                />
+              );
+            }
+            if (
+              msg.role === "user" &&
+              msg.content.startsWith("[Interview Answers]")
+            ) {
+              return (
+                <div key={msg.id} className="w-fit self-end">
+                  <InterviewAnswersCard content={msg.content} />
+                </div>
+              );
+            }
+            return (
+              <ChatMessage
+                key={msg.id}
+                id={msg.id}
+                role={msg.role as typeof ROLE_USER | typeof ROLE_AI}
+                content={msg.content}
+                className={`${msg.role === ROLE_USER && "w-fit self-end"}`}
+                isLast={messages.length - 1 === idx}
+                streaming={isStreaming}
+                waiting={isWaiting && messages.length - 1 === idx}
+              />
+            );
+          })}
         </div>
       ) : (
         <div className="flex flex-col justify-center items-center gap-2">
@@ -88,22 +130,31 @@ export default function Page() {
           </p>
         </div>
       )}
-      <PromptInput
-        className="sticky! bottom-0 z-50"
-        onSubmit={(content) => {
-          send(content);
-          if (chatStarted) {
-            setTimeout(
-              () =>
-                window.scrollTo({
-                  top: document.body.scrollHeight,
-                  behavior: "smooth",
-                }),
-              50,
-            );
-          }
-        }}
-      />
+      {interviewQuestions ? (
+        <InterviewWidget
+          questions={interviewQuestions}
+          onSubmit={submitInterviewAnswers}
+          onDismiss={dismissInterview}
+          className="sticky! bottom-0 z-50"
+        />
+      ) : (
+        <PromptInput
+          className="sticky! bottom-0 z-50"
+          onSubmit={(content) => {
+            send(content);
+            if (chatStarted) {
+              setTimeout(
+                () =>
+                  window.scrollTo({
+                    top: document.body.scrollHeight,
+                    behavior: "smooth",
+                  }),
+                50,
+              );
+            }
+          }}
+        />
+      )}
       <TextSelectionMenu
         visible={isVisible}
         position={menuPosition}

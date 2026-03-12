@@ -3,8 +3,7 @@ import { Geist, Geist_Mono, Raleway } from "next/font/google";
 import "./globals.css";
 import { AppSidebar } from "@/components/app-sidebar";
 import { Providers } from "@/components/providers";
-import { TopBar } from "@/components/top-bar";
-import { Tabs } from "@/components/ui/tabs";
+import { MainContent } from "@/components/main-content";
 
 const raleway = Raleway({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -35,12 +34,7 @@ export default function RootLayout({
       >
         <Providers>
           <AppSidebar />
-          <Tabs className={"w-full"}>
-            <main className="grow grid grid-rows-[auto_1fr]">
-              <TopBar />
-              {children}
-            </main>
-          </Tabs>
+          <MainContent>{children}</MainContent>
         </Providers>
       </body>
     </html>
