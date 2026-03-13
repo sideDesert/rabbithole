@@ -417,13 +417,13 @@ async def create_branch(thread_id: str, req: BranchRequest):
         return {"error": "Message not found in this thread"}
 
     history = load_history(thread_id, limit=20)
-    summary = await compact_parent_context(
+    generated_title, summary = await compact_parent_context(
         history=history,
         branch_text=req.branch_text,
         parent_title=str(parent.get("title", "")),
     )
 
-    title = req.title or req.branch_text[:80]
+    title = req.title or generated_title or req.branch_text[:80]
 
     child = Thread(
         user_id=str(parent["user_id"]),
