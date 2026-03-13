@@ -235,6 +235,11 @@ a.branch-annotation.scroll-highlight {
 
 [data-feynman-editor] .bn-editor {
   padding: 0;
+  background: transparent !important;
+}
+
+[data-feynman-editor] .bn-container {
+  background: transparent;
 }
 
 [data-feynman-editor] .bn-block-group {

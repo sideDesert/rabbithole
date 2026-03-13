@@ -129,7 +129,12 @@ export default function Page() {
           className="w-fit self-start"
         />
       </div>
-      <PromptInput mode="interview" className="sticky! bottom-0 z-50" onSubmit={() => {}} onClose={() => {}} />
+      <PromptInput
+        mode="interview"
+        className="sticky! bottom-0 z-50"
+        onSubmit={() => {}}
+        onClose={() => {}}
+      />
       <TextSelectionMenu
         visible={isVisible}
         position={menuPosition}

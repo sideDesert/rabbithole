@@ -60,6 +60,7 @@ export default function Page({
   const scrollToId = searchParams.get("scrollTo");
   const branchPointId = searchParams.get("branchPointId");
   const scrolledRef = useRef(false);
+  const promptRef = useRef(null);
 
   // Sync route param into PlanContext so PlanView can fetch progress
   useEffect(() => {
@@ -160,7 +161,7 @@ export default function Page({
     console.log("Quote:", data);
     setTagged(data.text);
     setMode(MODE_TAGGED);
-    // TODO: insert quoted text into prompt input
+    requestAnimationFrame(() => promptRef.current?.focus());
   };
   const annotationsByMessage = React.useMemo(() => {
     const map = new Map<string, Branch[]>();
@@ -187,6 +188,7 @@ export default function Page({
     setBranchMessageId(data.messageId);
     setBranchTextPosition(textPosition);
     setMode(MODE_BRANCH);
+    requestAnimationFrame(() => promptRef.current?.focus());
   };
 
   return (
@@ -199,7 +201,9 @@ export default function Page({
             </ItemMedia>
             <ItemContent>
               <ItemTitle>
-                <span className="bg-primary/15 w-fit">&ldquo;{thread.branch_text ?? "Branched"}&rdquo;</span>
+                <span className="bg-primary/15 w-fit">
+                  &ldquo;{thread.branch_text ?? "Branched"}&rdquo;
+                </span>
                 <Badge variant="outline">Depth {thread.depth}</Badge>
               </ItemTitle>
               {thread.parent_summary && (
@@ -256,6 +260,7 @@ export default function Page({
         />
       ) : (
         <PromptInput
+          ref={promptRef}
           mode={mode}
           tagged={tagged}
           loading={isBranching}

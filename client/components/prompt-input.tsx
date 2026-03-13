@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useRef, useState, type RefCallback } from "react";
 import {
   ChevronLeft,
   GitBranchIcon,
@@ -42,6 +42,7 @@ interface PromptInputInterface {
     goBack?: boolean;
     branchout?: boolean;
   };
+  ref: React.Ref<HTMLElement | null>;
 }
 export function PromptInput({
   className,
@@ -53,9 +54,16 @@ export function PromptInput({
   mode = MODE_DEFAULT,
   tagged = "",
   interviewQuestion = null,
+  ref,
 }: PromptInputInterface) {
   const [value, setValue] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const textareaCallbackRef: RefCallback<HTMLTextAreaElement> = (el) => {
+    textareaRef.current = el;
+    if (typeof ref === "function") ref(el);
+    else if (ref) (ref as React.MutableRefObject<HTMLElement | null>).current = el;
+  };
 
   const autoResize = useCallback(() => {
     const ta = textareaRef.current;
@@ -114,6 +122,7 @@ export function PromptInput({
                 </Button>
               ))}
               <Input
+                ref={ref}
                 value={value}
                 onChange={(e) => setValue(e.target.value)}
                 onKeyDown={(e) => {
@@ -153,7 +162,7 @@ export function PromptInput({
                 className="absolute right-1.5 bottom-8 shrink-0 cursor-pointer z-20"
               >
                 {loading && (
-                  <div className="flex justify-center items-center">
+                  <div className="flex gap-2 justify-center items-center">
                     <Loader2 className="h-4 w-4 animate-spin" />{" "}
                     <div>Creating Branch...</div>
                   </div>
@@ -164,7 +173,7 @@ export function PromptInput({
                 {!loading && streaming && <StopCircle />}
               </Button>
               <Textarea
-                ref={textareaRef}
+                ref={textareaCallbackRef}
                 value={value}
                 onChange={handleChange}
                 onKeyDown={handleKeyDown}

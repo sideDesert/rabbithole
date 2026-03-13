@@ -87,6 +87,14 @@ export function FeynmanModal({
     onClose();
   }, [onClose]);
 
+  // Lock scroll while modal is open
+  useEffect(() => {
+    document.documentElement.style.overflow = "hidden";
+    return () => {
+      document.documentElement.style.overflow = "";
+    };
+  }, []);
+
   // Close on Escape
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -137,7 +145,7 @@ export function FeynmanModal({
   const handleSubmit = useCallback(async () => {
     setIsSubmitting(true);
     try {
-      const markdown = await editor.blocksToMarkdownLossy(editor.document);
+      const markdown = editor.blocksToMarkdownLossy(editor.document);
       const hintIds = hints.map((h) => h.id);
       await submitFeynmanExplanation(threadId, conceptName, markdown, hintIds);
       localStorage.removeItem(DRAFT_KEY(threadId, conceptName));
@@ -151,11 +159,11 @@ export function FeynmanModal({
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 z-[99] bg-black/50 backdrop-blur-sm"
+        className="fixed inset-0 z-99 bg-background/70 backdrop-blur-sm"
         onClick={handleClose}
       />
       {/* Modal */}
-      <div className="fixed inset-4 z-[100] flex flex-col rounded-xl border border-border bg-background shadow-2xl">
+      <div className="fixed inset-4 z-100 max-w-4xl mx-auto flex flex-col rounded-xl border border-border bg-background shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border px-6 py-4">
           <div>
@@ -179,23 +187,19 @@ export function FeynmanModal({
 
         {/* Editor */}
         <div className="flex-1 overflow-auto px-6 py-4">
-          <div className="mx-auto max-w-3xl">
-            <BlockNoteView
-              editor={editor}
-              theme={resolvedTheme === "dark" ? "dark" : "light"}
-              data-feynman-editor
-            >
-              <SuggestionMenuController
-                triggerCharacter="/"
-                getItems={async (query) =>
-                  filterSuggestionItems(
-                    getCustomSlashMenuItems(editor),
-                    query,
-                  )
-                }
-              />
-            </BlockNoteView>
-          </div>
+          <BlockNoteView
+            className="bg-transparent"
+            editor={editor}
+            theme={resolvedTheme === "dark" ? "dark" : "light"}
+            data-feynman-editor
+          >
+            <SuggestionMenuController
+              triggerCharacter="/"
+              getItems={async (query) =>
+                filterSuggestionItems(getCustomSlashMenuItems(editor), query)
+              }
+            />
+          </BlockNoteView>
         </div>
 
         {/* Footer */}
@@ -208,10 +212,7 @@ export function FeynmanModal({
           >
             {isHintLoading ? "Getting hint..." : "Hint"}
           </Button>
-          <Button
-            onClick={handleSubmit}
-            disabled={isSubmitting}
-          >
+          <Button onClick={handleSubmit} disabled={isSubmitting}>
             {isSubmitting ? "Submitting..." : "Submit Explanation"}
           </Button>
         </div>

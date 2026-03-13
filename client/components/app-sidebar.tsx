@@ -7,6 +7,7 @@ import {
   MessageSquare,
   Network,
   BrainCircuit,
+  LayoutDashboard,
   SquarePen,
 } from "lucide-react";
 import {
@@ -24,6 +25,7 @@ import { usePlan } from "@/components/plan-context";
 import { ThreadTree } from "@/components/thread-tree";
 
 const tools = [
+  { name: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
   { name: "Chat Threads", icon: MessageSquare, href: "/threads" },
   { name: "Knowledge Graph", icon: Network, href: "/knowledge-graph" },
   { name: "Memories", icon: BrainCircuit, href: "memories" },
@@ -74,7 +76,7 @@ export function AppSidebar() {
           <p className="px-2 pb-1 text-sm font-semibold text-sidebar-foreground/90">
             Tools
           </p>
-          <SidebarMenu>
+          <SidebarMenu className="flex flex-col gap-1">
             {tools.map((tool) => (
               <SidebarMenuItem key={tool.name}>
                 <SidebarMenuButton
