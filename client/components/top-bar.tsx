@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { AgentPill } from "@/components/agent-pill";
+import { TopicProgress } from "@/components/topic-progress";
 
 interface TopBarInterface {
   config?: {
@@ -46,6 +47,7 @@ export function TopBar({ config }: TopBarInterface) {
           )}
           {config?.title && <h2 className="font-medium">{config.title}</h2>}
         </div>
+        <TopicProgress />
       </div>
 
       <div className="absolute left-1/2 -translate-x-1/2">
