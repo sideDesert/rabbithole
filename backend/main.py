@@ -14,6 +14,7 @@ from app.config import MONGO_USER, MONGO_PASSWORD, LLM_API_KEY, PLANS_DIR
 from app.db.mongo import get_client
 from app.db.indexes import ensure_indexes
 from app.api.chat import router as chat_router
+from app.api.feynman import router as feynman_router
 
 # --- Validate env ---
 for name, val in [("MONGO_USER", MONGO_USER), ("MONGO_PASSWORD", MONGO_PASSWORD), ("OPENROUTER_API_KEY", LLM_API_KEY)]:
@@ -42,6 +43,7 @@ app.add_middleware(
 )
 
 app.include_router(chat_router)
+app.include_router(feynman_router)
 
 
 @app.get("/health")
