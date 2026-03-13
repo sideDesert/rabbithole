@@ -72,19 +72,43 @@ def get_thread_map(thread_id: str):
 
 
 def _load_all_plans() -> list[tuple[str, dict]]:
-    """Load all plan.json files. Returns [(topic_slug, plan_data), ...]."""
+    """Load all plans. Prefers plan.json, falls back to parsing plan.md."""
     plans = []
     if not PLANS_DIR.exists():
         return plans
     for slug_dir in PLANS_DIR.iterdir():
         if not slug_dir.is_dir():
             continue
+        # Prefer structured JSON if available
         json_path = slug_dir / "plan.json"
         if json_path.exists():
             try:
                 data = _json.loads(json_path.read_text())
                 plans.append((slug_dir.name, data))
+                continue
             except (ValueError, OSError):
+                pass
+        # Fall back to parsing markdown
+        md_path = slug_dir / "plan.md"
+        if md_path.exists():
+            try:
+                tree = parse_plan(md_path.read_text())
+                data = {
+                    "topic": tree.topic,
+                    "phases": [
+                        {
+                            "title": phase.title,
+                            "order": phase.order,
+                            "concepts": [
+                                {"name": c.name, "description": c.description}
+                                for c in phase.concepts
+                            ],
+                        }
+                        for phase in tree.phases
+                    ],
+                }
+                plans.append((slug_dir.name, data))
+            except Exception:
                 continue
     return plans
 
