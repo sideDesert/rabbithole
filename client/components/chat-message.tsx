@@ -1,8 +1,10 @@
 import clsx from "clsx";
-import React from "react";
+import React, { useRef } from "react";
 import { Streamdown } from "streamdown";
 import { ThoughtTrail } from "./thought-trail";
 import type { TrailStep } from "@/hooks/use-chat";
+import type { Branch } from "@/lib/api";
+import { useAnnotations } from "@/hooks/use-annotations";
 
 export const ROLE_USER = "user";
 export const ROLE_AI = "assistant";
@@ -16,6 +18,7 @@ interface ChatMessageInterface {
   trailSteps?: TrailStep[];
   trailCollapsed?: boolean;
   onTrailToggle?: () => void;
+  annotations?: Branch[];
 }
 
 function lastMessageRef(id: string) {
@@ -56,7 +59,11 @@ export function ChatMessage({
   trailSteps,
   trailCollapsed,
   onTrailToggle,
+  annotations,
 }: ChatMessageInterface) {
+  const articleRef = useRef<HTMLElement | null>(null);
+  useAnnotations(articleRef, role === ROLE_AI ? annotations : undefined, !!isLast);
+
   if (role === ROLE_USER) {
     return (
       <div
@@ -78,6 +85,7 @@ export function ChatMessage({
         className="chat-message max-w-full overflow-auto streamdown"
         data-message-id={id}
         ref={(el) => {
+          articleRef.current = el;
           if (!el) return;
           if (isLast) {
             lastMessageRef(id)(el);
