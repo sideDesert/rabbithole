@@ -11,6 +11,13 @@ import {
 } from "@/lib/api";
 import { getTrailLabel } from "@/lib/trail-labels";
 
+export interface ToolCallEntry {
+  name: string;
+  label: string;
+  status: "running" | "done";
+  result?: string;
+}
+
 export interface ChatMessage {
   id: string;
   role: "user" | "assistant" | "system";
@@ -18,6 +25,7 @@ export interface ChatMessage {
   type?: "text" | "plan_card" | "phase_divider";
   metadata?: { topicSlug?: string };
   statusMessage?: string;
+  toolCalls?: ToolCallEntry[];
 }
 
 interface UseChatOptions {
@@ -36,6 +44,9 @@ interface UseChatReturn {
   send: (content: string) => Promise<void>;
   submitInterviewAnswers: (answers: Record<number, string>) => Promise<void>;
   dismissInterview: () => void;
+  feynmanOpen: boolean;
+  feynmanConcept: string | null;
+  dismissFeynman: () => void;
 }
 
 export function useChat({
@@ -56,6 +67,9 @@ export function useChat({
   >(null);
   const msgCounter = useRef(0);
   const pendingInterviewRef = useRef<InterviewQuestion[] | null>(null);
+  const [feynmanOpen, setFeynmanOpen] = useState(false);
+  const [feynmanConcept, setFeynmanConcept] = useState<string | null>(null);
+  const pendingFeynmanRef = useRef<string | null>(null);
 
   // Load existing messages when threadId is provided
   useQuery({
@@ -150,7 +164,7 @@ export function useChat({
       let currentAiMsgId = aiMsgId;
       setMessages((prev) => [
         ...prev,
-        { id: aiMsgId, role: "assistant", content: "", statusMessage: "" },
+        { id: aiMsgId, role: "assistant", content: "", statusMessage: "", toolCalls: [] },
       ]);
 
       const setStatus = (label: string) => {
@@ -177,9 +191,33 @@ export function useChat({
             console.log(`[chat] ${event.step} — ${event.duration_ms}ms`);
             break;
           case "tool_call":
-            setStatus(getTrailLabel("tool_call", event.name));
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === currentAiMsgId
+                  ? {
+                      ...m,
+                      statusMessage: undefined,
+                      toolCalls: [
+                        ...(m.toolCalls ?? []),
+                        { name: event.name, label: getTrailLabel("tool_call", event.name), status: "running" as const },
+                      ],
+                    }
+                  : m,
+              ),
+            );
             break;
           case "tool_result":
+            setMessages((prev) =>
+              prev.map((m) => {
+                if (m.id !== currentAiMsgId) return m;
+                const updated = (m.toolCalls ?? []).map((tc) =>
+                  tc.name === event.name && tc.status === "running"
+                    ? { ...tc, status: "done" as const, result: event.result }
+                    : tc,
+                );
+                return { ...m, toolCalls: updated };
+              }),
+            );
             break;
           case "message_id": {
             const isUser = event.role === "user";
@@ -194,11 +232,10 @@ export function useChat({
             break;
           }
           case "stream":
-            clearStatus();
             setMessages((prev) =>
               prev.map((m) =>
                 m.id === currentAiMsgId
-                  ? { ...m, content: m.content + event.content }
+                  ? { ...m, content: m.content + event.content, statusMessage: undefined }
                   : m,
               ),
             );
@@ -222,6 +259,11 @@ export function useChat({
             clearStatus();
             pendingInterviewRef.current = event.questions;
             setInterviewQuestions(event.questions);
+            break;
+          case "feynman_prompt":
+            // Store in a ref and apply after "end" event, same pattern as pendingInterviewRef.
+            // This prevents opening the modal while streaming is still in progress.
+            pendingFeynmanRef.current = event.concept_name;
             break;
           case "plan_created": {
             const slug = event.topic_slug;
@@ -248,14 +290,23 @@ export function useChat({
             if (event.duration_ms) {
               console.log(`[chat] total — ${event.duration_ms}ms`);
             }
-            clearStatus();
             setMessages((prev) =>
-              prev.filter(
-                (m) =>
-                  !(m.role === "assistant" && m.content === ""),
-              ),
+              prev
+                .map((m) =>
+                  m.id === currentAiMsgId ? { ...m, statusMessage: undefined } : m,
+                )
+                .filter(
+                  (m) =>
+                    !(m.role === "assistant" && m.content === "" && !(m.toolCalls?.length)),
+                ),
             );
             setIsStreaming(false);
+            // Apply pending Feynman prompt after streaming ends
+            if (pendingFeynmanRef.current) {
+              setFeynmanOpen(true);
+              setFeynmanConcept(pendingFeynmanRef.current);
+              pendingFeynmanRef.current = null;
+            }
             break;
           case "error":
             clearStatus();
@@ -307,6 +358,11 @@ export function useChat({
     setInterviewQuestions(null);
   }, []);
 
+  const dismissFeynman = useCallback(() => {
+    setFeynmanOpen(false);
+    setFeynmanConcept(null);
+  }, []);
+
   return {
     messages,
     isMessagesLoading: messagesLoading,
@@ -317,5 +373,8 @@ export function useChat({
     send,
     submitInterviewAnswers,
     dismissInterview,
+    feynmanOpen,
+    feynmanConcept,
+    dismissFeynman,
   };
 }
