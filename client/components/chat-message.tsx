@@ -1,6 +1,8 @@
 import clsx from "clsx";
 import React from "react";
 import { Streamdown } from "streamdown";
+import { ThoughtTrail } from "./thought-trail";
+import type { TrailStep } from "@/hooks/use-chat";
 
 export const ROLE_USER = "user";
 export const ROLE_AI = "assistant";
@@ -11,9 +13,9 @@ interface ChatMessageInterface {
   role: typeof ROLE_USER | typeof ROLE_AI;
   className?: string;
   isLast?: boolean;
-  waiting?: boolean;
-  streaming?: boolean;
-  statusMessage?: string | null;
+  trailSteps?: TrailStep[];
+  trailCollapsed?: boolean;
+  onTrailToggle?: () => void;
 }
 
 function lastMessageRef(id: string) {
@@ -33,15 +35,27 @@ function lastMessageRef(id: string) {
   };
 }
 
+export function PhaseDivider({ label }: { label: string }) {
+  return (
+    <div className="flex items-center gap-3 my-2 animate-in fade-in duration-300">
+      <div className="flex-1 border-t border-border" />
+      <span className="text-xs text-muted-foreground tracking-widest uppercase">
+        {label}
+      </span>
+      <div className="flex-1 border-t border-border" />
+    </div>
+  );
+}
+
 export function ChatMessage({
   id,
   content,
   role,
   className,
   isLast,
-  waiting,
-  streaming,
-  statusMessage,
+  trailSteps,
+  trailCollapsed,
+  onTrailToggle,
 }: ChatMessageInterface) {
   if (role === ROLE_USER) {
     return (
@@ -57,39 +71,30 @@ export function ChatMessage({
     );
   }
   if (role === ROLE_AI) {
+    const hasTrail = trailSteps && trailSteps.length > 0;
+
     return (
-      <>
-        <article
-          className={`chat-message max-w-full overflow-auto streamdown`}
-          data-message-id={id}
-          ref={(el) => {
-            if (!el) return;
-            if (isLast) {
-              lastMessageRef(id)(el);
-            } else {
-              el.style.minHeight = "";
-            }
-          }}
-        >
-          {isLast && waiting && (
-            <div className="flex items-center gap-2">
-              <div className="thinking-orb" />
-              {statusMessage && (
-                <span className="text-muted-foreground text-sm animate-pulse">
-                  {statusMessage}
-                </span>
-              )}
-            </div>
-          )}
-          <Streamdown>{content as string}</Streamdown>
-          {isLast && !waiting && streaming && (
-            <div className="gap-2 justify-center items-center mt-2 inline-flex">
-              <div className="gradient-spinner " />{" "}
-              <span className="text-muted-foreground text-sm">Streaming</span>
-            </div>
-          )}
-        </article>
-      </>
+      <article
+        className="chat-message max-w-full overflow-auto streamdown"
+        data-message-id={id}
+        ref={(el) => {
+          if (!el) return;
+          if (isLast) {
+            lastMessageRef(id)(el);
+          } else {
+            el.style.minHeight = "";
+          }
+        }}
+      >
+        {hasTrail && (
+          <ThoughtTrail
+            steps={trailSteps}
+            collapsed={trailCollapsed ?? false}
+            onToggle={onTrailToggle ?? (() => {})}
+          />
+        )}
+        <Streamdown>{content as string}</Streamdown>
+      </article>
     );
   }
 
