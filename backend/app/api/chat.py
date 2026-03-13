@@ -798,6 +798,13 @@ async def chat(thread_id: str, req: ChatRequest):
                 index=3,
             )
 
+        # Feynman mode trigger
+        if agent_ctx.feynman_concept:
+            yield sse({
+                "type": "feynman_prompt",
+                "concept_name": agent_ctx.feynman_concept,
+            })
+
         # 11. Update topic_slug if create_plan was called
         if new_topic_slug:
             _ = mongo.threads().update_one(
