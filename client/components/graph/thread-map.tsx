@@ -1,10 +1,12 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ReactFlow,
   Background,
   Controls,
+  useNodesState,
+  useEdgesState,
   type Node,
   type Edge,
   type NodeTypes,
@@ -32,9 +34,11 @@ function ThreadMapInner({ threadId }: { threadId: string }) {
   const router = useRouter();
   const { resolvedTheme } = useTheme();
   const [selectedNode, setSelectedNode] = useState<ThreadMapNode | null>(null);
+  const [nodes, setNodes, onNodesChange] = useNodesState([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
-  // Use controlled nodes/edges via useMemo — graph is read-only so no need for useNodesState
-  const { nodes, edges } = useMemo(() => {
+  // Compute layout when data changes, then push into draggable state
+  const layouted = useMemo(() => {
     if (!data?.nodes?.length) return { nodes: [] as Node[], edges: [] as Edge[] };
 
     const rfNodes: Node[] = data.nodes.map((n) => ({
@@ -59,8 +63,13 @@ function ThreadMapInner({ threadId }: { threadId: string }) {
       data: { branch_topic: e.branch_topic },
     }));
 
-    return layoutGraph(rfNodes, rfEdges, { direction: "TB" });
+    return layoutGraph(rfNodes, rfEdges, { direction: "LR" });
   }, [data]);
+
+  useEffect(() => {
+    setNodes(layouted.nodes);
+    setEdges(layouted.edges);
+  }, [layouted, setNodes, setEdges]);
 
   const onNodeClick = useCallback(
     (_: React.MouseEvent, node: Node) => {
@@ -101,12 +110,13 @@ function ThreadMapInner({ threadId }: { threadId: string }) {
       <ReactFlow
         nodes={nodes}
         edges={edges}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
         onNodeClick={onNodeClick}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         colorMode={resolvedTheme === "dark" ? "dark" : "light"}
         fitView
-        nodesDraggable={false}
         nodesConnectable={false}
         elementsSelectable
         minZoom={0.3}

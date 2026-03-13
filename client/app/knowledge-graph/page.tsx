@@ -7,6 +7,8 @@ import {
   Background,
   Controls,
   useReactFlow,
+  useNodesState,
+  useEdgesState,
   ReactFlowProvider,
   type Node,
   type Edge,
@@ -37,8 +39,11 @@ function KnowledgeGraphInner() {
   const focusParam = searchParams.get("focus");
   const [selectedConcept, setSelectedConcept] = useState<KnowledgeConcept | null>(null);
   const focusHandledRef = useRef(false);
+  const [nodes, setNodes, onNodesChange] = useNodesState([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
-  const { nodes, edges } = useMemo(() => {
+  // Compute layout when data changes, then push into draggable state
+  const layouted = useMemo(() => {
     if (!data?.concepts?.length) return { nodes: [] as Node[], edges: [] as Edge[] };
 
     const rfNodes: Node[] = data.concepts.map((c) => ({
@@ -61,6 +66,11 @@ function KnowledgeGraphInner() {
 
     return layoutGraph(rfNodes, rfEdges, { direction: "LR" });
   }, [data]);
+
+  useEffect(() => {
+    setNodes(layouted.nodes);
+    setEdges(layouted.edges);
+  }, [layouted, setNodes, setEdges]);
 
   // Handle ?focus param after data loads
   useEffect(() => {
@@ -128,12 +138,13 @@ function KnowledgeGraphInner() {
       <ReactFlow
         nodes={nodes}
         edges={edges}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
         onNodeClick={onNodeClick}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         colorMode={resolvedTheme === "dark" ? "dark" : "light"}
         fitView={!focusParam}
-        nodesDraggable={false}
         nodesConnectable={false}
         elementsSelectable
         minZoom={0.2}

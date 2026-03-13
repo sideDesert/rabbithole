@@ -28,7 +28,7 @@ export function ThreadNode({ data, selected }: NodeProps) {
         selected && "ring-2 ring-primary/50",
       )}
     >
-      <Handle type="target" position={Position.Top} className="!bg-border !w-2 !h-2" />
+      <Handle type="target" position={Position.Left} className="!bg-border !w-2 !h-2" />
 
       <div className="flex items-center gap-2 mb-1">
         <span
@@ -58,7 +58,7 @@ export function ThreadNode({ data, selected }: NodeProps) {
         </div>
       )}
 
-      <Handle type="source" position={Position.Bottom} className="!bg-border !w-2 !h-2" />
+      <Handle type="source" position={Position.Right} className="!bg-border !w-2 !h-2" />
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { BaseEdge, EdgeLabelRenderer, getSmoothStepPath, type EdgeProps } from "@xyflow/react";
+import { EdgeLabelRenderer, getSmoothStepPath, type EdgeProps } from "@xyflow/react";
 
 interface TrailEdgeData {
   branch_topic?: string | null;
@@ -29,15 +29,23 @@ export function TrailEdge({
 
   return (
     <>
-      <BaseEdge
+      <path
         id={id}
-        path={edgePath}
-        style={{
-          stroke: "var(--border)",
-          strokeWidth: 1.5,
-          strokeDasharray: "6 4",
-        }}
-      />
+        d={edgePath}
+        fill="none"
+        stroke="var(--muted-foreground)"
+        strokeWidth={2}
+        strokeDasharray="6 4"
+        strokeOpacity={0.6}
+      >
+        <animate
+          attributeName="stroke-dashoffset"
+          from="20"
+          to="0"
+          dur="1.5s"
+          repeatCount="indefinite"
+        />
+      </path>
       {label && (
         <EdgeLabelRenderer>
           <div
