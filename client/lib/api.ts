@@ -214,7 +214,7 @@ export interface Branch {
   branch_point_id: string;
   thread_id: string;
   message_id: string;
-  position: number[] | null;
+  position: { start: number; end: number } | null;
   type: string;
   title: string;
   status: string;
