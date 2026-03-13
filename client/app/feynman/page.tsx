@@ -112,8 +112,7 @@ export default function Page() {
                 content={msg.content}
                 className={`${msg.role === ROLE_USER && "w-fit self-end"}`}
                 isLast={messages.length - 1 === idx}
-                trailSteps={msg.trailSteps}
-                trailCollapsed={msg.trailCollapsed}
+                statusMessage={msg.statusMessage}
               />
             );
           })}

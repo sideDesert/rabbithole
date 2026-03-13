@@ -108,7 +108,7 @@ export function ThreadCard({ thread }: { thread: Thread }) {
                     className="text-destructive focus:text-destructive"
                   >
                     <Trash2 className="size-3.5 mr-2" />
-                    Delete thread
+                    Delete
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

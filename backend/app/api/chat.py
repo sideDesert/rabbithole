@@ -544,6 +544,12 @@ async def chat(thread_id: str, req: ChatRequest):
 
         t_total = time.perf_counter()
 
+        logger.info(
+            "[chat] ── REQUEST ── thread=%s content=%r",
+            thread_id,
+            req.content[:200],
+        )
+
         def _ms(start: float) -> int:
             return int((time.perf_counter() - start) * 1000)
 
@@ -562,6 +568,7 @@ async def chat(thread_id: str, req: ChatRequest):
         t0 = time.perf_counter()
         thread = mongo.threads().find_one({"_id": thread_id})
         if not thread:
+            logger.warning("[chat] thread not found: %s", thread_id)
             yield sse({"type": "error", "content": "Thread not found"})
             return
 
@@ -569,12 +576,25 @@ async def chat(thread_id: str, req: ChatRequest):
         topic_slug = str(thread.get("topic_slug", ""))
         user_id = str(thread["user_id"])
         group_id = str(thread.get("evermemos_group_id", thread_id))
+        logger.info(
+            "[chat] thread loaded: phase=%s topic=%s user=%s group=%s",
+            phase,
+            topic_slug or "(none)",
+            user_id,
+            group_id,
+        )
         yield _status("load_thread", "Loading conversation...", _ms(t0))
 
         # 2. Build context
         t0 = time.perf_counter()
         plan_context, current_concept = get_plan_context(topic_slug)
         interview_ctx: dict[str, object] = thread.get("interview_context", {})
+        logger.info(
+            "[chat] context: plan=%s current_concept=%s interview_keys=%s",
+            "loaded" if plan_context else "none",
+            current_concept or "(none)",
+            list(interview_ctx.keys()) if interview_ctx else "[]",
+        )
         yield _status("build_context", "Recalling your learning journey...", _ms(t0))
 
         # 3. Load history BEFORE saving user message to avoid duplication
@@ -583,6 +603,7 @@ async def chat(thread_id: str, req: ChatRequest):
         input_messages: list[EasyInputMessageParam] = history + [
             {"role": "user", "content": req.content}
         ]
+        logger.info("[chat] history: %d messages loaded", len(history))
         yield _status("load_history", "Loading history...", _ms(t0))
 
         # 4. Save user message
@@ -611,8 +632,8 @@ async def chat(thread_id: str, req: ChatRequest):
                 role="user",
                 sender_name="Learner",
             )
-        except Exception:
-            pass  # non-critical; don't block the response
+        except Exception as e:
+            logger.warning("[chat] evermemos store failed: %s", e)
         yield _status("store_memory", "Storing in memory...", _ms(t0))
 
         # 6. Build Agent for this phase
@@ -631,6 +652,11 @@ async def chat(thread_id: str, req: ChatRequest):
             thread_id=thread_id,
             topic_slug=topic_slug,
             group_id=group_id,
+        )
+        logger.info(
+            "[chat] agent built: phase=%s tools=%s",
+            phase,
+            [t.name for t in agent.tools],
         )
         yield _status("build_agent", "Preparing your tutor...", _ms(t0))
 
@@ -675,11 +701,17 @@ async def chat(thread_id: str, req: ChatRequest):
                     if tool_name:
                         tool_names_called.append(tool_name)
                         pending_tool_names.append(tool_name)
+                        logger.info("[chat] tool_call: %s", tool_name)
                         yield sse({"type": "tool_call", "name": tool_name})
 
                 elif item.type == "tool_call_output_item":
                     output = str(item.output) if hasattr(item, "output") else ""
                     result_tool_name = pending_tool_names.pop(0) if pending_tool_names else ""
+                    logger.info(
+                        "[chat] tool_result: %s → %s",
+                        result_tool_name,
+                        output[:200],
+                    )
                     yield sse(
                         {
                             "type": "tool_result",
@@ -702,7 +734,12 @@ async def chat(thread_id: str, req: ChatRequest):
                     if text and not full_text:
                         full_text = text
 
-        logger.info("[chat] agent_run — %dms", _ms(t_agent))
+        logger.info(
+            "[chat] agent_run — %dms | tools_called=%s response_len=%d",
+            _ms(t_agent),
+            tool_names_called or "none",
+            len(full_text),
+        )
 
         # 8. Get final output if streaming didn't capture it
         if not full_text and result.final_output:
@@ -739,8 +776,8 @@ async def chat(thread_id: str, req: ChatRequest):
                     role="assistant",
                     sender_name="Feynman",
                 )
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("[chat] evermemos store assistant failed: %s", e)
         yield _status("save_response", "Saving to memory...", _ms(t0))
 
         # 10. Emit interview questions if present_interview was called
@@ -795,6 +832,7 @@ async def chat(thread_id: str, req: ChatRequest):
                     if new_phase == "planning"
                     else None,
                 )
+                logger.info("[chat] phase transition: %s → %s", phase, new_phase)
                 yield sse({"type": "phase_change", "from": phase, "to": new_phase})
                 phase = new_phase
                 break
@@ -825,7 +863,13 @@ async def chat(thread_id: str, req: ChatRequest):
             {"_id": thread_id}, {"$set": {"updated_at": utcnow()}}
         )
         total_ms = _ms(t_total)
-        logger.info("[chat] total — %dms (thread=%s)", total_ms, thread_id)
+        logger.info(
+            "[chat] ── DONE ── %dms thread=%s phase=%s tools=%s",
+            total_ms,
+            thread_id,
+            phase,
+            tool_names_called or "none",
+        )
         yield sse({"type": "end", "duration_ms": total_ms})
 
     return StreamingResponse(stream(), media_type="text/event-stream")

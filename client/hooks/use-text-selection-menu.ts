@@ -6,6 +6,7 @@ export interface SelectionState {
   selectedText: string;
   messageId: string;
   menuPosition: { x: number; y: number };
+  textPosition: [number, number] | null;
   isVisible: boolean;
 }
 
@@ -13,6 +14,7 @@ const initialState: SelectionState = {
   selectedText: "",
   messageId: "",
   menuPosition: { x: 0, y: 0 },
+  textPosition: null,
   isVisible: false,
 };
 
@@ -64,6 +66,17 @@ export function useTextSelectionMenu() {
     const range = selection.getRangeAt(0);
     const rect = range.getBoundingClientRect();
 
+    let textPosition: [number, number] | null = null;
+    try {
+      const preRange = document.createRange();
+      preRange.selectNodeContents(anchorContainer);
+      preRange.setEnd(range.startContainer, range.startOffset);
+      const start = preRange.toString().length;
+      textPosition = [start, start + text.length];
+    } catch {
+      textPosition = null;
+    }
+
     setState({
       selectedText: text,
       messageId,
@@ -71,6 +84,7 @@ export function useTextSelectionMenu() {
         x: rect.left + rect.width / 2,
         y: rect.top - 8,
       },
+      textPosition,
       isVisible: true,
     });
   }, [hide]);

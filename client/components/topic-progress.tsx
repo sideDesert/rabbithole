@@ -5,6 +5,7 @@ import { getProgress, type PlanPhase } from "@/lib/api";
 import { usePlan } from "./plan-context";
 import { useRef, useState, useCallback, useEffect } from "react";
 import { Check, Circle } from "lucide-react";
+import { Button } from "./ui/button";
 
 function ProgressRing({
   progress,
@@ -169,7 +170,8 @@ export function TopicProgress() {
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      <button
+      <Button
+        variant={"outline"}
         onClick={handleClick}
         onKeyDown={handleKeyDown}
         className="flex items-center gap-2 px-2.5 py-1 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
@@ -180,7 +182,7 @@ export function TopicProgress() {
           {data.topic}
         </span>
         <ProgressRing progress={data.overall_progress} />
-      </button>
+      </Button>
 
       {isOpen && (
         <div className="absolute top-full left-0 mt-2 w-72 bg-popover border border-border rounded-xl shadow-lg p-3 z-30 animate-in fade-in slide-in-from-top-1 duration-150 max-h-80 overflow-y-auto">

@@ -11,21 +11,13 @@ import {
 } from "@/lib/api";
 import { getTrailLabel } from "@/lib/trail-labels";
 
-export interface TrailStep {
-  key: string;
-  label: string;
-  type: "status" | "tool_call";
-  done: boolean;
-}
-
 export interface ChatMessage {
   id: string;
   role: "user" | "assistant" | "system";
   content: string;
   type?: "text" | "plan_card" | "phase_divider";
   metadata?: { topicSlug?: string };
-  trailSteps?: TrailStep[];
-  trailCollapsed?: boolean;
+  statusMessage?: string;
 }
 
 interface UseChatOptions {
@@ -44,7 +36,6 @@ interface UseChatReturn {
   send: (content: string) => Promise<void>;
   submitInterviewAnswers: (answers: Record<number, string>) => Promise<void>;
   dismissInterview: () => void;
-  toggleTrailCollapsed: (messageId: string) => void;
 }
 
 export function useChat({
@@ -64,7 +55,6 @@ export function useChat({
     InterviewQuestion[] | null
   >(null);
   const msgCounter = useRef(0);
-  const trailCollapsedRef = useRef(false);
   const pendingInterviewRef = useRef<InterviewQuestion[] | null>(null);
 
   // Load existing messages when threadId is provided
@@ -145,7 +135,6 @@ export function useChat({
       ]);
       setIsStreaming(true);
       setInterviewQuestions(null);
-      trailCollapsedRef.current = false;
       pendingInterviewRef.current = null;
 
       let currentThreadId = initialThreadId ?? createdThreadId;
@@ -161,54 +150,21 @@ export function useChat({
       let currentAiMsgId = aiMsgId;
       setMessages((prev) => [
         ...prev,
-        { id: aiMsgId, role: "assistant", content: "", trailSteps: [], trailCollapsed: false },
+        { id: aiMsgId, role: "assistant", content: "", statusMessage: "" },
       ]);
 
-      const pushTrailStep = (step: TrailStep) => {
+      const setStatus = (label: string) => {
         setMessages((prev) =>
           prev.map((m) =>
-            m.id === currentAiMsgId
-              ? { ...m, trailSteps: [...(m.trailSteps ?? []), step] }
-              : m,
+            m.id === currentAiMsgId ? { ...m, statusMessage: label } : m,
           ),
         );
       };
 
-      const replaceOrPushTrailStep = (step: TrailStep) => {
-        setMessages((prev) =>
-          prev.map((m) => {
-            if (m.id !== currentAiMsgId) return m;
-            const existing = (m.trailSteps ?? []).findIndex(
-              (s) => s.key === step.key && s.type === "status",
-            );
-            if (existing >= 0) {
-              const updated = [...(m.trailSteps ?? [])];
-              updated[existing] = step;
-              return { ...m, trailSteps: updated };
-            }
-            return { ...m, trailSteps: [...(m.trailSteps ?? []), step] };
-          }),
-        );
-      };
-
-      const markToolDone = (toolName: string) => {
-        setMessages((prev) =>
-          prev.map((m) => {
-            if (m.id !== currentAiMsgId) return m;
-            const steps = (m.trailSteps ?? []).map((s) =>
-              s.key === toolName && s.type === "tool_call" && !s.done
-                ? { ...s, done: true }
-                : s,
-            );
-            return { ...m, trailSteps: steps };
-          }),
-        );
-      };
-
-      const collapseTrail = () => {
+      const clearStatus = () => {
         setMessages((prev) =>
           prev.map((m) =>
-            m.id === currentAiMsgId ? { ...m, trailCollapsed: true } : m,
+            m.id === currentAiMsgId ? { ...m, statusMessage: undefined } : m,
           ),
         );
       };
@@ -217,24 +173,13 @@ export function useChat({
         console.log({ event });
         switch (event.type) {
           case "status":
-            pushTrailStep({
-              key: event.step,
-              label: getTrailLabel("status", event.step),
-              type: "status",
-              done: true,
-            });
+            setStatus(getTrailLabel("status", event.step));
             console.log(`[chat] ${event.step} — ${event.duration_ms}ms`);
             break;
           case "tool_call":
-            replaceOrPushTrailStep({
-              key: event.name,
-              label: getTrailLabel("tool_call", event.name),
-              type: "tool_call",
-              done: false,
-            });
+            setStatus(getTrailLabel("tool_call", event.name));
             break;
           case "tool_result":
-            markToolDone(event.name);
             break;
           case "message_id": {
             const isUser = event.role === "user";
@@ -249,10 +194,7 @@ export function useChat({
             break;
           }
           case "stream":
-            if (!trailCollapsedRef.current) {
-              trailCollapsedRef.current = true;
-              collapseTrail();
-            }
+            clearStatus();
             setMessages((prev) =>
               prev.map((m) =>
                 m.id === currentAiMsgId
@@ -277,13 +219,7 @@ export function useChat({
             ]);
             break;
           case "interview_questions":
-            pushTrailStep({
-              key: "interview_questions",
-              label: "Preparing questions...",
-              type: "status",
-              done: true,
-            });
-            collapseTrail();
+            clearStatus();
             pendingInterviewRef.current = event.questions;
             setInterviewQuestions(event.questions);
             break;
@@ -312,27 +248,23 @@ export function useChat({
             if (event.duration_ms) {
               console.log(`[chat] total — ${event.duration_ms}ms`);
             }
+            clearStatus();
             setMessages((prev) =>
               prev.filter(
                 (m) =>
-                  !(
-                    m.role === "assistant" &&
-                    m.content === "" &&
-                    !(m.trailSteps?.length)
-                  ),
+                  !(m.role === "assistant" && m.content === ""),
               ),
             );
             setIsStreaming(false);
             break;
           case "error":
+            clearStatus();
             setMessages((prev) =>
-              prev.map((m) => {
-                if (m.id !== currentAiMsgId) return m;
-                const steps = (m.trailSteps ?? []).map((s) =>
-                  !s.done ? { ...s, done: true } : s,
-                );
-                return { ...m, trailSteps: steps, content: m.content || event.content };
-              }),
+              prev.map((m) =>
+                m.id === currentAiMsgId
+                  ? { ...m, content: m.content || event.content }
+                  : m,
+              ),
             );
             setIsStreaming(false);
             break;
@@ -375,19 +307,6 @@ export function useChat({
     setInterviewQuestions(null);
   }, []);
 
-  const toggleTrailCollapsed = useCallback(
-    (messageId: string) => {
-      setMessages((prev) =>
-        prev.map((m) =>
-          m.id === messageId
-            ? { ...m, trailCollapsed: !m.trailCollapsed }
-            : m,
-        ),
-      );
-    },
-    [],
-  );
-
   return {
     messages,
     isMessagesLoading: messagesLoading,
@@ -398,6 +317,5 @@ export function useChat({
     send,
     submitInterviewAnswers,
     dismissInterview,
-    toggleTrailCollapsed,
   };
 }

@@ -48,7 +48,6 @@ export function TopBar({ config, backToRootHandler }: TopBarInterface) {
           )}
           {config?.title && <h2 className="font-medium">{config.title}</h2>}
         </div>
-        <TopicProgress />
       </div>
 
       {/*<div className="absolute left-1/2 -translate-x-1/2">
@@ -56,6 +55,7 @@ export function TopBar({ config, backToRootHandler }: TopBarInterface) {
       </div>*/}
 
       <div className="flex items-center gap-2">
+        <TopicProgress />
         <TabsList>
           <TabsTrigger value="chat-mode">
             <MessageCircle />

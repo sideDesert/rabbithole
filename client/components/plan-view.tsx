@@ -138,7 +138,7 @@ export function PlanView() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground trail-dot-pulse" />
+        <div className="thinking-orb" />
       </div>
     );
   }

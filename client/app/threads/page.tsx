@@ -13,9 +13,11 @@ export default async function Page() {
         </p>
       )}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {threads.map((thread) => (
-          <ThreadCard key={thread.id} thread={thread} />
-        ))}
+        {threads
+          .filter((thread) => !thread.parent_thread_id)
+          .map((thread) => (
+            <ThreadCard key={thread.id} thread={thread} />
+          ))}
       </div>
     </div>
   );

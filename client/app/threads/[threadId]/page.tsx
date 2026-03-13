@@ -55,7 +55,6 @@ export default function Page({
     interviewQuestions,
     submitInterviewAnswers,
     dismissInterview,
-    toggleTrailCollapsed,
   } = useChat({
     threadId,
     onPlanCreated: (slug) => setTopicSlug(slug),
@@ -173,9 +172,7 @@ export default function Page({
               content={msg.content}
               className={`${msg.role === ROLE_USER && "w-fit self-end"}`}
               isLast={messages.length - 1 === index}
-              trailSteps={msg.trailSteps}
-              trailCollapsed={msg.trailCollapsed}
-              onTrailToggle={() => toggleTrailCollapsed(msg.id)}
+              statusMessage={msg.statusMessage}
               annotations={annotationsByMessage.get(msg.id)}
             />
           );

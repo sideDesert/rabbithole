@@ -1,8 +1,7 @@
 import clsx from "clsx";
 import React, { useRef } from "react";
 import { Streamdown } from "streamdown";
-import { ThoughtTrail } from "./thought-trail";
-import type { TrailStep } from "@/hooks/use-chat";
+import { ThinkingOrb } from "./thought-trail";
 import type { Branch } from "@/lib/api";
 import { useAnnotations } from "@/hooks/use-annotations";
 
@@ -15,9 +14,7 @@ interface ChatMessageInterface {
   role: typeof ROLE_USER | typeof ROLE_AI;
   className?: string;
   isLast?: boolean;
-  trailSteps?: TrailStep[];
-  trailCollapsed?: boolean;
-  onTrailToggle?: () => void;
+  statusMessage?: string;
   annotations?: Branch[];
 }
 
@@ -56,9 +53,7 @@ export function ChatMessage({
   role,
   className,
   isLast,
-  trailSteps,
-  trailCollapsed,
-  onTrailToggle,
+  statusMessage,
   annotations,
 }: ChatMessageInterface) {
   const articleRef = useRef<HTMLElement | null>(null);
@@ -78,7 +73,7 @@ export function ChatMessage({
     );
   }
   if (role === ROLE_AI) {
-    const hasTrail = trailSteps && trailSteps.length > 0;
+    const showOrb = statusMessage && !(content as string);
 
     return (
       <article
@@ -94,13 +89,7 @@ export function ChatMessage({
           }
         }}
       >
-        {hasTrail && (
-          <ThoughtTrail
-            steps={trailSteps}
-            collapsed={trailCollapsed ?? false}
-            onToggle={onTrailToggle ?? (() => {})}
-          />
-        )}
+        {showOrb && <ThinkingOrb statusMessage={statusMessage} />}
         <Streamdown>{content as string}</Streamdown>
       </article>
     );

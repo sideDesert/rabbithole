@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { type ReactNode } from "react";
 import { Tabs } from "./ui/tabs";
 import { TopBar } from "./top-bar";
 import { PlanView } from "./plan-view";
@@ -37,8 +37,12 @@ export function MainContent({ children }: { children: ReactNode }) {
         <TopBar
           config={config}
           backToRootHandler={() => {
-            console.log({ root_id: thread?.root_thread_id });
-            router.push(`/threads/${thread?.root_thread_id}`);
+            if (thread?.parent_thread_id) {
+              const scrollParam = thread.branch_source_message_id
+                ? `?scrollTo=${thread.branch_source_message_id}`
+                : "";
+              router.push(`/threads/${thread.parent_thread_id}${scrollParam}`);
+            }
           }}
         />
         {/* Keep page content mounted but hidden when plan tab is active
