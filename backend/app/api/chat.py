@@ -419,7 +419,7 @@ async def create_branch(thread_id: str, req: BranchRequest):
     history = load_history(thread_id, limit=20)
     summary = await compact_parent_context(
         history=history,
-        _branch_text=req.branch_text,
+        branch_text=req.branch_text,
         parent_title=str(parent.get("title", "")),
     )
 
