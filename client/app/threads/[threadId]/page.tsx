@@ -69,11 +69,6 @@ export default function Page({
       sentPendingRef.current = true;
       send(pendingMsg);
     }
-    // if (pendingMsg && !sentPendingRef.current) {
-    //   sentPendingRef.current = true;
-    //   send(pendingMsg);
-    //   router.replace(`/threads/${threadId}`);
-    // }
   }, [pendingMsg, send, threadId, router, mode, messages, isMessagesLoading]);
 
   console.log({ messages });

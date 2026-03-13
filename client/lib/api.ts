@@ -95,6 +95,25 @@ export async function getMessages(
   return res.json();
 }
 
+// ── Thread Tree ──────────────────────────────────────────────────────────
+
+export interface ThreadTreeNode {
+  thread_id: string;
+  title: string;
+  status: string;
+  phase: string;
+  depth: number;
+  updated_at: string;
+  children: ThreadTreeNode[];
+}
+
+export async function fetchThreadTrees(): Promise<{
+  trees: ThreadTreeNode[];
+}> {
+  const res = await fetch(`${API_BASE}/threads/tree`);
+  return res.json();
+}
+
 // ── Plan ──────────────────────────────────────────────────────────────────
 
 export interface PlanConcept {

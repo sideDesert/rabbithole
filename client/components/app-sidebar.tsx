@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/sidebar";
 import { useAgent } from "@/components/agent-context";
 import { usePlan } from "@/components/plan-context";
-import { useThreads } from "@/hooks/use-threads";
+import { ThreadTree } from "@/components/thread-tree";
 
 const tools = [
   { name: "Chat Threads", icon: MessageSquare, href: "/threads" },
@@ -35,12 +35,7 @@ export function AppSidebar() {
 
   const { activeAgent, agents } = useAgent();
   const { setThreadId } = usePlan();
-  const { threads: threadsData } = useThreads();
-
   const activeAgentData = agents.find((a) => a.id === activeAgent);
-
-  const allThreads = threadsData?.threads ?? [];
-  const agentThreads = allThreads.filter((t) => t.agent === activeAgent);
 
   function handleNewChat() {
     setThreadId(null);
@@ -96,39 +91,12 @@ export function AppSidebar() {
 
         <SidebarSeparator />
 
-        {/* History Section */}
+        {/* Thread Tree */}
         <SidebarGroup className="flex-1 overflow-auto">
           <p className="px-2 pb-1 text-sm font-semibold text-sidebar-foreground/90">
             History
           </p>
-          {agentThreads.length === 0 ? (
-            <p className="px-2 py-3 text-sm text-muted-foreground">
-              No conversations yet
-            </p>
-          ) : (
-            <SidebarMenu>
-              {agentThreads
-                .sort(
-                  (a, b) =>
-                    new Date(b.updated_at).getTime() -
-                    new Date(a.updated_at).getTime(),
-                )
-                .slice(0, 5)
-                .map((thread) => {
-                  const threadId = thread.id;
-                  return (
-                    <SidebarMenuItem key={thread.evermemos_group_id}>
-                      <SidebarMenuButton
-                        isActive={path.includes(threadId)}
-                        render={<Link href={`/threads/${threadId}`} />}
-                      >
-                        <span className="truncate">{thread.title}</span>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  );
-                })}
-            </SidebarMenu>
-          )}
+          <ThreadTree />
         </SidebarGroup>
       </SidebarContent>
     </Sidebar>

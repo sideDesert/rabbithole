@@ -52,8 +52,7 @@ function PhaseGroup({
       </div>
       <div className="flex flex-col gap-0.5">
         {phase.concepts.map((concept) => {
-          const isCurrent =
-            currentConcept && concept.name === currentConcept;
+          const isCurrent = currentConcept && concept.name === currentConcept;
           return (
             <div
               key={concept.name}
@@ -177,16 +176,14 @@ export function TopicProgress() {
         aria-expanded={isOpen}
         aria-haspopup="true"
       >
-        <span className="text-sm font-medium truncate max-w-[160px]">
+        <span className="text-sm font-medium truncate  max-w-40">
           {data.topic}
         </span>
         <ProgressRing progress={data.overall_progress} />
       </button>
 
       {isOpen && (
-        <div
-          className="absolute top-full left-0 mt-2 w-72 bg-popover border border-border rounded-xl shadow-lg p-3 z-30 animate-in fade-in slide-in-from-top-1 duration-150 max-h-80 overflow-y-auto"
-        >
+        <div className="absolute top-full left-0 mt-2 w-72 bg-popover border border-border rounded-xl shadow-lg p-3 z-30 animate-in fade-in slide-in-from-top-1 duration-150 max-h-80 overflow-y-auto">
           <div className="flex items-center justify-between mb-3 pb-2 border-b border-border">
             <span className="text-xs font-medium text-muted-foreground">
               Progress

@@ -206,6 +206,42 @@ def list_threads():
     return {"threads": docs}
 
 
+@router.get("/threads/tree")
+def get_all_trees():
+    """Return branch trees for all root threads belonging to the user."""
+    user_id = "user_001"
+    all_threads = list(mongo.threads().find({"user_id": user_id}))
+
+    by_parent: dict[str, list[str]] = {}
+    thread_map: dict[str, dict[str, object]] = {}
+    root_ids: list[str] = []
+
+    for t in all_threads:
+        tid = str(t["_id"])
+        thread_map[tid] = t
+        pid = t.get("parent_thread_id")
+        if pid:
+            by_parent.setdefault(str(pid), []).append(tid)
+        else:
+            root_ids.append(tid)
+
+    def build_node(tid: str) -> dict[str, object]:
+        t = thread_map.get(tid, {})
+        return {
+            "thread_id": tid,
+            "title": t.get("title", ""),
+            "status": t.get("status", ""),
+            "phase": t.get("phase", ""),
+            "depth": t.get("depth", 0),
+            "updated_at": str(t.get("updated_at", "")),
+            "children": [build_node(cid) for cid in by_parent.get(tid, [])],
+        }
+
+    trees = [build_node(rid) for rid in root_ids]
+    trees.sort(key=lambda t: str(t.get("updated_at", "")), reverse=True)
+    return {"trees": trees}
+
+
 @router.delete("/threads/{thread_id}")
 def delete_thread(thread_id: str):
     doc = mongo.threads().find_one({"_id": thread_id})
@@ -397,7 +433,9 @@ async def create_branch(thread_id: str, req: BranchRequest):
         child_thread_id=child.id,
     )
     _ = mongo.branch_points().insert_one(bp.to_doc())
-    _ = mongo.threads().update_one({"_id": child.id}, {"$set": {"branch_point_id": bp.id}})
+    _ = mongo.threads().update_one(
+        {"_id": child.id}, {"$set": {"branch_point_id": bp.id}}
+    )
 
     return {
         "thread_id": child.id,
@@ -660,7 +698,13 @@ async def chat(thread_id: str, req: ChatRequest):
                 group_id=msg_group_id,
                 index=1,
             )
-            yield sse({"type": "message_id", "role": "assistant", "message_id": assistant_msg_id})
+            yield sse(
+                {
+                    "type": "message_id",
+                    "role": "assistant",
+                    "message_id": assistant_msg_id,
+                }
+            )
 
             # Store assistant response in EverMemOS
             try:

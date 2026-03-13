@@ -16,7 +16,6 @@ import { Button } from "./ui/button";
 import clsx from "clsx";
 import { Input } from "./ui/input";
 import type { InterviewQuestion } from "@/lib/api";
-import { handleClientScriptLoad } from "next/script";
 
 export const MODE_INTERVIEW = "interview";
 export const MODE_DEFAULT = "defatul";
@@ -101,7 +100,7 @@ export function PromptInput({
             )}
           </div>
         )}
-        <div className="bg-background pb-6 rounded-xl overflow-hidden">
+        <div className="bg-background pb-6 rounded-lg overflow-hidden">
           {mode === MODE_INTERVIEW && interviewQuestion && (
             <div className="flex flex-col gap-2">
               {interviewQuestion.options.map((option, i) => (
@@ -153,17 +152,17 @@ export function PromptInput({
                 onClick={handleSubmit}
                 className="absolute right-1.5 bottom-8 shrink-0 cursor-pointer z-20"
               >
-                {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+                {loading && (
+                  <div className="flex justify-center items-center">
+                    <Loader2 className="h-4 w-4 animate-spin" />{" "}
+                    <div>Creating Branch...</div>
+                  </div>
+                )}
                 {!loading && !streaming && (
                   <SendHorizonal className="h-4 w-4" />
                 )}
                 {!loading && streaming && <StopCircle />}
               </Button>
-              {loading && (
-                <p className="text-xs text-muted-foreground px-1 pb-1">
-                  Creating branch...
-                </p>
-              )}
               <Textarea
                 ref={textareaRef}
                 value={value}

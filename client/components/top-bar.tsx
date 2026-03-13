@@ -20,8 +20,9 @@ interface TopBarInterface {
     back?: boolean;
     title?: string;
   };
+  backToRootHandler: () => void;
 }
-export function TopBar({ config }: TopBarInterface) {
+export function TopBar({ config, backToRootHandler }: TopBarInterface) {
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -41,7 +42,7 @@ export function TopBar({ config }: TopBarInterface) {
         <SidebarTrigger />
         <div className="flex flex-row items-center gap-4">
           {config?.back && (
-            <Button variant="outline">
+            <Button variant="outline" onClick={backToRootHandler}>
               <ChevronLeft /> Back to Root
             </Button>
           )}
@@ -50,9 +51,9 @@ export function TopBar({ config }: TopBarInterface) {
         <TopicProgress />
       </div>
 
-      <div className="absolute left-1/2 -translate-x-1/2">
+      {/*<div className="absolute left-1/2 -translate-x-1/2">
         <AgentPill />
-      </div>
+      </div>*/}
 
       <div className="flex items-center gap-2">
         <TabsList>
