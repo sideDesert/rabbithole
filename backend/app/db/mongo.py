@@ -1,4 +1,7 @@
+from typing import Any
+
 from pymongo import MongoClient
+from pymongo.collection import Collection
 from pymongo.database import Database
 from pymongo.server_api import ServerApi
 
@@ -23,29 +26,29 @@ def get_db() -> Database:
 
 
 # Collection accessors
-def threads():
+def threads() -> Collection[dict[str, Any]]:
     return get_db()["threads"]
 
 
-def messages():
+def messages() -> Collection[dict[str, Any]]:
     return get_db()["messages"]
 
 
-def branch_points():
+def branch_points() -> Collection[dict[str, Any]]:
     return get_db()["branch_points"]
 
 
-def concept_mastery():
+def concept_mastery() -> Collection[dict[str, Any]]:
     return get_db()["concept_mastery"]
 
 
-def review_schedule():
+def review_schedule() -> Collection[dict[str, Any]]:
     return get_db()["review_schedule"]
 
 
-def test_results():
+def test_results() -> Collection[dict[str, Any]]:
     return get_db()["test_results"]
 
 
-def learning_sessions():
+def learning_sessions() -> Collection[dict[str, Any]]:
     return get_db()["learning_sessions"]

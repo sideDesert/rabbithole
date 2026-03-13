@@ -34,7 +34,7 @@ export function TopBar({ config }: TopBarInterface) {
 
   return (
     <div
-      className={`relative flex bg-background z-20 items-center justify-between p-2 sticky top-0 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-6 after:translate-y-full after:bg-gradient-to-b after:from-background after:to-transparent after:pointer-events-none after:transition-opacity ${scrolled ? "after:opacity-100" : "after:opacity-0"}`}
+      className={`flex bg-background z-20 items-center justify-between p-2 sticky top-0 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-6 after:translate-y-full after:bg-gradient-to-b after:from-background after:to-transparent after:pointer-events-none after:transition-opacity ${scrolled ? "after:opacity-100" : "after:opacity-0"}`}
     >
       <div className="flex items-center gap-2">
         <SidebarTrigger />
@@ -44,9 +44,7 @@ export function TopBar({ config }: TopBarInterface) {
               <ChevronLeft /> Back to Root
             </Button>
           )}
-          {config?.title && (
-            <h2 className="font-medium">{config.title}</h2>
-          )}
+          {config?.title && <h2 className="font-medium">{config.title}</h2>}
         </div>
       </div>
 

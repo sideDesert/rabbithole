@@ -13,6 +13,7 @@ interface ChatMessageInterface {
   isLast?: boolean;
   waiting?: boolean;
   streaming?: boolean;
+  statusMessage?: string | null;
 }
 
 function lastMessageRef(id: string) {
@@ -40,6 +41,7 @@ export function ChatMessage({
   isLast,
   waiting,
   streaming,
+  statusMessage,
 }: ChatMessageInterface) {
   if (role === ROLE_USER) {
     return (
@@ -69,7 +71,16 @@ export function ChatMessage({
             }
           }}
         >
-          {isLast && waiting && <div className="thinking-orb" />}
+          {isLast && waiting && (
+            <div className="flex items-center gap-2">
+              <div className="thinking-orb" />
+              {statusMessage && (
+                <span className="text-muted-foreground text-sm animate-pulse">
+                  {statusMessage}
+                </span>
+              )}
+            </div>
+          )}
           <Streamdown>{content as string}</Streamdown>
           {isLast && !waiting && streaming && (
             <div className="gap-2 justify-center items-center mt-2 inline-flex">

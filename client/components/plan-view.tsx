@@ -32,8 +32,7 @@ function ConceptRow({
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
-    mutationFn: () =>
-      toggleConcept(threadId, concept.name, !concept.completed),
+    mutationFn: () => toggleConcept(threadId, concept.name, !concept.completed),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["progress", threadId] });
     },
@@ -47,7 +46,9 @@ function ConceptRow({
         className="mt-0.5 shrink-0 size-[18px] rounded border border-border flex items-center justify-center transition-colors cursor-pointer data-[checked=true]:bg-primary data-[checked=true]:border-primary"
         data-checked={concept.completed}
       >
-        {concept.completed && <Check className="size-3 text-primary-foreground" />}
+        {concept.completed && (
+          <Check className="size-3 text-primary-foreground" />
+        )}
       </button>
       <div className="flex-1 min-w-0">
         <span
@@ -117,6 +118,7 @@ function PhaseSection({
 
 export function PlanView() {
   const { threadId } = usePlan();
+  console.log("[planView]", threadId);
 
   const { data, isLoading } = useQuery({
     queryKey: ["progress", threadId],
@@ -159,16 +161,16 @@ export function PlanView() {
     0,
   );
 
-  const firstIncompletePhaseIdx = data.phases.findIndex(
-    (p) => p.progress < 1,
-  );
+  const firstIncompletePhaseIdx = data.phases.findIndex((p) => p.progress < 1);
 
   return (
     <div className="w-full max-w-3xl mx-auto px-10 pt-8 pb-16 overflow-auto h-full">
       <div className="mb-8">
         <h1 className="text-2xl font-bold">{data.topic}</h1>
         <div className="flex items-center gap-3 mt-2 text-sm text-muted-foreground">
-          {data.depth && <span className="capitalize">{data.depth.replace(/_/g, " ")}</span>}
+          {data.depth && (
+            <span className="capitalize">{data.depth.replace(/_/g, " ")}</span>
+          )}
           {data.depth && data.prior_knowledge && <span>&middot;</span>}
           {data.prior_knowledge && <span>{data.prior_knowledge}</span>}
         </div>

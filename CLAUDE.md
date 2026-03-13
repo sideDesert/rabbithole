@@ -38,8 +38,8 @@ uv run python test_tools.py
 uv run ruff check .
 uv run ruff format .
 
-# Type checking
-uv run pyright
+# Type checking (use basedpyright, not pyright — matches Zed's checker)
+npx basedpyright
 ```
 
 ### Frontend (from `client/`)

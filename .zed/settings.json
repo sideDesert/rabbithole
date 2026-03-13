@@ -1,0 +1,17 @@
+{
+  "lsp": {
+    "basedpyright": {
+      "settings": {
+        "python": {
+          "pythonPath": "/Users/siddarth/dev/hackathon/evermemos/learn-os/backend/.venv/bin/python"
+        },
+        "basedpyright.analysis": {
+          "extraPaths": [
+            "/Users/siddarth/dev/hackathon/evermemos/learn-os/backend/.venv/lib/python3.12/site-packages"
+          ],
+          "diagnosticMode": "openFilesOnly"
+        }
+      }
+    }
+  }
+}

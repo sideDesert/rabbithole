@@ -32,6 +32,7 @@ const tools = [
 export function AppSidebar() {
   const path = usePathname();
   const router = useRouter();
+
   const { activeAgent, agents } = useAgent();
   const { setThreadId } = usePlan();
   const { threads: threadsData } = useThreads();
@@ -60,7 +61,10 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton onClick={handleNewChat}>
+              <SidebarMenuButton
+                isActive={path.includes("feynman")}
+                onClick={handleNewChat}
+              >
                 <SquarePen className="h-4 w-4" />
                 <span>New Chat</span>
               </SidebarMenuButton>
@@ -107,11 +111,11 @@ export function AppSidebar() {
                 .sort(
                   (a, b) =>
                     new Date(b.updated_at).getTime() -
-                    new Date(a.updated_at).getTime()
+                    new Date(a.updated_at).getTime(),
                 )
+                .slice(0, 5)
                 .map((thread) => {
-                  const threadId =
-                    thread.root_thread_id ?? thread.evermemos_group_id;
+                  const threadId = thread.id;
                   return (
                     <SidebarMenuItem key={thread.evermemos_group_id}>
                       <SidebarMenuButton

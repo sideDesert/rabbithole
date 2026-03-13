@@ -3,6 +3,8 @@
  * Simple fetch-based client with SSE streaming support.
  */
 
+import { PHASE_TYPE } from "next/dist/shared/lib/constants";
+
 const API_BASE = "http://localhost:8000/api";
 
 // ── Types ────────────────────────────────────────────────────────────────
@@ -14,16 +16,19 @@ export interface InterviewQuestion {
 
 export type SSEEvent =
   | { type: "phase"; phase: string }
+  | { type: "status"; step: string; message: string; duration_ms: number }
   | { type: "stream"; content: string }
   | { type: "tool_call"; name: string; args: Record<string, unknown> }
   | { type: "tool_result"; name: string; result: Record<string, unknown> }
   | { type: "phase_change"; from: string; to: string }
   | { type: "plan_created"; topic_slug: string }
   | { type: "interview_questions"; questions: InterviewQuestion[] }
-  | { type: "end" }
+  | { type: "message_id"; role: "user" | "assistant"; message_id: string }
+  | { type: "end"; duration_ms?: number }
   | { type: "error"; content: string };
 
 export interface Thread {
+  id: string;
   created_at: string;
   updated_at: string;
   user_id: string;
@@ -69,7 +74,9 @@ export async function listThreads(): Promise<{ threads: Thread[] }> {
   return res.json();
 }
 
-export async function deleteThread(threadId: string): Promise<{ deleted: boolean }> {
+export async function deleteThread(
+  threadId: string,
+): Promise<{ deleted: boolean }> {
   const res = await fetch(`${API_BASE}/threads/${threadId}`, {
     method: "DELETE",
   });
@@ -135,6 +142,52 @@ export async function toggleConcept(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ concept_name: conceptName, completed }),
   });
+  return res.json();
+}
+
+export type BranchoutResponse = {
+  thread_id: string;
+  branch_point_id: string;
+  title: string;
+  phase: PHASE_TYPE;
+  parent_summary: string;
+};
+
+export type BranchoutParams = {
+  messageId: string;
+  threadId: string;
+  branchText: string;
+  textPosition?: number[];
+  title?: string;
+};
+
+export async function branchout(
+  params: BranchoutParams,
+): Promise<BranchoutResponse> {
+  const body = {
+    message_id: params.messageId,
+    branch_type: "highlight",
+    branch_text: params.branchText,
+    position_start:
+      params.textPosition && params.textPosition.length > 1
+        ? params.textPosition[0]
+        : null,
+    position_end:
+      params.textPosition && params.textPosition.length > 1
+        ? params.textPosition[1]
+        : null,
+    title: params.title,
+  };
+
+  const res = await fetch(
+    `${API_BASE}/threads/${params.threadId}/branch`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    },
+  );
+
   return res.json();
 }
 

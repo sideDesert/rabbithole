@@ -9,15 +9,16 @@ Flow:
 """
 
 import json
+import logging
+import time
 import uuid
-
 from typing import Literal
 
-from agents import Runner, ItemHelpers
+from agents import ItemHelpers, Runner
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 from openai import AsyncOpenAI
-from openai.types.responses import ResponseTextDeltaEvent
+from openai.types.responses import EasyInputMessageParam, ResponseTextDeltaEvent
 from pydantic import BaseModel
 
 from app.agent.phases import apply_transition, should_transition
@@ -36,7 +37,10 @@ from app.models.thread import Thread
 from app.plan_parser import parse_plan
 from app.tools_impl import AgentContext
 
+MessageRole = Literal["user", "assistant", "system"]
+
 router = APIRouter(prefix="/api", tags=["chat"])
+logger = logging.getLogger(__name__)
 
 llm = AsyncOpenAI(base_url=LLM_BASE_URL, api_key=LLM_API_KEY)
 
@@ -65,11 +69,11 @@ class ToggleConceptRequest(BaseModel):
 # ── Helpers ───────────────────────────────────────────────────────────────
 
 
-def sse(data: dict) -> str:
+def sse(data: dict[str, object]) -> str:
     return f"data: {json.dumps(data)}\n\n"
 
 
-def load_history(thread_id: str, limit: int = 50) -> list[dict]:
+def load_history(thread_id: str, limit: int = 50) -> list[EasyInputMessageParam]:
     """Load recent messages from MongoDB as OpenAI message dicts."""
     docs = list(
         mongo.messages()
@@ -77,23 +81,39 @@ def load_history(thread_id: str, limit: int = 50) -> list[dict]:
         .sort("created_at", 1)
         .limit(limit)
     )
-    messages = []
+    messages: list[EasyInputMessageParam] = []
     for doc in docs:
-        role = doc["role"]
-        content = doc["content"]
-        msg_type = doc.get("type", "text")
-
+        msg_type = str(doc.get("type", "text"))
         if msg_type in ("tool_call", "tool_result"):
             continue
 
-        if isinstance(content, str):
-            messages.append({"role": role, "content": content})
-        else:
-            messages.append({"role": role, "content": json.dumps(content)})
+        raw = doc.get("content", "")
+        text = str(raw) if isinstance(raw, str) else json.dumps(raw)
+        role = str(doc["role"])
+        if role not in ("user", "assistant", "system", "developer"):
+            continue
+        messages.append({"role": role, "content": text})
     return messages
 
 
-def save_message(*, user_id, thread_id, role, content, msg_type, group_id, index):
+def save_message(
+    *,
+    user_id: str,
+    thread_id: str,
+    role: MessageRole,
+    content: str,
+    msg_type: Literal[
+        "text",
+        "markdown",
+        "feynman_input",
+        "tool_call",
+        "tool_result",
+        "plan_card",
+        "interview_questions",
+    ],
+    group_id: str,
+    index: int,
+) -> str:
     msg = Message(
         user_id=user_id,
         thread_id=thread_id,
@@ -103,7 +123,8 @@ def save_message(*, user_id, thread_id, role, content, msg_type, group_id, index
         group_id=group_id,
         index=index,
     )
-    mongo.messages().insert_one(msg.to_doc())
+    _ = mongo.messages().insert_one(msg.to_doc())
+    return msg.id
 
 
 def get_plan_context(topic_slug: str | None) -> tuple[str | None, str | None]:
@@ -127,14 +148,15 @@ Keep it factual and concise — this summary will be used as context for a follo
 
 
 async def compact_parent_context(
-    history: list[dict],
-    branch_text: str,
+    history: list[EasyInputMessageParam],
+    _branch_text: str,
     parent_title: str,
 ) -> str:
-    lines = []
+    lines: list[str] = []
     for msg in history:
         role = msg.get("role", "")
-        content = msg.get("content", "")
+        raw_content = msg.get("content", "")
+        content = raw_content if isinstance(raw_content, str) else str(raw_content)
         if role in ("user", "assistant") and content:
             speaker = "Learner" if role == "user" else "Teacher"
             if len(content) > 500:
@@ -146,7 +168,10 @@ async def compact_parent_context(
         model=DEFAULT_MODEL,
         messages=[
             {"role": "system", "content": COMPACTION_PROMPT},
-            {"role": "user", "content": f"Topic: {parent_title}\n\nConversation:\n{transcript}"},
+            {
+                "role": "user",
+                "content": f"Topic: {parent_title}\n\nConversation:\n{transcript}",
+            },
         ],
         max_tokens=300,
     )
@@ -167,7 +192,7 @@ def create_thread(req: ChatRequest):
         phase="interview",
     )
     thread.root_thread_id = thread.id
-    mongo.threads().insert_one(thread.to_doc())
+    _ = mongo.threads().insert_one(thread.to_doc())
     return {"thread_id": thread.id, "phase": "interview"}
 
 
@@ -186,11 +211,11 @@ def delete_thread(thread_id: str):
     doc = mongo.threads().find_one({"_id": thread_id})
     if not doc:
         return {"error": "not found"}
-    mongo.messages().delete_many({"thread_id": thread_id})
-    mongo.branch_points().delete_many(
+    _ = mongo.messages().delete_many({"thread_id": thread_id})
+    _ = mongo.branch_points().delete_many(
         {"$or": [{"parent_thread_id": thread_id}, {"child_thread_id": thread_id}]}
     )
-    mongo.threads().delete_one({"_id": thread_id})
+    _ = mongo.threads().delete_one({"_id": thread_id})
     return {"deleted": True}
 
 
@@ -208,12 +233,12 @@ def get_progress(thread_id: str):
     doc = mongo.threads().find_one({"_id": thread_id})
     if not doc:
         return {"error": "not found"}
-    topic_slug = doc.get("topic_slug")
+    topic_slug = str(doc.get("topic_slug", ""))
     if not topic_slug:
-        return {"progress": 0, "phases": []}
+        return {"progress": 0, "phases": list[object]()}
     plan_path = PLANS_DIR / topic_slug / "plan.md"
     if not plan_path.exists():
-        return {"progress": 0, "phases": []}
+        return {"progress": 0, "phases": list[object]()}
     tree = parse_plan(plan_path.read_text())
     first = tree.first_uncompleted_concept()
     return {
@@ -247,7 +272,7 @@ def get_plan(thread_id: str):
     doc = mongo.threads().find_one({"_id": thread_id})
     if not doc:
         return {"error": "not found"}
-    topic_slug = doc.get("topic_slug")
+    topic_slug = str(doc.get("topic_slug", ""))
     if not topic_slug:
         return {"markdown": None, "topic_slug": None}
     plan_path = PLANS_DIR / topic_slug / "plan.md"
@@ -261,7 +286,7 @@ def toggle_concept(thread_id: str, req: ToggleConceptRequest):
     doc = mongo.threads().find_one({"_id": thread_id})
     if not doc:
         return {"error": "Thread not found"}
-    topic_slug = doc.get("topic_slug")
+    topic_slug = str(doc.get("topic_slug", ""))
     if not topic_slug:
         return {"error": "No plan associated with this thread"}
 
@@ -280,10 +305,13 @@ def toggle_concept(thread_id: str, req: ToggleConceptRequest):
         if old in content:
             new = f"{check_to} {variant}"
             content = content.replace(old, new, 1)
-            plan_path.write_text(content)
+            _ = plan_path.write_text(content)
             break
     else:
-        return {"toggled": False, "reason": "Concept not found or already in target state"}
+        return {
+            "toggled": False,
+            "reason": "Concept not found or already in target state",
+        }
 
     tree = parse_plan(content)
     return {
@@ -298,17 +326,24 @@ def toggle_concept(thread_id: str, req: ToggleConceptRequest):
 def get_messages(thread_id: str):
     docs = list(
         mongo.messages()
-        .find({"thread_id": thread_id, "type": {"$in": ["text", "markdown", "plan_card", "interview_questions"]}})
+        .find(
+            {
+                "thread_id": thread_id,
+                "type": {
+                    "$in": ["text", "markdown", "plan_card", "interview_questions"]
+                },
+            }
+        )
         .sort("created_at", 1)
     )
-    messages = []
+    messages: list[dict[str, object]] = []
     for doc in docs:
         messages.append(
             {
-                "id": doc.get("_id", ""),
-                "role": doc["role"],
-                "content": doc["content"],
-                "type": doc.get("type", "text"),
+                "id": str(doc.get("_id", "")),
+                "role": str(doc["role"]),
+                "content": str(doc["content"]),
+                "type": str(doc.get("type", "text")),
             }
         )
     return {"messages": messages}
@@ -330,25 +365,25 @@ async def create_branch(thread_id: str, req: BranchRequest):
     history = load_history(thread_id, limit=20)
     summary = await compact_parent_context(
         history=history,
-        branch_text=req.branch_text,
-        parent_title=parent.get("title", ""),
+        _branch_text=req.branch_text,
+        parent_title=str(parent.get("title", "")),
     )
 
     title = req.title or req.branch_text[:80]
 
     child = Thread(
-        user_id=parent["user_id"],
+        user_id=str(parent["user_id"]),
         title=title,
-        topic_slug=parent.get("topic_slug", ""),
+        topic_slug=str(parent.get("topic_slug", "")),
         phase="teaching",
-        depth=parent.get("depth", 0) + 1,
+        depth=int(parent.get("depth", 0)) + 1,
         parent_thread_id=thread_id,
-        root_thread_id=parent.get("root_thread_id", thread_id),
+        root_thread_id=str(parent.get("root_thread_id", thread_id)),
         evermemos_group_id=str(uuid.uuid4()),
         parent_summary=summary,
         branch_text=req.branch_text,
     )
-    mongo.threads().insert_one(child.to_doc())
+    _ = mongo.threads().insert_one(child.to_doc())
 
     position = None
     if req.position_start is not None and req.position_end is not None:
@@ -361,10 +396,8 @@ async def create_branch(thread_id: str, req: BranchRequest):
         type=req.branch_type,
         child_thread_id=child.id,
     )
-    mongo.branch_points().insert_one(bp.to_doc())
-    mongo.threads().update_one(
-        {"_id": child.id}, {"$set": {"branch_point_id": bp.id}}
-    )
+    _ = mongo.branch_points().insert_one(bp.to_doc())
+    _ = mongo.threads().update_one({"_id": child.id}, {"$set": {"branch_point_id": bp.id}})
 
     return {
         "thread_id": child.id,
@@ -379,28 +412,29 @@ async def create_branch(thread_id: str, req: BranchRequest):
 def list_branches(thread_id: str):
     bps = list(mongo.branch_points().find({"thread_id": thread_id}))
     if not bps:
-        return {"branches": []}
+        return {"branches": list[object]()}
 
     child_ids = [bp["child_thread_id"] for bp in bps]
     children = {
-        doc["_id"]: doc
-        for doc in mongo.threads().find({"_id": {"$in": child_ids}})
+        doc["_id"]: doc for doc in mongo.threads().find({"_id": {"$in": child_ids}})
     }
 
-    branches = []
+    branches: list[dict[str, object]] = []
     for bp in bps:
         child = children.get(bp["child_thread_id"], {})
-        branches.append({
-            "branch_point_id": bp["_id"],
-            "thread_id": bp["child_thread_id"],
-            "message_id": bp["message_id"],
-            "position": bp.get("position"),
-            "type": bp["type"],
-            "title": child.get("title", ""),
-            "status": child.get("status", ""),
-            "phase": child.get("phase", ""),
-            "depth": child.get("depth", 0),
-        })
+        branches.append(
+            {
+                "branch_point_id": bp["_id"],
+                "thread_id": bp["child_thread_id"],
+                "message_id": bp["message_id"],
+                "position": bp.get("position"),
+                "type": bp["type"],
+                "title": child.get("title", ""),
+                "status": child.get("status", ""),
+                "phase": child.get("phase", ""),
+                "depth": child.get("depth", 0),
+            }
+        )
 
     return {"branches": branches}
 
@@ -411,7 +445,7 @@ def get_branch_tree(thread_id: str):
     if not thread:
         return {"error": "Thread not found"}
 
-    root_id = thread.get("root_thread_id", thread_id)
+    root_id = str(thread.get("root_thread_id", thread_id))
     all_threads = list(mongo.threads().find({"root_thread_id": root_id}))
     if not any(t["_id"] == root_id for t in all_threads):
         root_doc = mongo.threads().find_one({"_id": root_id})
@@ -419,15 +453,15 @@ def get_branch_tree(thread_id: str):
             all_threads.append(root_doc)
 
     by_parent: dict[str, list[str]] = {}
-    thread_map: dict[str, dict] = {}
+    thread_map: dict[str, dict[str, object]] = {}
     for t in all_threads:
-        tid = t["_id"]
+        tid = str(t["_id"])
         thread_map[tid] = t
         pid = t.get("parent_thread_id")
         if pid:
-            by_parent.setdefault(pid, []).append(tid)
+            by_parent.setdefault(str(pid), []).append(tid)
 
-    def build_node(tid: str) -> dict:
+    def build_node(tid: str) -> dict[str, object]:
         t = thread_map.get(tid, {})
         return {
             "thread_id": tid,
@@ -449,24 +483,55 @@ async def chat(thread_id: str, req: ChatRequest):
     """SSE streaming chat powered by OpenAI Agents SDK Runner."""
 
     async def stream():
+        from app.memory import evermemos
+
+        t_total = time.perf_counter()
+
+        def _ms(start: float) -> int:
+            return int((time.perf_counter() - start) * 1000)
+
+        def _status(step: str, message: str, duration_ms: int) -> str:
+            logger.info("[chat] %s — %dms", step, duration_ms)
+            return sse(
+                {
+                    "type": "status",
+                    "step": step,
+                    "message": message,
+                    "duration_ms": duration_ms,
+                }
+            )
+
         # 1. Load thread
+        t0 = time.perf_counter()
         thread = mongo.threads().find_one({"_id": thread_id})
         if not thread:
             yield sse({"type": "error", "content": "Thread not found"})
             return
 
-        phase = thread.get("phase", "interview")
-        topic_slug = thread.get("topic_slug", "")
-        user_id = thread["user_id"]
-        group_id = thread.get("evermemos_group_id", thread_id)
+        phase = str(thread.get("phase", "interview"))
+        topic_slug = str(thread.get("topic_slug", ""))
+        user_id = str(thread["user_id"])
+        group_id = str(thread.get("evermemos_group_id", thread_id))
+        yield _status("load_thread", "Loading conversation...", _ms(t0))
 
         # 2. Build context
+        t0 = time.perf_counter()
         plan_context, current_concept = get_plan_context(topic_slug)
-        interview_ctx = thread.get("interview_context", {})
+        interview_ctx: dict[str, object] = thread.get("interview_context", {})
+        yield _status("build_context", "Recalling your learning journey...", _ms(t0))
 
-        # 3. Save user message
+        # 3. Load history BEFORE saving user message to avoid duplication
+        t0 = time.perf_counter()
+        history = load_history(thread_id)
+        input_messages: list[EasyInputMessageParam] = history + [
+            {"role": "user", "content": req.content}
+        ]
+        yield _status("load_history", "Loading history...", _ms(t0))
+
+        # 4. Save user message
+        t0 = time.perf_counter()
         msg_group_id = new_object_id()
-        save_message(
+        user_msg_id = save_message(
             user_id=user_id,
             thread_id=thread_id,
             role="user",
@@ -475,11 +540,13 @@ async def chat(thread_id: str, req: ChatRequest):
             group_id=msg_group_id,
             index=0,
         )
+        yield _status("save_message", "Saving your message...", _ms(t0))
+        yield sse({"type": "message_id", "role": "user", "message_id": user_msg_id})
 
-        # 4. Store user message in EverMemOS for memory extraction
+        # 5. Store user message in EverMemOS for memory extraction
+        t0 = time.perf_counter()
         try:
-            from app.memory import evermemos
-            await evermemos.store_memory(
+            _ = await evermemos.store_memory(
                 message_id=msg_group_id,
                 content=req.content,
                 sender=user_id,
@@ -489,8 +556,10 @@ async def chat(thread_id: str, req: ChatRequest):
             )
         except Exception:
             pass  # non-critical; don't block the response
+        yield _status("store_memory", "Storing in memory...", _ms(t0))
 
-        # 5. Build Agent for this phase
+        # 6. Build Agent for this phase
+        t0 = time.perf_counter()
         agent = build_agent(
             phase=phase,
             plan_context=plan_context,
@@ -500,54 +569,70 @@ async def chat(thread_id: str, req: ChatRequest):
             branch_text=thread.get("branch_text"),
         )
 
-        # 6. Build input messages (history + new user message)
-        history = load_history(thread_id)
-        input_messages = history + [{"role": "user", "content": req.content}]
-
         agent_ctx = AgentContext(
             user_id=user_id,
             thread_id=thread_id,
             topic_slug=topic_slug,
             group_id=group_id,
         )
+        yield _status("build_agent", "Preparing your tutor...", _ms(t0))
 
-        yield sse({"type": "phase", "phase": phase})
+        yield sse(
+            {
+                "type": "status",
+                "step": "thinking",
+                "message": "Thinking...",
+                "duration_ms": 0,
+            }
+        )
 
         # 7. Run the agent with streaming
+        t_agent = time.perf_counter()
         full_text = ""
         tool_names_called: list[str] = []
         new_topic_slug = ""
 
         result = Runner.run_streamed(
             agent,
-            input=input_messages,
+            input=input_messages,  # pyright: ignore[reportArgumentType]
             context=agent_ctx,
         )
 
         async for event in result.stream_events():
             if event.type == "raw_response_event":
-                if hasattr(event.data, "delta") and isinstance(event.data, ResponseTextDeltaEvent):
+                if hasattr(event.data, "delta") and isinstance(
+                    event.data, ResponseTextDeltaEvent
+                ):
                     full_text += event.data.delta
                     yield sse({"type": "stream", "content": event.data.delta})
 
             elif event.type == "run_item_stream_event":
                 item = event.item
                 if item.type == "tool_call_item":
-                    tool_name = getattr(item.raw_item, "name", "") if hasattr(item, "raw_item") else ""
+                    tool_name = (
+                        getattr(item.raw_item, "name", "")
+                        if hasattr(item, "raw_item")
+                        else ""
+                    )
                     if tool_name:
                         tool_names_called.append(tool_name)
                         yield sse({"type": "tool_call", "name": tool_name})
 
                 elif item.type == "tool_call_output_item":
-                    output = item.output if hasattr(item, "output") else ""
-                    yield sse({"type": "tool_result", "result": output[:500] if isinstance(output, str) else str(output)[:500]})
+                    output = str(item.output) if hasattr(item, "output") else ""
+                    yield sse(
+                        {
+                            "type": "tool_result",
+                            "result": output[:500],
+                        }
+                    )
 
                     # Detect if create_plan was called and extract topic_slug
-                    if isinstance(output, str) and "topic_slug" in output:
+                    if "topic_slug" in output:
                         try:
-                            parsed = json.loads(output)
+                            parsed: dict[str, object] = json.loads(output)
                             if "topic_slug" in parsed:
-                                new_topic_slug = parsed["topic_slug"]
+                                new_topic_slug = str(parsed["topic_slug"])
                         except (json.JSONDecodeError, KeyError):
                             pass
 
@@ -556,14 +641,17 @@ async def chat(thread_id: str, req: ChatRequest):
                     if text and not full_text:
                         full_text = text
 
+        logger.info("[chat] agent_run — %dms", _ms(t_agent))
+
         # 8. Get final output if streaming didn't capture it
         if not full_text and result.final_output:
             full_text = str(result.final_output)
             yield sse({"type": "stream", "content": full_text})
 
         # 9. Save assistant response
+        t0 = time.perf_counter()
         if full_text:
-            save_message(
+            assistant_msg_id = save_message(
                 user_id=user_id,
                 thread_id=thread_id,
                 role="assistant",
@@ -572,10 +660,11 @@ async def chat(thread_id: str, req: ChatRequest):
                 group_id=msg_group_id,
                 index=1,
             )
+            yield sse({"type": "message_id", "role": "assistant", "message_id": assistant_msg_id})
 
             # Store assistant response in EverMemOS
             try:
-                await evermemos.store_memory(
+                _ = await evermemos.store_memory(
                     message_id=new_object_id(),
                     content=full_text,
                     sender="feynman_bot",
@@ -585,13 +674,16 @@ async def chat(thread_id: str, req: ChatRequest):
                 )
             except Exception:
                 pass
+        yield _status("save_response", "Saving to memory...", _ms(t0))
 
         # 10. Emit interview questions if present_interview was called
         if agent_ctx.interview_questions:
-            yield sse({
-                "type": "interview_questions",
-                "questions": agent_ctx.interview_questions,
-            })
+            yield sse(
+                {
+                    "type": "interview_questions",
+                    "questions": agent_ctx.interview_questions,
+                }
+            )
             save_message(
                 user_id=user_id,
                 thread_id=thread_id,
@@ -604,11 +696,10 @@ async def chat(thread_id: str, req: ChatRequest):
 
         # 11. Update topic_slug if create_plan was called
         if new_topic_slug:
-            mongo.threads().update_one(
+            _ = mongo.threads().update_one(
                 {"_id": thread_id},
                 {"$set": {"topic_slug": new_topic_slug}},
             )
-            topic_slug = new_topic_slug
 
             try:
                 save_message(
@@ -633,7 +724,9 @@ async def chat(thread_id: str, req: ChatRequest):
                     db_threads=mongo.threads(),
                     thread_id=thread_id,
                     new_phase=new_phase,
-                    interview_context=interview_ctx if new_phase == "planning" else None,
+                    interview_context=interview_ctx
+                    if new_phase == "planning"
+                    else None,
                 )
                 yield sse({"type": "phase_change", "from": phase, "to": new_phase})
                 phase = new_phase
@@ -641,19 +734,31 @@ async def chat(thread_id: str, req: ChatRequest):
 
         # Check plan approval (planning -> teaching)
         if phase == "planning":
-            approval_words = ["approve", "looks good", "let's go", "start", "yes", "lgtm", "go ahead"]
+            approval_words = [
+                "approve",
+                "looks good",
+                "let's go",
+                "start",
+                "yes",
+                "lgtm",
+                "go ahead",
+            ]
             if any(w in req.content.lower() for w in approval_words):
                 apply_transition(
                     db_threads=mongo.threads(),
                     thread_id=thread_id,
                     new_phase="teaching",
                 )
-                yield sse({"type": "phase_change", "from": "planning", "to": "teaching"})
+                yield sse(
+                    {"type": "phase_change", "from": "planning", "to": "teaching"}
+                )
 
         # 13. Update thread timestamp
-        mongo.threads().update_one(
+        _ = mongo.threads().update_one(
             {"_id": thread_id}, {"$set": {"updated_at": utcnow()}}
         )
-        yield sse({"type": "end"})
+        total_ms = _ms(t_total)
+        logger.info("[chat] total — %dms (thread=%s)", total_ms, thread_id)
+        yield sse({"type": "end", "duration_ms": total_ms})
 
     return StreamingResponse(stream(), media_type="text/event-stream")

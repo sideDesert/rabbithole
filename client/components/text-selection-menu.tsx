@@ -35,7 +35,7 @@ export function TextSelectionMenu({
 
   return (
     <div
-      className="fixed z-[100] flex items-center gap-0.5 rounded-lg border border-border bg-popover px-1 py-1 shadow-lg"
+      className="fixed z-100 flex items-center gap-0.5 rounded-lg border border-border bg-popover px-1 py-1 shadow-lg"
       style={{
         left: position.x,
         top: position.y,

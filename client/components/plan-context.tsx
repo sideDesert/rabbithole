@@ -1,5 +1,6 @@
 "use client";
 
+import { useParams } from "next/navigation";
 import { createContext, useContext, useState, type ReactNode } from "react";
 
 interface PlanContextValue {
@@ -15,7 +16,10 @@ const PlanContext = createContext<PlanContextValue | null>(null);
 
 export function PlanProvider({ children }: { children: ReactNode }) {
   const [activeTab, setActiveTab] = useState("chat-mode");
-  const [threadId, setThreadId] = useState<string | null>(null);
+  const params = useParams();
+  const [threadId, setThreadId] = useState<string | null>(
+    (params?.threadId as string) ?? null,
+  );
   const [topicSlug, setTopicSlug] = useState<string | null>(null);
 
   return (

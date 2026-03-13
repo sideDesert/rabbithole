@@ -26,9 +26,11 @@ interface UseChatOptions {
 
 interface UseChatReturn {
   messages: ChatMessage[];
+  isMessagesLoading: boolean;
   phase: string;
   isStreaming: boolean;
   isWaiting: boolean;
+  statusMessage: string | null;
   threadId: string | null;
   interviewQuestions: InterviewQuestion[] | null;
   send: (content: string) => Promise<void>;
@@ -42,10 +44,15 @@ export function useChat({
   onPlanCreated,
 }: UseChatOptions = {}): UseChatReturn {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messagesLoading, setMessageLoading] = useState<boolean>(true);
   const [phase, setPhase] = useState("interview");
   const [isStreaming, setIsStreaming] = useState(false);
   const [isWaiting, setIsWaiting] = useState(false);
-  const [threadId, setThreadId] = useState<string | null>(initialThreadId);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  // Only used when no initialThreadId — stores the ID after creating a new thread
+  const [createdThreadId, setCreatedThreadId] = useState<string | null>(null);
+  const threadId = initialThreadId ?? createdThreadId;
+
   const [interviewQuestions, setInterviewQuestions] = useState<
     InterviewQuestion[] | null
   >(null);
@@ -57,6 +64,7 @@ export function useChat({
   useQuery({
     queryKey: ["messages", threadId],
     queryFn: async () => {
+      setMessageLoading(true);
       const { messages: existing } = await getMessages(threadId!);
       let pendingInterview: InterviewQuestion[] | null = null;
       let hasAnswerAfterInterview = false;
@@ -103,6 +111,7 @@ export function useChat({
       });
 
       setMessages(mapped);
+      setMessageLoading(false);
 
       if (pendingInterview && !hasAnswerAfterInterview) {
         setInterviewQuestions(pendingInterview);
@@ -111,7 +120,7 @@ export function useChat({
       return existing;
     },
     enabled: !!initialThreadId,
-    staleTime: Infinity,
+    staleTime: 0,
   });
 
   const createThreadMutation = useMutation({
@@ -129,33 +138,55 @@ export function useChat({
       ]);
       setIsStreaming(true);
       setIsWaiting(true);
+      setStatusMessage(null);
+      setInterviewQuestions(null);
       waitingCleared.current = false;
       pendingInterviewRef.current = null;
 
-      let currentThreadId = threadId;
+      let currentThreadId = initialThreadId ?? createdThreadId;
       if (!currentThreadId) {
         const { thread_id } = await createThreadMutation.mutateAsync(content);
         currentThreadId = thread_id;
-        setThreadId(thread_id);
+        setCreatedThreadId(thread_id);
         onThreadCreated?.(thread_id);
       }
 
       const aiMsgId = `msg-${++msgCounter.current}`;
+      let currentUserMsgId = userMsgId;
+      let currentAiMsgId = aiMsgId;
       setMessages((prev) => [
         ...prev,
         { id: aiMsgId, role: "assistant", content: "" },
       ]);
 
       await streamChat(currentThreadId, content, (event: SSEEvent) => {
+        console.log({ event });
         switch (event.type) {
+          case "status":
+            setStatusMessage(event.message);
+            console.log(`[chat] ${event.step} — ${event.duration_ms}ms`);
+            break;
+          case "message_id": {
+            const isUser = event.role === "user";
+            const tempId = isUser ? currentUserMsgId : currentAiMsgId;
+            if (isUser) currentUserMsgId = event.message_id;
+            else currentAiMsgId = event.message_id;
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === tempId ? { ...m, id: event.message_id } : m,
+              ),
+            );
+            break;
+          }
           case "stream":
             if (!waitingCleared.current) {
               waitingCleared.current = true;
               setIsWaiting(false);
+              setStatusMessage(null);
             }
             setMessages((prev) =>
               prev.map((m) =>
-                m.id === aiMsgId
+                m.id === currentAiMsgId
                   ? { ...m, content: m.content + event.content }
                   : m,
               ),
@@ -170,6 +201,7 @@ export function useChat({
           case "interview_questions":
             pendingInterviewRef.current = event.questions;
             setInterviewQuestions(event.questions);
+            setIsWaiting(false);
             break;
           case "plan_created": {
             const slug = event.topic_slug;
@@ -187,9 +219,18 @@ export function useChat({
             break;
           }
           case "end":
+            if (event.duration_ms) {
+              console.log(`[chat] total — ${event.duration_ms}ms`);
+            }
+            // Remove empty assistant message bubbles (e.g. when only tools ran)
+            setMessages((prev) =>
+              prev.filter((m) => !(m.role === "assistant" && m.content === "")),
+            );
+            setStatusMessage(null);
             setIsStreaming(false);
             break;
           case "error":
+            setStatusMessage(null);
             setIsStreaming(false);
             break;
         }
@@ -204,7 +245,14 @@ export function useChat({
         pendingInterviewRef.current = null;
       }
     },
-    [threadId, isStreaming, createThreadMutation, onThreadCreated, onPlanCreated],
+    [
+      initialThreadId,
+      createdThreadId,
+      isStreaming,
+      createThreadMutation,
+      onThreadCreated,
+      onPlanCreated,
+    ],
   );
 
   const submitInterviewAnswers = useCallback(
@@ -226,9 +274,11 @@ export function useChat({
 
   return {
     messages,
+    isMessagesLoading: messagesLoading,
     phase,
     isStreaming,
     isWaiting,
+    statusMessage,
     threadId,
     interviewQuestions,
     send,

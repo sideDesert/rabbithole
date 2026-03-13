@@ -4,22 +4,41 @@ import { useCallback, useRef, useState } from "react";
 import {
   ChevronLeft,
   GitBranchIcon,
+  Loader2,
   SendHorizonal,
   StopCircle,
+  Quote,
+  GitBranch,
+  X,
 } from "lucide-react";
 import { Textarea } from "./ui/textarea";
 import { Button } from "./ui/button";
 import clsx from "clsx";
 import { Input } from "./ui/input";
+import type { InterviewQuestion } from "@/lib/api";
+import { handleClientScriptLoad } from "next/script";
 
 export const MODE_INTERVIEW = "interview";
 export const MODE_DEFAULT = "defatul";
-export type Mode = typeof MODE_INTERVIEW | typeof MODE_DEFAULT;
+export const MODE_TAGGED = "tagged";
+export const MODE_BRANCH = "branch";
+export type Mode =
+  | typeof MODE_INTERVIEW
+  | typeof MODE_DEFAULT
+  | typeof MODE_TAGGED
+  | typeof MODE_BRANCH;
+
+const OPTION_LABELS = ["A", "B", "C", "D", "E", "F", "G", "H"];
+
 interface PromptInputInterface {
   className?: string;
   onSubmit: (content: string) => void;
+  onClose: () => void;
   streaming?: boolean;
+  loading?: boolean;
   mode?: Mode;
+  interviewQuestion?: InterviewQuestion | null;
+  tagged?: string;
   config?: {
     goBack?: boolean;
     branchout?: boolean;
@@ -29,8 +48,12 @@ export function PromptInput({
   className,
   config,
   onSubmit,
+  onClose,
   streaming = false,
+  loading = false,
   mode = MODE_DEFAULT,
+  tagged = "",
+  interviewQuestion = null,
 }: PromptInputInterface) {
   const [value, setValue] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -78,48 +101,79 @@ export function PromptInput({
             )}
           </div>
         )}
-        <div className="bg-background pb-6">
-          {mode === MODE_INTERVIEW && (
+        <div className="bg-background pb-6 rounded-xl overflow-hidden">
+          {mode === MODE_INTERVIEW && interviewQuestion && (
             <div className="flex flex-col gap-2">
-              <Button variant={"outline"} className={"block w-full"}>
-                <span>A</span> <span>Something more complicated</span>
-              </Button>
-              <Button variant={"outline"} className={"block w-full"}>
-                <span>B</span> <span>Something more complicated</span>
-              </Button>
-              <Button variant={"outline"} className={"block w-full"}>
-                <span>C</span> <span>Something more complicated</span>
-              </Button>
-              <Button variant={"outline"} className={"block w-full"}>
-                <span>D</span> <span>Something more complicated</span>
-              </Button>
+              {interviewQuestion.options.map((option, i) => (
+                <Button
+                  key={i}
+                  variant={"outline"}
+                  className={"w-full inline-flex justify-start"}
+                  onClick={() => onSubmit(option)}
+                >
+                  <span>{OPTION_LABELS[i] ?? i + 1}</span> <span>{option}</span>
+                </Button>
+              ))}
               <Input
                 value={value}
-                placeholder="Type your message..."
+                onChange={(e) => setValue(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && value.trim()) {
+                    onSubmit(value.trim());
+                    setValue("");
+                  }
+                }}
+                placeholder="Or type your own answer..."
                 className="field-sizing-fixed max-h-48 w-full resize-none overflow-y-auto pr-20 py-3"
               />
             </div>
           )}
-          {mode === MODE_DEFAULT && (
+          {(mode === MODE_DEFAULT ||
+            mode === MODE_TAGGED ||
+            mode === MODE_BRANCH) && (
             <>
-              {" "}
+              {(mode === MODE_TAGGED || mode === MODE_BRANCH) && (
+                <div className="text-md flex w-full justify-between p-2 border-2 text-foreground/60 rounded-xl relative z-0 mb-2">
+                  <div className="flex justify-center items-center pl-2">
+                    {mode === MODE_TAGGED && <Quote size={18} />}
+                    {mode === MODE_BRANCH && <GitBranch size={18} />}
+                  </div>
+                  <div className="grow pl-2 text-left inline-flex items-center">
+                    {tagged.length > 80 ? `${tagged.slice(0, 80)}...` : tagged}
+                  </div>
+                  <div>
+                    <Button onClick={onClose} variant={"ghost"}>
+                      <X />
+                    </Button>
+                  </div>
+                </div>
+              )}{" "}
+              <Button
+                disabled={!value.trim() || loading}
+                onClick={handleSubmit}
+                className="absolute right-1.5 bottom-8 shrink-0 cursor-pointer z-20"
+              >
+                {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+                {!loading && !streaming && (
+                  <SendHorizonal className="h-4 w-4" />
+                )}
+                {!loading && streaming && <StopCircle />}
+              </Button>
+              {loading && (
+                <p className="text-xs text-muted-foreground px-1 pb-1">
+                  Creating branch...
+                </p>
+              )}
               <Textarea
                 ref={textareaRef}
                 value={value}
                 onChange={handleChange}
                 onKeyDown={handleKeyDown}
                 placeholder="Type your message..."
+                disabled={loading}
                 rows={3}
-                className="field-sizing-fixed max-h-48 w-full resize-none overflow-y-auto pr-20 py-3"
+                className="field-sizing-fixed max-h-48 w-full relative resize-none overflow-y-auto pr-20 py-3"
               />
-              <Button
-                disabled={!value.trim()}
-                onClick={handleSubmit}
-                className="absolute right-1.5 bottom-8  shrink-0 cursor-pointer"
-              >
-                {!streaming && <SendHorizonal className="h-4 w-4" />}
-                {streaming && <StopCircle />}
-              </Button>
             </>
           )}
         </div>

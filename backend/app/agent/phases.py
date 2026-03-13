@@ -1,5 +1,9 @@
 """Phase transition logic: interview -> planning -> teaching."""
 
+from typing import Any
+
+from pymongo.collection import Collection
+
 from app.models.base import utcnow
 
 
@@ -19,13 +23,13 @@ def should_transition(
 
 def apply_transition(
     *,
-    db_threads,
+    db_threads: Collection[dict[str, Any]],
     thread_id: str,
     new_phase: str,
-    interview_context: dict | None = None,
+    interview_context: dict[str, Any] | None = None,
 ) -> None:
     """Update the thread document in MongoDB with the new phase."""
-    update: dict = {"$set": {"phase": new_phase, "updated_at": utcnow()}}
+    update: dict[str, Any] = {"$set": {"phase": new_phase, "updated_at": utcnow()}}
     if interview_context is not None:
         update["$set"]["interview_context"] = interview_context
     db_threads.update_one({"_id": thread_id}, update)

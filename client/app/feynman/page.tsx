@@ -44,6 +44,7 @@ export default function Page() {
     messages,
     isStreaming,
     isWaiting,
+    statusMessage,
     threadId,
     interviewQuestions,
     submitInterviewAnswers,
@@ -115,6 +116,7 @@ export default function Page() {
                 isLast={messages.length - 1 === idx}
                 streaming={isStreaming}
                 waiting={isWaiting && messages.length - 1 === idx}
+                statusMessage={messages.length - 1 === idx ? statusMessage : null}
               />
             );
           })}
