@@ -2,7 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { type Block } from "@blocknote/core";
-import { useCreateBlockNote } from "@blocknote/react";
+import { filterSuggestionItems } from "@blocknote/core/extensions";
+import {
+  useCreateBlockNote,
+  SuggestionMenuController,
+  getDefaultReactSlashMenuItems,
+} from "@blocknote/react";
 import { BlockNoteView } from "@blocknote/shadcn";
 import "@blocknote/shadcn/style.css";
 
@@ -74,6 +79,8 @@ export function FeynmanModal({
     return () => clearInterval(interval);
   }, [editor, threadId, conceptName]);
 
+  const handleHintRef = useRef<(() => void) | null>(null);
+
   const handleHint = useCallback(async () => {
     if (isHintLoading) return;
     setIsHintLoading(true);
@@ -88,6 +95,24 @@ export function FeynmanModal({
       setIsHintLoading(false);
     }
   }, [editor, threadId, conceptName, isHintLoading]);
+
+  handleHintRef.current = handleHint;
+
+  const getCustomSlashMenuItems = useCallback(
+    (ed: typeof editor) => [
+      ...getDefaultReactSlashMenuItems(ed),
+      {
+        title: "Hint",
+        subtext: "Get a nudge about what to cover next",
+        group: "Other",
+        icon: <span>💡</span>,
+        onItemClick: () => {
+          handleHintRef.current?.();
+        },
+      },
+    ],
+    [],
+  );
 
   const handleDismissHint = useCallback((id: string) => {
     setHints((prev) => prev.filter((h) => h.id !== id));
@@ -142,7 +167,17 @@ export function FeynmanModal({
             editor={editor}
             theme="light"
             data-feynman-editor
-          />
+          >
+            <SuggestionMenuController
+              triggerCharacter="/"
+              getItems={async (query) =>
+                filterSuggestionItems(
+                  getCustomSlashMenuItems(editor),
+                  query,
+                )
+              }
+            />
+          </BlockNoteView>
         </div>
       </div>
 
