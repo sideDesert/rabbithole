@@ -23,6 +23,7 @@ export type SSEEvent =
   | { type: "phase_change"; from: string; to: string }
   | { type: "plan_created"; topic_slug: string }
   | { type: "interview_questions"; questions: InterviewQuestion[] }
+  | { type: "feynman_prompt"; concept_name: string }
   | { type: "message_id"; role: "user" | "assistant"; message_id: string }
   | { type: "end"; duration_ms?: number }
   | { type: "error"; content: string };
@@ -272,4 +273,54 @@ export async function streamChat(
       }
     }
   }
+}
+
+// ── Feynman Mode ────────────────────────────────────────────────────
+
+export interface HintResponse {
+  hint: string;
+  hint_id: string;
+}
+
+export async function requestFeynmanHint(
+  threadId: string,
+  conceptName: string,
+  currentContent?: string,
+): Promise<HintResponse> {
+  const res = await fetch(`${API_BASE}/feynman/hint`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      thread_id: threadId,
+      concept_name: conceptName,
+      current_content: currentContent || null,
+    }),
+  });
+  if (!res.ok) throw new Error("Failed to get hint");
+  return res.json();
+}
+
+export interface SubmitFeynmanResponse {
+  submission_id: string;
+  status: string;
+}
+
+export async function submitFeynmanExplanation(
+  threadId: string,
+  conceptName: string,
+  markdown: string,
+  hintIds: string[],
+): Promise<SubmitFeynmanResponse> {
+  const res = await fetch(`${API_BASE}/feynman/submit`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      thread_id: threadId,
+      concept_name: conceptName,
+      markdown,
+      hint_ids: hintIds,
+    }),
+  });
+  if (!res.ok) throw new Error("Failed to submit explanation");
+  return res.json();
 }
