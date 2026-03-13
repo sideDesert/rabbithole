@@ -326,3 +326,51 @@ export async function submitFeynmanExplanation(
   if (!res.ok) throw new Error("Failed to submit explanation");
   return res.json();
 }
+
+// ── Graph Views ──────────────────────────────────────────────────────────
+
+export interface ThreadMapNode {
+  thread_id: string;
+  title: string;
+  phase: string;
+  depth: number;
+  current_concept: string | null;
+  summary: string | null;
+  status: string;
+  progress: number | null;
+}
+
+export interface ThreadMapEdge {
+  source: string;
+  target: string;
+  source_concept: string | null;
+  branch_topic: string | null;
+}
+
+export interface ThreadMapData {
+  nodes: ThreadMapNode[];
+  edges: ThreadMapEdge[];
+}
+
+export async function fetchThreadMap(threadId: string): Promise<ThreadMapData> {
+  const res = await fetch(`${API_BASE}/threads/${threadId}/map`);
+  return res.json();
+}
+
+export interface KnowledgeConcept {
+  name: string;
+  mastery_score: number;
+  strength_trend: "improving" | "stable" | "declining";
+  threads: string[];
+  last_reviewed: string | null;
+}
+
+export interface KnowledgeGraphData {
+  concepts: KnowledgeConcept[];
+  prerequisites: { source: string; target: string }[];
+}
+
+export async function fetchKnowledgeGraph(): Promise<KnowledgeGraphData> {
+  const res = await fetch(`${API_BASE}/knowledge-graph`);
+  return res.json();
+}
