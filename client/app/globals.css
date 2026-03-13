@@ -147,3 +147,16 @@
     0% { background-color: hsl(var(--accent)); }
     100% { background-color: transparent; }
 }
+
+.branch-annotation {
+    text-decoration: underline dotted;
+    text-decoration-color: var(--primary);
+    text-underline-offset: 3px;
+    cursor: pointer;
+    transition: background-color 0.15s;
+    color: inherit;
+}
+.branch-annotation:hover {
+    background-color: oklch(from var(--primary) l c h / 0.15);
+    border-radius: 2px;
+}
