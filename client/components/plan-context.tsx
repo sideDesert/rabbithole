@@ -10,6 +10,8 @@ interface PlanContextValue {
   setThreadId: (id: string | null) => void;
   topicSlug: string | null;
   setTopicSlug: (slug: string | null) => void;
+  feynmanRequested: boolean;
+  setFeynmanRequested: (v: boolean) => void;
 }
 
 const PlanContext = createContext<PlanContextValue | null>(null);
@@ -21,6 +23,7 @@ export function PlanProvider({ children }: { children: ReactNode }) {
     (params?.threadId as string) ?? null,
   );
   const [topicSlug, setTopicSlug] = useState<string | null>(null);
+  const [feynmanRequested, setFeynmanRequested] = useState(false);
 
   return (
     <PlanContext.Provider
@@ -31,6 +34,8 @@ export function PlanProvider({ children }: { children: ReactNode }) {
         setThreadId,
         topicSlug,
         setTopicSlug,
+        feynmanRequested,
+        setFeynmanRequested,
       }}
     >
       {children}

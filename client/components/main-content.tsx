@@ -10,7 +10,7 @@ import { useThread } from "@/hooks/use-thread";
 import { useRouter } from "next/navigation";
 
 export function MainContent({ children }: { children: ReactNode }) {
-  const { activeTab, setActiveTab } = usePlan();
+  const { activeTab, setActiveTab, setFeynmanRequested } = usePlan();
   const router = useRouter();
   const params = useParams();
   const threadId = params?.threadId as string;
@@ -30,7 +30,13 @@ export function MainContent({ children }: { children: ReactNode }) {
   return (
     <Tabs
       value={activeTab}
-      onValueChange={(val) => setActiveTab(val as string)}
+      onValueChange={(val) => {
+        if (val === "feynman-mode") {
+          setFeynmanRequested(true);
+          return;
+        }
+        setActiveTab(val as string);
+      }}
       className="w-full"
     >
       <main className="grow grid grid-rows-[auto_1fr]">
@@ -39,7 +45,7 @@ export function MainContent({ children }: { children: ReactNode }) {
           backToRootHandler={() => {
             if (thread?.parent_thread_id) {
               const scrollParam = thread.branch_source_message_id
-                ? `?scrollTo=${thread.branch_source_message_id}`
+                ? `?scrollTo=${thread.branch_source_message_id}${thread.branch_point_id ? `&branchPointId=${thread.branch_point_id}` : ""}`
                 : "";
               router.push(`/threads/${thread.parent_thread_id}${scrollParam}`);
             }

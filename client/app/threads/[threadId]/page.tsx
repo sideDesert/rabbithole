@@ -33,7 +33,7 @@ export default function Page({
   params: Promise<{ threadId: string }>;
 }) {
   const { threadId } = use(params);
-  const { activeTab, setActiveTab, setThreadId, setTopicSlug } = usePlan();
+  const { feynmanRequested, setFeynmanRequested, setThreadId, setTopicSlug } = usePlan();
   const router = useRouter();
   const [tagged, setTagged] = useState("");
   const [branchMessageId, setBranchMessageId] = useState("");
@@ -74,10 +74,8 @@ export default function Page({
 
   // Open Feynman modal when Pen tab is clicked
   useEffect(() => {
-    if (activeTab !== "feynman-mode") return;
-    // Switch back to chat tab immediately — the modal overlays everything
-    setActiveTab("chat-mode");
-    // Fetch current concept from plan progress
+    if (!feynmanRequested) return;
+    setFeynmanRequested(false);
     getProgress(threadId).then((progress) => {
       const concept = progress.current_concept;
       if (concept) {
@@ -86,7 +84,7 @@ export default function Page({
     }).catch(() => {
       // No plan yet — can't open Feynman mode without a concept
     });
-  }, [activeTab, setActiveTab, threadId, openFeynman]);
+  }, [feynmanRequested, setFeynmanRequested, threadId, openFeynman]);
 
   // Auto-send message passed via query param (from branch navigation)
   useEffect(() => {
