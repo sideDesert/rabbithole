@@ -19,7 +19,7 @@ export type SSEEvent =
   | { type: "status"; step: string; message: string; duration_ms: number }
   | { type: "stream"; content: string }
   | { type: "tool_call"; name: string; args: Record<string, unknown> }
-  | { type: "tool_result"; name: string; result: Record<string, unknown> }
+  | { type: "tool_result"; name: string; result: string }
   | { type: "phase_change"; from: string; to: string }
   | { type: "plan_created"; topic_slug: string }
   | { type: "interview_questions"; questions: InterviewQuestion[] }
@@ -40,6 +40,7 @@ export interface Thread {
   parent_thread_id: string | null;
   root_thread_id: string | null;
   branch_point_id: string | null;
+  branch_source_message_id: string | null;
   agent: string;
   evermemos_group_id: string;
   closed_at: string | null;
@@ -198,15 +199,33 @@ export async function branchout(
     title: params.title,
   };
 
-  const res = await fetch(
-    `${API_BASE}/threads/${params.threadId}/branch`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    },
-  );
+  const res = await fetch(`${API_BASE}/threads/${params.threadId}/branch`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
 
+  return res.json();
+}
+
+// ── Branches ─────────────────────────────────────────────────────────────
+
+export interface Branch {
+  branch_point_id: string;
+  thread_id: string;
+  message_id: string;
+  position: number[] | null;
+  type: string;
+  title: string;
+  status: string;
+  phase: string;
+  depth: number;
+}
+
+export async function listBranches(
+  threadId: string,
+): Promise<{ branches: Branch[] }> {
+  const res = await fetch(`${API_BASE}/threads/${threadId}/branches`);
   return res.json();
 }
 
