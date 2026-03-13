@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
   ReactFlow,
@@ -36,7 +36,7 @@ function KnowledgeGraphInner() {
   const reactFlowInstance = useReactFlow();
   const focusParam = searchParams.get("focus");
   const [selectedConcept, setSelectedConcept] = useState<KnowledgeConcept | null>(null);
-  const [focusHandled, setFocusHandled] = useState(false);
+  const focusHandledRef = useRef(false);
 
   const { nodes, edges } = useMemo(() => {
     if (!data?.concepts?.length) return { nodes: [] as Node[], edges: [] as Edge[] };
@@ -64,7 +64,7 @@ function KnowledgeGraphInner() {
 
   // Handle ?focus param after data loads
   useEffect(() => {
-    if (focusParam && !focusHandled && data?.concepts && nodes.length > 0) {
+    if (focusParam && !focusHandledRef.current && data?.concepts && nodes.length > 0) {
       const target = data.concepts.find(
         (c) => c.name.toLowerCase() === focusParam.toLowerCase(),
       );
@@ -74,16 +74,18 @@ function KnowledgeGraphInner() {
           (n) => n.id.toLowerCase() === focusParam.toLowerCase(),
         );
         if (node) {
-          reactFlowInstance.setCenter(
-            node.position.x + 125,
-            node.position.y + 40,
-            { zoom: 1.2, duration: 500 },
-          );
+          requestAnimationFrame(() => {
+            reactFlowInstance.setCenter(
+              node.position.x + 125,
+              node.position.y + 40,
+              { zoom: 1.2, duration: 500 },
+            );
+          });
         }
       }
-      setFocusHandled(true);
+      focusHandledRef.current = true;
     }
-  }, [focusParam, focusHandled, data, nodes, reactFlowInstance]);
+  }, [focusParam, data, nodes, reactFlowInstance]);
 
   const onNodeClick = useCallback(
     (_: React.MouseEvent, node: Node) => {
@@ -92,6 +94,8 @@ function KnowledgeGraphInner() {
     },
     [data],
   );
+
+  const closePanel = useCallback(() => setSelectedConcept(null), []);
 
   if (isLoading) {
     return (
@@ -139,7 +143,7 @@ function KnowledgeGraphInner() {
         <Controls showInteractive={false} />
       </ReactFlow>
 
-      <PreviewPanel open={!!selectedConcept} onClose={() => setSelectedConcept(null)}>
+      <PreviewPanel open={!!selectedConcept} onClose={closePanel}>
         {selectedConcept && (
           <div className="space-y-3">
             <h3 className="font-semibold text-sm">{selectedConcept.name}</h3>
