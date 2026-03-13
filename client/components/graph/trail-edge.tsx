@@ -33,7 +33,7 @@ export function TrailEdge({
         id={id}
         path={edgePath}
         style={{
-          stroke: "hsl(var(--border))",
+          stroke: "var(--border)",
           strokeWidth: 1.5,
           strokeDasharray: "6 4",
         }}
