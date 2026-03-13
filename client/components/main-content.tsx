@@ -5,6 +5,7 @@ import { Tabs } from "./ui/tabs";
 import { TopBar } from "./top-bar";
 import { PlanView } from "./plan-view";
 import { usePlan } from "./plan-context";
+import { ThreadMap } from "@/components/graph/thread-map";
 import { useParams } from "next/navigation";
 import { useThread } from "@/hooks/use-thread";
 import { useRootOrigin } from "@/hooks/use-root-origin";
@@ -65,12 +66,13 @@ export function MainContent({ children }: { children: ReactNode }) {
             }
           }}
         />
-        {/* Keep page content mounted but hidden when plan tab is active
+        {/* Keep page content mounted but hidden when plan or graph tab is active
             so chat state isn't lost on tab switch */}
-        <div className={activeTab === "plan-mode" ? "hidden" : ""}>
+        <div className={activeTab !== "chat-mode" ? "hidden" : ""}>
           {children}
         </div>
         {activeTab === "plan-mode" && <PlanView />}
+        {activeTab === "graph-mode" && threadId && <ThreadMap threadId={threadId} />}
       </main>
     </Tabs>
   );
