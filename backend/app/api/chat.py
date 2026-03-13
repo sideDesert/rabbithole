@@ -444,12 +444,17 @@ async def create_branch(thread_id: str, req: BranchRequest):
     if req.position_start is not None and req.position_end is not None:
         position = TextPosition(start=req.position_start, end=req.position_end)
 
+    # Compute current_concept from plan (not persisted on thread doc)
+    _, branch_source_concept = get_plan_context(parent.get("topic_slug"))
+
     bp = BranchPoint(
         thread_id=thread_id,
         message_id=req.message_id,
         position=position,
         type=req.branch_type,
         child_thread_id=child.id,
+        source_concept=branch_source_concept,
+        branch_topic=req.branch_text,
     )
     _ = mongo.branch_points().insert_one(bp.to_doc())
     _ = mongo.threads().update_one(

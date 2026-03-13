@@ -16,3 +16,5 @@ class BranchPoint(MongoBase):
     position: TextPosition | None = None
     type: Literal["highlight", "explore", "suggested"]
     child_thread_id: str
+    source_concept: str | None = None
+    branch_topic: str | None = None
