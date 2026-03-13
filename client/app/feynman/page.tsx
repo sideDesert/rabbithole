@@ -43,8 +43,6 @@ export default function Page() {
     send,
     messages,
     isStreaming,
-    isWaiting,
-    statusMessage,
     threadId,
     interviewQuestions,
     submitInterviewAnswers,
@@ -114,9 +112,8 @@ export default function Page() {
                 content={msg.content}
                 className={`${msg.role === ROLE_USER && "w-fit self-end"}`}
                 isLast={messages.length - 1 === idx}
-                streaming={isStreaming}
-                waiting={isWaiting && messages.length - 1 === idx}
-                statusMessage={messages.length - 1 === idx ? statusMessage : null}
+                trailSteps={msg.trailSteps}
+                trailCollapsed={msg.trailCollapsed}
               />
             );
           })}
@@ -142,6 +139,7 @@ export default function Page() {
       ) : (
         <PromptInput
           className="sticky! bottom-0 z-50"
+          onClose={() => {}}
           onSubmit={(content) => {
             send(content);
             if (chatStarted) {
