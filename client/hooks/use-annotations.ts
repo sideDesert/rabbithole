@@ -142,6 +142,19 @@ function positionTooltips(el: HTMLElement) {
   }
 }
 
+function clampTooltip(tip: HTMLDivElement) {
+  const left = tip.getBoundingClientRect().left;
+  const overflow = left + tip.offsetWidth - window.innerWidth + 8;
+  if (overflow > 0) {
+    tip.style.left = `${parseFloat(tip.style.left) - overflow}px`;
+  }
+}
+
+function unclampTooltip(tip: HTMLDivElement, el: HTMLElement) {
+  const right = getContainerRight() + 52;
+  tip.style.left = `${right}px`;
+}
+
 function createTooltips(el: HTMLElement) {
   clearTooltips();
   const links = el.querySelectorAll("a.branch-annotation");
@@ -156,8 +169,14 @@ function createTooltips(el: HTMLElement) {
     tip.dataset.branchId = branchId;
     document.body.appendChild(tip);
 
-    tip.addEventListener("mouseenter", () => tip.classList.add("branch-tooltip--active"));
-    tip.addEventListener("mouseleave", () => tip.classList.remove("branch-tooltip--active"));
+    tip.addEventListener("mouseenter", () => {
+      tip.classList.add("branch-tooltip--active");
+      clampTooltip(tip);
+    });
+    tip.addEventListener("mouseleave", () => {
+      tip.classList.remove("branch-tooltip--active");
+      unclampTooltip(tip, el);
+    });
 
     tooltipMap.set(branchId, tip);
   });
@@ -207,7 +226,12 @@ export function useAnnotations(
       const target = (e.target as HTMLElement).closest?.("a.branch-annotation") as HTMLElement | null;
       if (!target) return;
       const branchId = target.dataset.branchId;
-      if (branchId) tooltipMap.get(branchId)?.classList.add("branch-tooltip--active");
+      if (!branchId) return;
+      const tip = tooltipMap.get(branchId);
+      if (tip) {
+        tip.classList.add("branch-tooltip--active");
+        clampTooltip(tip);
+      }
     };
 
     const handleOut = (e: MouseEvent) => {
@@ -215,7 +239,12 @@ export function useAnnotations(
       const related = (e.relatedTarget as HTMLElement)?.closest?.("a.branch-annotation") as HTMLElement | null;
       if (target && target !== related) {
         const branchId = target.dataset.branchId;
-        if (branchId) tooltipMap.get(branchId)?.classList.remove("branch-tooltip--active");
+        if (!branchId) return;
+        const tip = tooltipMap.get(branchId);
+        if (tip) {
+          tip.classList.remove("branch-tooltip--active");
+          unclampTooltip(tip, el);
+        }
       }
     };
 

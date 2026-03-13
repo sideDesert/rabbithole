@@ -219,7 +219,7 @@ a.branch-annotation.scroll-highlight {
     z-index: 50;
     box-shadow: 0 4px 12px oklch(0 0 0 / 0.12);
     opacity: 0.5;
-    transition: opacity 0.15s;
+    transition: opacity 0.15s, left 0.3s ease-in-out;
 }
 .branch-tooltip--active {
     opacity: 1;

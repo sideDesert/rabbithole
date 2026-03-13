@@ -1,10 +1,25 @@
 import clsx from "clsx";
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Streamdown } from "streamdown";
 import { ThinkingOrb } from "./thought-trail";
 import type { Branch } from "@/lib/api";
 import type { ToolCallEntry } from "@/hooks/use-chat";
 import { useAnnotations } from "@/hooks/use-annotations";
+import {
+  Check,
+  Search,
+  Brain,
+  FilePlus,
+  FileText,
+  ListChecks,
+  GitBranch,
+  type LucideIcon,
+} from "lucide-react";
+import {
+  Collapsible,
+  CollapsibleTrigger,
+  CollapsibleContent,
+} from "./ui/collapsible";
 
 export const ROLE_USER = "user";
 export const ROLE_AI = "assistant";
@@ -51,31 +66,165 @@ export function PhaseDivider({ label }: { label: string }) {
   );
 }
 
+const TOOL_ICONS: Record<string, LucideIcon> = {
+  recall_memory: Search,
+  store_memory: Brain,
+  create_plan: FilePlus,
+  read_plan: FileText,
+  update_plan_progress: ListChecks,
+  suggest_branches: GitBranch,
+};
+
+function pickRandom() {
+  return loadingWords[Math.floor(Math.random() * loadingWords.length)];
+}
+
+function useRotatingWord(active: boolean) {
+  const [word, setWord] = useState(pickRandom);
+  useEffect(() => {
+    if (!active) return;
+    const tick = () => {
+      setWord(pickRandom());
+      const delay = 6000 + Math.random() * 9000;
+      timer = window.setTimeout(tick, delay);
+    };
+    let timer = window.setTimeout(tick, 6000 + Math.random() * 9000);
+    return () => clearTimeout(timer);
+  }, [active]);
+  return word;
+}
+
 function ToolCallBlock({ tc }: { tc: ToolCallEntry }) {
-  const [open, setOpen] = useState(false);
   const isDone = tc.status === "done";
+  const Icon = TOOL_ICONS[tc.name] ?? Check;
+  const rotatingWord = useRotatingWord(!isDone);
 
   return (
-    <div>
-      <button
-        className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors w-full text-left py-1"
-        onClick={() => tc.result && setOpen(!open)}
-      >
+    <Collapsible disabled={!tc.result}>
+      <CollapsibleTrigger className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors w-full justify-start py-1 cursor-pointer">
         {isDone ? (
-          <span className="text-emerald-500 text-xs">&#10003;</span>
+          <Icon className="w-3 h-3 text-emerald-400/50" />
         ) : (
-          <span className="thinking-orb shrink-0 !w-3 !h-3" />
+          <Icon className="w-3 h-3 text-muted-foreground/50 animate-pulse" />
         )}
-        <span>{tc.label}</span>
-      </button>
-      {open && tc.result && (
-        <pre className="text-xs text-muted-foreground bg-muted/50 rounded p-2 mt-1 mb-2 overflow-x-auto whitespace-pre-wrap">
-          {tc.result}
-        </pre>
+        <span className="text-left">{isDone ? tc.label : `${rotatingWord}...`}</span>
+      </CollapsibleTrigger>
+      {tc.result && (
+        <CollapsibleContent>
+          <pre className="text-xs text-muted-foreground bg-muted/50 rounded p-2 mt-1 mb-2 overflow-x-auto whitespace-pre-wrap">
+            {(() => {
+              try {
+                return JSON.stringify(JSON.parse(tc.result!), null, 2);
+              } catch {
+                return tc.result;
+              }
+            })()}
+          </pre>
+        </CollapsibleContent>
       )}
-    </div>
+    </Collapsible>
   );
 }
+
+const loadingWords = [
+  "rummaging",
+  "meandering",
+  "floggulating",
+  "tinkering",
+  "fiddling",
+  "pottering",
+  "puttering",
+  "dabbling",
+  "toiling",
+  "laboring",
+  "slogging",
+  "grinding",
+  "churning",
+  "hammering",
+  "cobbling",
+  "hacking",
+  "patching",
+  "crafting",
+  "shaping",
+  "forging",
+  "stirring",
+  "simmering",
+  "whisking",
+  "kneading",
+  "sauteing",
+  "braising",
+  "roasting",
+  "grilling",
+  "searing",
+  "tempering",
+  "concocting",
+  "brewing",
+  "fermenting",
+  "distilling",
+  "stewing",
+  "mixing",
+  "blending",
+  "folding",
+  "marinating",
+  "glazing",
+  "assembling",
+  "engineering",
+  "fabricating",
+  "machining",
+  "welding",
+  "soldering",
+  "riveting",
+  "chiseling",
+  "carving",
+  "sculpting",
+  "iterating",
+  "prototyping",
+  "refining",
+  "optimizing",
+  "debugging",
+  "compiling",
+  "hackingAway",
+  "cobblingTogether",
+  "whippingUp",
+  "rustlingUp",
+  "noodling",
+  "pokingAround",
+  "diggingAround",
+  "fussing",
+  "muckingAbout",
+  "monkeying",
+  "tinkeringAway",
+  "fussingWith",
+  "putzing",
+  "doodling",
+  "experimenting",
+  "scheming",
+  "devising",
+  "rigging",
+  "juryRigging",
+  "kludging",
+  "macgyvering",
+  "hammeringAway",
+  "pluggingAway",
+  "chippingAway",
+  "sloggingThrough",
+  "grindingAway",
+  "sweatingOver",
+  "sweatingThrough",
+  "whippingTogether",
+  "hackingTogether",
+  "slappingTogether",
+  "conjuring",
+  "brewingUp",
+  "cookingUp",
+  "spinningUp",
+  "crankingOut",
+  "hammeringOut",
+  "bangingOut",
+  "churningOut",
+  "rollingUpSleeves",
+  "whippingOut",
+];
 
 export function ChatMessage({
   id,
@@ -130,8 +279,8 @@ export function ChatMessage({
           <ThinkingOrb statusMessage={statusMessage ?? "Loading"} />
         )}
         {hasToolCalls && (
-          <div className="mb-3 border-l-2 border-border pl-3 space-y-0.5">
-            {toolCalls.map((tc, i) => (
+          <div className="mb-3 space-y-0.5">
+            {toolCalls!.map((tc, i) => (
               <ToolCallBlock key={`${tc.name}-${i}`} tc={tc} />
             ))}
           </div>

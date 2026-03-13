@@ -7,6 +7,7 @@ import { PlanView } from "./plan-view";
 import { usePlan } from "./plan-context";
 import { useParams } from "next/navigation";
 import { useThread } from "@/hooks/use-thread";
+import { useRootOrigin } from "@/hooks/use-root-origin";
 import { useRouter } from "next/navigation";
 
 export function MainContent({ children }: { children: ReactNode }) {
@@ -15,6 +16,7 @@ export function MainContent({ children }: { children: ReactNode }) {
   const params = useParams();
   const threadId = params?.threadId as string;
   const { thread } = useThread(threadId);
+  const { rootOrigin } = useRootOrigin(threadId);
   const config = {
     back: false,
     title: "",
@@ -43,11 +45,23 @@ export function MainContent({ children }: { children: ReactNode }) {
         <TopBar
           config={config}
           backToRootHandler={() => {
+            if (rootOrigin) {
+              const scrollParam = rootOrigin.rootMessageId
+                ? `?scrollTo=${rootOrigin.rootMessageId}`
+                : "";
+              router.push(
+                `/threads/${rootOrigin.rootThread.id}${scrollParam}`,
+              );
+            } else if (thread?.root_thread_id) {
+              router.push(`/threads/${thread.root_thread_id}`);
+            }
+          }}
+          backToParentHandler={() => {
             if (thread?.parent_thread_id) {
-              const scrollParam = thread.branch_source_message_id
+              const scrollparam = thread.branch_source_message_id
                 ? `?scrollTo=${thread.branch_source_message_id}${thread.branch_point_id ? `&branchPointId=${thread.branch_point_id}` : ""}`
                 : "";
-              router.push(`/threads/${thread.parent_thread_id}${scrollParam}`);
+              router.push(`/threads/${thread.parent_thread_id}${scrollparam}`);
             }
           }}
         />

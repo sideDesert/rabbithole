@@ -6,12 +6,14 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { TabsList, TabsTrigger } from "./ui/tabs";
 import {
   ChevronLeft,
+  ChevronsLeft,
   ListTodo,
   MessageCircle,
   NetworkIcon,
   Pen,
 } from "lucide-react";
 import { Button } from "./ui/button";
+import { ButtonGroup } from "./ui/button-group";
 import { AgentPill } from "@/components/agent-pill";
 import { TopicProgress } from "@/components/topic-progress";
 
@@ -21,8 +23,13 @@ interface TopBarInterface {
     title?: string;
   };
   backToRootHandler: () => void;
+  backToParentHandler: () => void;
 }
-export function TopBar({ config, backToRootHandler }: TopBarInterface) {
+export function TopBar({
+  config,
+  backToRootHandler,
+  backToParentHandler,
+}: TopBarInterface) {
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -42,9 +49,14 @@ export function TopBar({ config, backToRootHandler }: TopBarInterface) {
         <SidebarTrigger />
         <div className="flex flex-row items-center gap-4">
           {config?.back && (
-            <Button variant="outline" onClick={backToRootHandler}>
-              <ChevronLeft /> Back to Root
-            </Button>
+            <ButtonGroup>
+              <Button variant="outline" onClick={backToRootHandler}>
+                <ChevronsLeft /> Root
+              </Button>
+              <Button variant="outline" onClick={backToParentHandler}>
+                <ChevronLeft /> Parent
+              </Button>
+            </ButtonGroup>
           )}
           {config?.title && <h2 className="font-medium">{config.title}</h2>}
         </div>

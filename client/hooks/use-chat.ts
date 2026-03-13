@@ -39,7 +39,7 @@ interface UseChatReturn {
   isMessagesLoading: boolean;
   phase: string;
   isStreaming: boolean;
-  isLoading: booleam;
+  isLoading: boolean;
   threadId: string | null;
   interviewQuestions: InterviewQuestion[] | null;
   send: (content: string) => Promise<void>;

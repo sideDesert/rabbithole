@@ -22,10 +22,20 @@ import { TextSelectionMenu } from "@/components/text-selection-menu";
 import { useChat } from "@/hooks/use-chat";
 import { useTextSelectionMenu } from "@/hooks/use-text-selection-menu";
 import { useBranchout, useBranches } from "@/hooks/use-branch";
+import { useThread } from "@/hooks/use-thread";
 import type { Branch } from "@/lib/api";
 import { useRouter, useSearchParams } from "next/navigation";
-import React, { use, useCallback, useEffect, useRef, useState } from "react";
+import React, { use, useEffect, useRef, useState } from "react";
 import { getProgress } from "@/lib/api";
+import { Badge } from "@/components/ui/badge";
+import {
+  Item,
+  ItemContent,
+  ItemDescription,
+  ItemMedia,
+  ItemTitle,
+} from "@/components/ui/item";
+import { GitBranchIcon } from "lucide-react";
 
 export default function Page({
   params,
@@ -33,6 +43,7 @@ export default function Page({
   params: Promise<{ threadId: string }>;
 }) {
   const { threadId } = use(params);
+  const { thread } = useThread(threadId);
   const { feynmanRequested, setFeynmanRequested, setThreadId, setTopicSlug } =
     usePlan();
   const router = useRouter();
@@ -61,7 +72,6 @@ export default function Page({
     isMessagesLoading,
     isStreaming,
     isLoading,
-    phase,
     interviewQuestions,
     submitInterviewAnswers,
     dismissInterview,
@@ -182,6 +192,22 @@ export default function Page({
   return (
     <div className="px-10 pt-4 h-full max-w-3xl m-auto grid grid-rows-[1fr_auto]">
       <div className="flex flex-col overflow-auto relative z-0 gap-4 min-h-0 pb-6">
+        {thread && thread.depth > 0 && (
+          <Item variant="muted" size="sm">
+            <ItemMedia>
+              <GitBranchIcon className="size-4" />
+            </ItemMedia>
+            <ItemContent>
+              <ItemTitle>
+                <span className="bg-primary/15 w-fit">&ldquo;{thread.branch_text ?? "Branched"}&rdquo;</span>
+                <Badge variant="outline">Depth {thread.depth}</Badge>
+              </ItemTitle>
+              {thread.parent_summary && (
+                <ItemDescription>{thread.parent_summary}</ItemDescription>
+              )}
+            </ItemContent>
+          </Item>
+        )}
         {messages.map((msg, index) => {
           if (msg.type === "plan_card") {
             return (

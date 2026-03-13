@@ -49,6 +49,8 @@ export interface Thread {
   phase: string;
   interview_context: unknown;
   current_concept: string | null;
+  parent_summary: string | null;
+  branch_text: string | null;
 }
 
 export interface Message {
