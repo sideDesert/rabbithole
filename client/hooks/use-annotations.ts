@@ -1,13 +1,9 @@
 "use client";
 
 import type { Branch } from "@/lib/api";
-import { useEffect } from "react";
+import { useLayoutEffect } from "react";
 import { useRouter } from "next/navigation";
 
-/**
- * Walks text nodes in `container` to find the node and offset
- * corresponding to `targetOffset` characters from the start.
- */
 function findTextPosition(
   container: HTMLElement,
   targetOffset: number,
@@ -29,10 +25,6 @@ function findTextPosition(
   return null;
 }
 
-/**
- * Remove all annotation wrappers from the container,
- * replacing each <a class="branch-annotation"> with its child nodes.
- */
 function clearAnnotations(container: HTMLElement) {
   const marks = container.querySelectorAll("a.branch-annotation");
   marks.forEach((mark) => {
@@ -46,66 +38,136 @@ function clearAnnotations(container: HTMLElement) {
   });
 }
 
-const BRANCH_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>`;
-
-function showTooltip(anchor: HTMLElement) {
-  const existing = document.querySelector(".branch-tooltip");
-  if (existing) existing.remove();
-
-  const text = anchor.dataset.tooltip;
-  if (!text) return;
-
-  // Read CSS custom properties from document root
-  const styles = getComputedStyle(document.documentElement);
-  const primary = styles.getPropertyValue("--primary").trim();
-  const popover = styles.getPropertyValue("--popover").trim();
-  const popoverFg = styles.getPropertyValue("--popover-foreground").trim();
-  const border = styles.getPropertyValue("--border").trim();
-
-  const tooltip = document.createElement("div");
-  tooltip.className = "branch-tooltip";
-
-  // Build icon with explicit color
-  const iconSpan = document.createElement("span");
-  iconSpan.style.cssText = `flex-shrink:0;display:flex;align-items:center;color:${primary}`;
-  iconSpan.innerHTML = BRANCH_ICON_SVG;
-
-  const textSpan = document.createElement("span");
-  textSpan.textContent = text;
-
-  tooltip.appendChild(iconSpan);
-  tooltip.appendChild(textSpan);
-
-  // Apply all styles inline so they work regardless of where tooltip is in DOM
-  tooltip.style.cssText = `
-    position:absolute;
-    display:flex;
-    align-items:center;
-    gap:8px;
-    padding:10px 14px;
-    background:${popover};
-    color:${popoverFg};
-    border:1px solid ${border};
-    border-radius:8px;
-    font-size:0.875rem;
-    line-height:1.5;
-    max-width:420px;
-    pointer-events:none;
-    z-index:50;
-    box-shadow:0 4px 12px oklch(0 0 0 / 0.12);
-    animation:annotation-tooltip-in 0.2s ease-out;
-`;
-
-  document.body.appendChild(tooltip);
-
-  const rect = anchor.getBoundingClientRect();
-  tooltip.style.left = `${rect.left + window.scrollX}px`;
-  tooltip.style.top = `${rect.top + window.scrollY - tooltip.offsetHeight - 8}px`;
+/**
+ * Collect all text nodes between startPos and endPos (inclusive).
+ */
+function getTextNodesInRange(
+  container: HTMLElement,
+  startPos: { node: Text; offset: number },
+  endPos: { node: Text; offset: number },
+): Text[] {
+  const nodes: Text[] = [];
+  const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null);
+  let inRange = false;
+  let node: Text | null;
+  while ((node = walker.nextNode() as Text | null)) {
+    if (node === startPos.node) inRange = true;
+    if (inRange) nodes.push(node);
+    if (node === endPos.node) break;
+  }
+  return nodes;
 }
 
-function hideTooltip() {
-  const existing = document.querySelector(".branch-tooltip");
-  if (existing) existing.remove();
+function applyAnnotations(el: HTMLElement, annotations: Branch[]) {
+  clearAnnotations(el);
+
+  const sorted = annotations
+    .filter(
+      (a): a is Branch & { position: NonNullable<Branch["position"]> } =>
+        a.position !== null,
+    )
+    .sort((a, b) => b.position.start - a.position.start);
+
+  for (const annotation of sorted) {
+    const { start, end } = annotation.position;
+    const startPos = findTextPosition(el, start);
+    const endPos = findTextPosition(el, end);
+    if (!startPos || !endPos) continue;
+
+    try {
+      const textNodes = getTextNodesInRange(el, startPos, endPos);
+
+      for (const textNode of textNodes) {
+        const wrapStart = textNode === startPos.node ? startPos.offset : 0;
+        const wrapEnd = textNode === endPos.node ? endPos.offset : textNode.textContent!.length;
+
+        if (wrapStart >= wrapEnd) continue;
+
+        const range = document.createRange();
+        range.setStart(textNode, wrapStart);
+        range.setEnd(textNode, wrapEnd);
+
+        const link = document.createElement("a");
+        link.className = "branch-annotation";
+        link.href = `/threads/${annotation.thread_id}`;
+        link.dataset.tooltip = annotation.title || "";
+        link.dataset.branchId = annotation.branch_point_id;
+
+        range.surroundContents(link);
+      }
+    } catch (err) {
+      console.error("[annotations] failed to apply", err);
+    }
+  }
+}
+
+// Persistent tooltips that are always visible
+const tooltipMap = new Map<string, HTMLDivElement>();
+
+function getContainerRight(): number {
+  const container = document.querySelector(".max-w-3xl");
+  if (container) return container.getBoundingClientRect().right;
+  return window.innerWidth - 32;
+}
+
+function positionTooltips(el: HTMLElement) {
+  const links = Array.from(el.querySelectorAll("a.branch-annotation"));
+  const right = getContainerRight() + 52;
+
+  // Collect desired positions sorted by vertical position
+  const items: { branchId: string; desiredTop: number }[] = [];
+  for (const link of links) {
+    const branchId = (link as HTMLElement).dataset.branchId;
+    if (!branchId || !tooltipMap.has(branchId)) continue;
+    const rect = link.getBoundingClientRect();
+    items.push({ branchId, desiredTop: rect.top + rect.height / 2 });
+  }
+  items.sort((a, b) => a.desiredTop - b.desiredTop);
+
+  // Resolve overlaps — push each tooltip below the previous if they collide
+  let lastBottom = -Infinity;
+  for (const item of items) {
+    const tip = tooltipMap.get(item.branchId)!;
+    const tipHeight = tip.offsetHeight;
+    let top = item.desiredTop - tipHeight / 2;
+
+    if (top < lastBottom + 4) {
+      top = lastBottom + 4;
+    }
+
+    tip.style.left = `${right}px`;
+    tip.style.top = `${top}px`;
+    tip.style.transform = "";
+    lastBottom = top + tipHeight;
+  }
+}
+
+function createTooltips(el: HTMLElement) {
+  clearTooltips();
+  const links = el.querySelectorAll("a.branch-annotation");
+  links.forEach((link) => {
+    const text = (link as HTMLElement).dataset.tooltip;
+    const branchId = (link as HTMLElement).dataset.branchId;
+    if (!text || !branchId) return;
+
+    const tip = document.createElement("div");
+    tip.className = "branch-tooltip";
+    tip.textContent = text;
+    tip.dataset.branchId = branchId;
+    document.body.appendChild(tip);
+
+    tip.addEventListener("mouseenter", () => tip.classList.add("branch-tooltip--active"));
+    tip.addEventListener("mouseleave", () => tip.classList.remove("branch-tooltip--active"));
+
+    tooltipMap.set(branchId, tip);
+  });
+
+  positionTooltips(el);
+}
+
+function clearTooltips() {
+  tooltipMap.forEach((tip) => tip.remove());
+  tooltipMap.clear();
 }
 
 export function useAnnotations(
@@ -115,86 +177,69 @@ export function useAnnotations(
 ) {
   const router = useRouter();
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = messageRef.current;
     if (!el || !annotations?.length || isStreaming) return;
 
-    const sorted = annotations
-      .filter(
-        (a): a is Branch & { position: NonNullable<Branch["position"]> } =>
-          a.position !== null,
-      )
-      .sort((a, b) => b.position.start - a.position.start);
+    applyAnnotations(el, annotations);
 
-    if (sorted.length === 0) return;
+    // Create persistent tooltips after a frame so layout is settled
+    requestAnimationFrame(() => {
+      createTooltips(el);
 
-    // Defer so Streamdown finishes its DOM work first
-    const rafId = requestAnimationFrame(() => {
-      if (!el) return;
-      // Clean slate — remove any leftover wrappers
-      clearAnnotations(el);
-
-      for (const annotation of sorted) {
-        const { start, end } = annotation.position;
-        const startPos = findTextPosition(el, start);
-        const endPos = findTextPosition(el, end);
-        if (!startPos || !endPos) continue;
-
-        try {
-          const range = document.createRange();
-          range.setStart(startPos.node, startPos.offset);
-          range.setEnd(endPos.node, endPos.offset);
-
-          const link = document.createElement("a");
-          link.className = "branch-annotation";
-          link.href = `/threads/${annotation.thread_id}`;
-          link.dataset.tooltip = annotation.title || "";
-          link.dataset.branchId = annotation.branch_point_id;
-
-          const fragment = range.extractContents();
-          link.appendChild(fragment);
-          range.insertNode(link);
-        } catch (err) {
-          console.error("[annotations] failed to apply", err);
-        }
-      }
+      // Add click handlers to tooltips for navigation
+      tooltipMap.forEach((tip, branchId) => {
+        tip.addEventListener("click", () => {
+          const link = el.querySelector(`a.branch-annotation[data-branch-id="${branchId}"]`) as HTMLAnchorElement | null;
+          const href = link?.getAttribute("href");
+          if (href) router.push(href);
+        });
+      });
     });
 
-    // Event delegation for click and hover
+    // Reposition on scroll/resize
+    const reposition = () => positionTooltips(el);
+    window.addEventListener("scroll", reposition, { passive: true });
+    window.addEventListener("resize", reposition, { passive: true });
+
+    // Highlight tooltip on annotation hover
+    const handleOver = (e: MouseEvent) => {
+      const target = (e.target as HTMLElement).closest?.("a.branch-annotation") as HTMLElement | null;
+      if (!target) return;
+      const branchId = target.dataset.branchId;
+      if (branchId) tooltipMap.get(branchId)?.classList.add("branch-tooltip--active");
+    };
+
+    const handleOut = (e: MouseEvent) => {
+      const target = (e.target as HTMLElement).closest?.("a.branch-annotation") as HTMLElement | null;
+      const related = (e.relatedTarget as HTMLElement)?.closest?.("a.branch-annotation") as HTMLElement | null;
+      if (target && target !== related) {
+        const branchId = target.dataset.branchId;
+        if (branchId) tooltipMap.get(branchId)?.classList.remove("branch-tooltip--active");
+      }
+    };
+
     const handleClick = (e: MouseEvent) => {
       const target = (e.target as HTMLElement).closest?.("a.branch-annotation");
       if (target instanceof HTMLAnchorElement) {
         e.preventDefault();
-        hideTooltip();
         const href = target.getAttribute("href");
         if (href) router.push(href);
       }
     };
 
-    const handleMouseOver = (e: MouseEvent) => {
-      const target = (e.target as HTMLElement).closest?.("a.branch-annotation");
-      if (target instanceof HTMLElement) showTooltip(target);
-    };
-
-    const handleMouseOut = (e: MouseEvent) => {
-      const target = (e.target as HTMLElement).closest?.("a.branch-annotation");
-      const related = (e.relatedTarget as HTMLElement)?.closest?.(
-        "a.branch-annotation",
-      );
-      if (target && target !== related) hideTooltip();
-    };
-
     el.addEventListener("click", handleClick);
-    el.addEventListener("mouseover", handleMouseOver);
-    el.addEventListener("mouseout", handleMouseOut);
+    el.addEventListener("mouseover", handleOver);
+    el.addEventListener("mouseout", handleOut);
 
     return () => {
-      cancelAnimationFrame(rafId);
       el.removeEventListener("click", handleClick);
-      el.removeEventListener("mouseover", handleMouseOver);
-      el.removeEventListener("mouseout", handleMouseOut);
-      hideTooltip();
+      el.removeEventListener("mouseover", handleOver);
+      el.removeEventListener("mouseout", handleOut);
+      window.removeEventListener("scroll", reposition);
+      window.removeEventListener("resize", reposition);
+      clearTooltips();
       clearAnnotations(el);
     };
-  }, [messageRef, annotations, isStreaming, router]);
+  }, [annotations, isStreaming, router]);
 }

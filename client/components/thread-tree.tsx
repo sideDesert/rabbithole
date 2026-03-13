@@ -1,10 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import { Tree, type NodeRendererProps } from "react-arborist";
 import { useRouter, usePathname } from "next/navigation";
-import { ChevronRight, ChevronDown, MessageSquare, GitBranch } from "lucide-react";
+import { ChevronRight, ChevronDown, MessageSquare, GitBranch, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ThreadTreeNode } from "@/lib/api";
+import { deleteThread } from "@/lib/api";
 import { useThreadTree } from "@/hooks/use-thread-tree";
 
 type TreeData = ThreadTreeNode;
@@ -12,17 +14,29 @@ type TreeData = ThreadTreeNode;
 function Node({ node, style, dragHandle }: NodeRendererProps<TreeData>) {
   const router = useRouter();
   const path = usePathname();
+  const { refetch } = useThreadTree();
+  const [deleting, setDeleting] = useState(false);
   const isActive = path.includes(node.data.thread_id);
   const isRoot = node.level === 0;
+
+  async function handleDelete(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (deleting) return;
+    setDeleting(true);
+    await deleteThread(node.data.thread_id);
+    refetch();
+    if (isActive) router.push("/threads");
+  }
 
   return (
     <div
       ref={dragHandle}
       style={style}
       className={cn(
-        "flex items-center gap-1.5 px-2 py-1 rounded-md cursor-pointer text-sm text-sidebar-foreground",
+        "group/node flex items-center gap-1.5 px-2 py-1 rounded-md cursor-pointer text-sm text-sidebar-foreground",
         "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
         isActive && "bg-sidebar-accent text-sidebar-accent-foreground",
+        deleting && "opacity-50 pointer-events-none",
       )}
       onClick={() => router.push(`/threads/${node.data.thread_id}`)}
     >
@@ -51,7 +65,15 @@ function Node({ node, style, dragHandle }: NodeRendererProps<TreeData>) {
         <GitBranch className="h-3.5 w-3.5 shrink-0" />
       )}
 
-      <span className="truncate">{node.data.title}</span>
+      <span className="truncate flex-1">{node.data.title}</span>
+
+      <button
+        type="button"
+        className="hidden group-hover/node:flex h-5 w-5 shrink-0 items-center justify-center rounded hover:bg-destructive/20 text-muted-foreground hover:text-destructive transition-colors"
+        onClick={handleDelete}
+      >
+        <Trash2 className="h-3 w-3" />
+      </button>
     </div>
   );
 }

@@ -798,7 +798,8 @@ async def chat(thread_id: str, req: ChatRequest):
                 index=3,
             )
 
-        # Feynman mode trigger
+        # Feynman mode trigger — no message persistence; modal is ephemeral
+        # until user submits via /api/feynman/submit, which saves the TestResult.
         if agent_ctx.feynman_concept:
             yield sse({
                 "type": "feynman_prompt",

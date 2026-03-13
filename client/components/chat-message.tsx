@@ -1,8 +1,9 @@
 import clsx from "clsx";
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import { Streamdown } from "streamdown";
 import { ThinkingOrb } from "./thought-trail";
 import type { Branch } from "@/lib/api";
+import type { ToolCallEntry } from "@/hooks/use-chat";
 import { useAnnotations } from "@/hooks/use-annotations";
 
 export const ROLE_USER = "user";
@@ -14,7 +15,10 @@ interface ChatMessageInterface {
   role: typeof ROLE_USER | typeof ROLE_AI;
   className?: string;
   isLast?: boolean;
+  isStreaming?: boolean;
+  isLoading?: boolean;
   statusMessage?: string;
+  toolCalls?: ToolCallEntry[];
   annotations?: Branch[];
 }
 
@@ -47,17 +51,50 @@ export function PhaseDivider({ label }: { label: string }) {
   );
 }
 
+function ToolCallBlock({ tc }: { tc: ToolCallEntry }) {
+  const [open, setOpen] = useState(false);
+  const isDone = tc.status === "done";
+
+  return (
+    <div>
+      <button
+        className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors w-full text-left py-1"
+        onClick={() => tc.result && setOpen(!open)}
+      >
+        {isDone ? (
+          <span className="text-emerald-500 text-xs">&#10003;</span>
+        ) : (
+          <span className="thinking-orb shrink-0 !w-3 !h-3" />
+        )}
+        <span>{tc.label}</span>
+      </button>
+      {open && tc.result && (
+        <pre className="text-xs text-muted-foreground bg-muted/50 rounded p-2 mt-1 mb-2 overflow-x-auto whitespace-pre-wrap">
+          {tc.result}
+        </pre>
+      )}
+    </div>
+  );
+}
+
 export function ChatMessage({
   id,
   content,
   role,
   className,
   isLast,
+  isStreaming,
+  isLoading,
   statusMessage,
+  toolCalls,
   annotations,
 }: ChatMessageInterface) {
   const articleRef = useRef<HTMLElement | null>(null);
-  useAnnotations(articleRef, role === ROLE_AI ? annotations : undefined, !!isLast);
+  useAnnotations(
+    articleRef,
+    role === ROLE_AI ? annotations : undefined,
+    !!isStreaming,
+  );
 
   if (role === ROLE_USER) {
     return (
@@ -73,7 +110,7 @@ export function ChatMessage({
     );
   }
   if (role === ROLE_AI) {
-    const showOrb = statusMessage && !(content as string);
+    const hasToolCalls = toolCalls && toolCalls.length > 0;
 
     return (
       <article
@@ -89,7 +126,16 @@ export function ChatMessage({
           }
         }}
       >
-        {showOrb && <ThinkingOrb statusMessage={statusMessage} />}
+        {isLoading && (
+          <ThinkingOrb statusMessage={statusMessage ?? "Loading"} />
+        )}
+        {hasToolCalls && (
+          <div className="mb-3 border-l-2 border-border pl-3 space-y-0.5">
+            {toolCalls.map((tc, i) => (
+              <ToolCallBlock key={`${tc.name}-${i}`} tc={tc} />
+            ))}
+          </div>
+        )}
         <Streamdown>{content as string}</Streamdown>
       </article>
     );

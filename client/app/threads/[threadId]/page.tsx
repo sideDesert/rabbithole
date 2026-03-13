@@ -33,7 +33,8 @@ export default function Page({
   params: Promise<{ threadId: string }>;
 }) {
   const { threadId } = use(params);
-  const { feynmanRequested, setFeynmanRequested, setThreadId, setTopicSlug } = usePlan();
+  const { feynmanRequested, setFeynmanRequested, setThreadId, setTopicSlug } =
+    usePlan();
   const router = useRouter();
   const [tagged, setTagged] = useState("");
   const [branchMessageId, setBranchMessageId] = useState("");
@@ -59,6 +60,7 @@ export default function Page({
     messages,
     isMessagesLoading,
     isStreaming,
+    isLoading,
     phase,
     interviewQuestions,
     submitInterviewAnswers,
@@ -76,14 +78,16 @@ export default function Page({
   useEffect(() => {
     if (!feynmanRequested) return;
     setFeynmanRequested(false);
-    getProgress(threadId).then((progress) => {
-      const concept = progress.current_concept;
-      if (concept) {
-        openFeynman(concept);
-      }
-    }).catch(() => {
-      // No plan yet — can't open Feynman mode without a concept
-    });
+    getProgress(threadId)
+      .then((progress) => {
+        const concept = progress.current_concept;
+        if (concept) {
+          openFeynman(concept);
+        }
+      })
+      .catch(() => {
+        // No plan yet — can't open Feynman mode without a concept
+      });
   }, [feynmanRequested, setFeynmanRequested, threadId, openFeynman]);
 
   // Auto-send message passed via query param (from branch navigation)
@@ -209,6 +213,7 @@ export default function Page({
               className={`${msg.role === ROLE_USER && "w-fit self-end"}`}
               isLast={messages.length - 1 === index}
               isStreaming={messages.length - 1 === index && isStreaming}
+              isLoading={messages.length - 1 === index && isLoading}
               statusMessage={msg.statusMessage}
               toolCalls={msg.toolCalls}
               annotations={annotationsByMessage.get(msg.id)}

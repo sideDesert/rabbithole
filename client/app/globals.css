@@ -215,7 +215,7 @@ a.branch-annotation.scroll-highlight {
     max-width: 320px;
     width: max-content;
     white-space: pre-wrap;
-    pointer-events: none;
+    cursor: pointer;
     z-index: 50;
     box-shadow: 0 4px 12px oklch(0 0 0 / 0.12);
     opacity: 0.5;

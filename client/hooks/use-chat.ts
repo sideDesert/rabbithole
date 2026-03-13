@@ -39,6 +39,7 @@ interface UseChatReturn {
   isMessagesLoading: boolean;
   phase: string;
   isStreaming: boolean;
+  isLoading: booleam;
   threadId: string | null;
   interviewQuestions: InterviewQuestion[] | null;
   send: (content: string) => Promise<void>;
@@ -59,6 +60,7 @@ export function useChat({
   const [messagesLoading, setMessageLoading] = useState<boolean>(true);
   const [phase, setPhase] = useState("interview");
   const [isStreaming, setIsStreaming] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   // Only used when no initialThreadId — stores the ID after creating a new thread
   const [createdThreadId, setCreatedThreadId] = useState<string | null>(null);
   const threadId = initialThreadId ?? createdThreadId;
@@ -148,7 +150,7 @@ export function useChat({
         ...prev,
         { id: userMsgId, role: "user", content },
       ]);
-      setIsStreaming(true);
+      setIsLoading(true);
       setInterviewQuestions(null);
       pendingInterviewRef.current = null;
 
@@ -165,7 +167,13 @@ export function useChat({
       let currentAiMsgId = aiMsgId;
       setMessages((prev) => [
         ...prev,
-        { id: aiMsgId, role: "assistant", content: "", statusMessage: "", toolCalls: [] },
+        {
+          id: aiMsgId,
+          role: "assistant",
+          content: "",
+          statusMessage: "",
+          toolCalls: [],
+        },
       ]);
 
       const setStatus = (label: string) => {
@@ -200,7 +208,11 @@ export function useChat({
                       statusMessage: undefined,
                       toolCalls: [
                         ...(m.toolCalls ?? []),
-                        { name: event.name, label: getTrailLabel("tool_call", event.name), status: "running" as const },
+                        {
+                          name: event.name,
+                          label: getTrailLabel("tool_call", event.name),
+                          status: "running" as const,
+                        },
                       ],
                     }
                   : m,
@@ -233,10 +245,15 @@ export function useChat({
             break;
           }
           case "stream":
+            setIsStreaming(true);
             setMessages((prev) =>
               prev.map((m) =>
                 m.id === currentAiMsgId
-                  ? { ...m, content: m.content + event.content, statusMessage: undefined }
+                  ? {
+                      ...m,
+                      content: m.content + event.content,
+                      statusMessage: undefined,
+                    }
                   : m,
               ),
             );
@@ -294,11 +311,17 @@ export function useChat({
             setMessages((prev) =>
               prev
                 .map((m) =>
-                  m.id === currentAiMsgId ? { ...m, statusMessage: undefined } : m,
+                  m.id === currentAiMsgId
+                    ? { ...m, statusMessage: undefined }
+                    : m,
                 )
                 .filter(
                   (m) =>
-                    !(m.role === "assistant" && m.content === "" && !(m.toolCalls?.length)),
+                    !(
+                      m.role === "assistant" &&
+                      m.content === "" &&
+                      !m.toolCalls?.length
+                    ),
                 ),
             );
             setIsStreaming(false);
@@ -323,6 +346,7 @@ export function useChat({
         }
       });
 
+      setIsLoading(false);
       setIsStreaming(false);
 
       // Ref-based fallback: if the SSE event set interview questions during
@@ -374,6 +398,7 @@ export function useChat({
     isMessagesLoading: messagesLoading,
     phase,
     isStreaming,
+    isLoading,
     threadId,
     interviewQuestions,
     send,

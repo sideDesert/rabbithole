@@ -10,6 +10,7 @@ import {
 } from "@blocknote/react";
 import { BlockNoteView } from "@blocknote/shadcn";
 import "@blocknote/shadcn/style.css";
+import { useTheme } from "next-themes";
 
 import { Button } from "@/components/ui/button";
 import { HintBanner } from "@/components/hint-banner";
@@ -31,10 +32,10 @@ export function FeynmanModal({
   onClose,
 }: FeynmanModalProps) {
   const [hints, setHints] = useState<{ id: string; text: string }[]>([]);
-  const [hintIds, setHintIds] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isHintLoading, setIsHintLoading] = useState(false);
   const hasContentRef = useRef(false);
+  const { resolvedTheme } = useTheme();
 
   const editor = useCreateBlockNote({
     domAttributes: {
@@ -79,6 +80,22 @@ export function FeynmanModal({
     return () => clearInterval(interval);
   }, [editor, threadId, conceptName]);
 
+  const handleClose = useCallback(() => {
+    if (hasContentRef.current) {
+      if (!window.confirm("Discard your explanation?")) return;
+    }
+    onClose();
+  }, [onClose]);
+
+  // Close on Escape
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") handleClose();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [handleClose]);
+
   const handleHintRef = useRef<(() => void) | null>(null);
 
   const handleHint = useCallback(async () => {
@@ -88,7 +105,6 @@ export function FeynmanModal({
       const markdown = await editor.blocksToMarkdownLossy(editor.document);
       const res = await requestFeynmanHint(threadId, conceptName, markdown);
       setHints((prev) => [...prev, { id: res.hint_id, text: res.hint }]);
-      setHintIds((prev) => [...prev, res.hint_id]);
     } catch {
       // silently fail — hint is optional
     } finally {
@@ -122,82 +138,84 @@ export function FeynmanModal({
     setIsSubmitting(true);
     try {
       const markdown = await editor.blocksToMarkdownLossy(editor.document);
+      const hintIds = hints.map((h) => h.id);
       await submitFeynmanExplanation(threadId, conceptName, markdown, hintIds);
       localStorage.removeItem(DRAFT_KEY(threadId, conceptName));
       onClose();
     } catch {
       setIsSubmitting(false);
     }
-  }, [editor, threadId, conceptName, hintIds, onClose]);
-
-  const handleClose = useCallback(() => {
-    if (hasContentRef.current) {
-      if (!window.confirm("Discard your explanation?")) return;
-    }
-    onClose();
-  }, [onClose]);
+  }, [editor, threadId, conceptName, hints, onClose]);
 
   return (
-    <div className="fixed inset-0 z-[100] flex flex-col bg-background">
-      {/* Header */}
-      <div className="flex items-center justify-between border-b border-border px-6 py-4">
-        <div>
-          <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
-            Feynman Mode
-          </p>
-          <h1 className="mt-1 text-xl font-semibold">
-            Explain: {conceptName}
-          </h1>
-        </div>
-        <button
-          onClick={handleClose}
-          className="rounded-lg p-2 hover:bg-accent"
-        >
-          <X className="h-5 w-5" />
-        </button>
-      </div>
-
-      {/* Hints */}
-      <HintBanner hints={hints} onDismiss={handleDismissHint} />
-
-      {/* Editor */}
-      <div className="flex-1 overflow-auto px-6 py-4">
-        <div className="mx-auto max-w-3xl">
-          <BlockNoteView
-            editor={editor}
-            theme="light"
-            data-feynman-editor
+    <>
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 z-[99] bg-black/50 backdrop-blur-sm"
+        onClick={handleClose}
+      />
+      {/* Modal */}
+      <div className="fixed inset-4 z-[100] flex flex-col rounded-xl border border-border bg-background shadow-2xl">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-border px-6 py-4">
+          <div>
+            <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
+              Feynman Mode
+            </p>
+            <h1 className="mt-1 text-xl font-semibold">
+              Explain: {conceptName}
+            </h1>
+          </div>
+          <button
+            onClick={handleClose}
+            className="rounded-lg p-2 hover:bg-accent"
           >
-            <SuggestionMenuController
-              triggerCharacter="/"
-              getItems={async (query) =>
-                filterSuggestionItems(
-                  getCustomSlashMenuItems(editor),
-                  query,
-                )
-              }
-            />
-          </BlockNoteView>
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        {/* Hints */}
+        <HintBanner hints={hints} onDismiss={handleDismissHint} />
+
+        {/* Editor */}
+        <div className="flex-1 overflow-auto px-6 py-4">
+          <div className="mx-auto max-w-3xl">
+            <BlockNoteView
+              editor={editor}
+              theme={resolvedTheme === "dark" ? "dark" : "light"}
+              data-feynman-editor
+            >
+              <SuggestionMenuController
+                triggerCharacter="/"
+                getItems={async (query) =>
+                  filterSuggestionItems(
+                    getCustomSlashMenuItems(editor),
+                    query,
+                  )
+                }
+              />
+            </BlockNoteView>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-between border-t border-border px-6 py-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleHint}
+            disabled={isHintLoading}
+          >
+            {isHintLoading ? "Getting hint..." : "Hint"}
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? "Submitting..." : "Submit Explanation"}
+          </Button>
         </div>
       </div>
-
-      {/* Footer */}
-      <div className="flex items-center justify-between border-t border-border px-6 py-4">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleHint}
-          disabled={isHintLoading}
-        >
-          {isHintLoading ? "Getting hint..." : "Hint"}
-        </Button>
-        <Button
-          onClick={handleSubmit}
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? "Submitting..." : "Submit Explanation"}
-        </Button>
-      </div>
-    </div>
+    </>
   );
 }

@@ -9,8 +9,8 @@ import { Button } from "./ui/button";
 
 function ProgressRing({
   progress,
-  size = 20,
-  strokeWidth = 3,
+  size = 35,
+  strokeWidth = 4,
 }: {
   progress: number;
   size?: number;
@@ -24,7 +24,7 @@ function ProgressRing({
       style={{
         width: size,
         height: size,
-        background: `conic-gradient(var(--primary) ${deg}deg, var(--muted) ${deg}deg)`,
+        background: `conic-gradient(var(--primary) ${deg}deg, oklch(from var(--primary) l c h / 0.6) ${deg}deg)`,
         mask: `radial-gradient(farthest-side, transparent calc(50% - ${strokeWidth}px), #000 calc(50% - ${strokeWidth - 1}px), #000 50%, transparent 51%)`,
         WebkitMask: `radial-gradient(farthest-side, transparent calc(50% - ${strokeWidth}px), #000 calc(50% - ${strokeWidth - 1}px), #000 50%, transparent 51%)`,
       }}
@@ -99,25 +99,25 @@ export function TopicProgress() {
 
   const isOpen = isHovered || isPinned;
 
-  const handleMouseEnter = useCallback(() => {
+  const handleMouseEnter = () => {
     if (leaveTimer.current) {
       clearTimeout(leaveTimer.current);
       leaveTimer.current = null;
     }
     enterTimer.current = setTimeout(() => setIsHovered(true), 150);
-  }, []);
+  };
 
-  const handleMouseLeave = useCallback(() => {
+  const handleMouseLeave = () => {
     if (enterTimer.current) {
       clearTimeout(enterTimer.current);
       enterTimer.current = null;
     }
     leaveTimer.current = setTimeout(() => setIsHovered(false), 300);
-  }, []);
+  };
 
-  const handleClick = useCallback(() => {
+  const handleClick = () => {
     setIsPinned((prev) => !prev);
-  }, []);
+  };
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -174,7 +174,7 @@ export function TopicProgress() {
         variant={"outline"}
         onClick={handleClick}
         onKeyDown={handleKeyDown}
-        className="flex items-center gap-2 px-2.5 py-1 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+        className="flex pr-0! items-center gap-2 px-2.5 py-1 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
         aria-expanded={isOpen}
         aria-haspopup="true"
       >
