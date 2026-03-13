@@ -18,6 +18,7 @@ from app.tools_impl import (
     recall_memory,
     store_memory,
     suggest_branches,
+    trigger_feynman,
     update_plan_progress,
 )
 
@@ -43,6 +44,7 @@ PHASE_TOOLS = {
         suggest_branches,
         read_plan,
         update_plan_progress,
+        trigger_feynman,
     ],
 }
 
