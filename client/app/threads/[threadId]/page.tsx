@@ -1,6 +1,11 @@
 "use client";
 
-import { ChatMessage, ROLE_AI, ROLE_USER, PhaseDivider } from "@/components/chat-message";
+import {
+  ChatMessage,
+  ROLE_AI,
+  ROLE_USER,
+  PhaseDivider,
+} from "@/components/chat-message";
 import { InterviewAnswersCard } from "@/components/interview-answers-card";
 import { InterviewWidget } from "@/components/interview-modal";
 import { PlanCreatedCard } from "@/components/plan-created-card";
@@ -12,6 +17,7 @@ import {
   MODE_TAGGED,
   PromptInput,
 } from "@/components/prompt-input";
+import { FeynmanModal } from "@/components/feynman-modal";
 import { TextSelectionMenu } from "@/components/text-selection-menu";
 import { useChat } from "@/hooks/use-chat";
 import { useTextSelectionMenu } from "@/hooks/use-text-selection-menu";
@@ -39,6 +45,7 @@ export default function Page({
   const pendingMsg = searchParams.get("msg");
   const sentPendingRef = useRef(false);
   const scrollToId = searchParams.get("scrollTo");
+  const branchPointId = searchParams.get("branchPointId");
   const scrolledRef = useRef(false);
 
   // Sync route param into PlanContext so PlanView can fetch progress
@@ -55,6 +62,9 @@ export default function Page({
     interviewQuestions,
     submitInterviewAnswers,
     dismissInterview,
+    feynmanOpen,
+    feynmanConcept,
+    dismissFeynman,
   } = useChat({
     threadId,
     onPlanCreated: (slug) => setTopicSlug(slug),
@@ -75,24 +85,36 @@ export default function Page({
     }
   }, [pendingMsg, send, threadId, router, mode, messages, isMessagesLoading]);
 
+  const { data: branchData } = useBranches(threadId);
+
   useEffect(() => {
     if (
       scrollToId &&
       !isMessagesLoading &&
       messages.length > 0 &&
-      !scrolledRef.current
+      !scrolledRef.current &&
+      // Wait for branch data before scrolling if we need a specific annotation
+      (!branchPointId || branchData?.branches)
     ) {
       scrolledRef.current = true;
       requestAnimationFrame(() => {
-        const el = document.querySelector(`[data-message-id="${scrollToId}"]`);
-        if (el) {
-          el.scrollIntoView({ behavior: "smooth", block: "center" });
-          el.classList.add("scroll-highlight");
-          setTimeout(() => el.classList.remove("scroll-highlight"), 2000);
+        const annotation = branchPointId
+          ? document.querySelector(
+              `a.branch-annotation[data-branch-id="${branchPointId}"]`,
+            )
+          : null;
+
+        const target =
+          annotation ??
+          document.querySelector(`[data-message-id="${scrollToId}"]`);
+        if (target) {
+          target.scrollIntoView({ behavior: "smooth", block: "center" });
+          target.classList.add("scroll-highlight");
+          setTimeout(() => target.classList.remove("scroll-highlight"), 2000);
         }
       });
     }
-  }, [scrollToId, isMessagesLoading, messages]);
+  }, [scrollToId, branchPointId, isMessagesLoading, messages, branchData]);
 
   console.log({ messages });
   const {
@@ -110,8 +132,6 @@ export default function Page({
     setMode(MODE_TAGGED);
     // TODO: insert quoted text into prompt input
   };
-
-  const { data: branchData } = useBranches(threadId);
   const annotationsByMessage = React.useMemo(() => {
     const map = new Map<string, Branch[]>();
     if (!branchData?.branches) return map;
@@ -172,7 +192,9 @@ export default function Page({
               content={msg.content}
               className={`${msg.role === ROLE_USER && "w-fit self-end"}`}
               isLast={messages.length - 1 === index}
+              isStreaming={messages.length - 1 === index && isStreaming}
               statusMessage={msg.statusMessage}
+              toolCalls={msg.toolCalls}
               annotations={annotationsByMessage.get(msg.id)}
             />
           );
@@ -237,6 +259,13 @@ export default function Page({
         onBranch={handleBranch}
         onActionComplete={clearSelection}
       />
+      {feynmanOpen && feynmanConcept && (
+        <FeynmanModal
+          threadId={threadId}
+          conceptName={feynmanConcept}
+          onClose={dismissFeynman}
+        />
+      )}
     </div>
   );
 }
