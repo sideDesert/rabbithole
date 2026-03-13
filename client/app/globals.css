@@ -130,59 +130,20 @@
     }
 }
 
-.thinking-orb {
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    background:
-        radial-gradient(circle at 20% 20%, oklch(0.6 0.22 290) 0%, oklch(0.5 0.18 260) 50%, transparent 70%),
-        radial-gradient(circle at 85% 20%, oklch(0.7 0.2 195) 0%, oklch(0.55 0.15 230) 50%, transparent 70%),
-        radial-gradient(circle at 75% 80%, oklch(0.7 0.2 145) 0%, oklch(0.6 0.18 160) 50%, transparent 70%),
-        radial-gradient(circle at 15% 75%, oklch(0.65 0.22 330) 0%, oklch(0.55 0.2 300) 50%, transparent 70%),
-        radial-gradient(circle at 50% 10%, oklch(0.75 0.18 75) 0%, oklch(0.65 0.2 50) 50%, transparent 70%),
-        radial-gradient(circle at 50% 90%, oklch(0.7 0.2 140) 0%, oklch(0.6 0.18 120) 50%, transparent 70%),
-        oklch(0.5 0.18 270);
-    background-size: 200% 200%;
-    animation: orb-shift 6s ease-in-out infinite;
-    opacity: 0.85;
-    filter: blur(1px);
+@keyframes trail-dot-pulse {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 0.8; }
 }
 
-@keyframes orb-shift {
-    0%   { background-position: 0% 50%,   100% 0%,  50% 100%, 80% 30%,  20% 60%,  70% 40%;  }
-    17%  { background-position: 80% 0%,   20% 80%,  100% 30%, 10% 70%,  90% 20%,  30% 90%;  }
-    33%  { background-position: 100% 80%, 50% 20%,  0% 60%,   60% 100%, 40% 80%,  80% 10%;  }
-    50%  { background-position: 20% 100%, 80% 60%,  60% 0%,   100% 10%, 0% 40%,   50% 70%;  }
-    67%  { background-position: 60% 20%,  0% 100%,  30% 80%,  40% 50%,  70% 0%,   10% 30%;  }
-    83%  { background-position: 40% 70%,  60% 30%,  80% 50%,  20% 90%,  50% 10%,  90% 60%;  }
-    100% { background-position: 0% 50%,   100% 0%,  50% 100%, 80% 30%,  20% 60%,  70% 40%;  }
+.trail-dot-pulse {
+    animation: trail-dot-pulse 1.5s ease-in-out infinite;
 }
 
-.gradient-spinner {
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    background:
-        radial-gradient(circle at 20% 20%, oklch(0.6 0.22 290) 0%, oklch(0.5 0.18 260) 50%, transparent 70%),
-        radial-gradient(circle at 85% 20%, oklch(0.7 0.2 195) 0%, oklch(0.55 0.15 230) 50%, transparent 70%),
-        radial-gradient(circle at 75% 80%, oklch(0.7 0.2 145) 0%, oklch(0.6 0.18 160) 50%, transparent 70%),
-        radial-gradient(circle at 15% 75%, oklch(0.65 0.22 330) 0%, oklch(0.55 0.2 300) 50%, transparent 70%),
-        radial-gradient(circle at 50% 10%, oklch(0.75 0.18 75) 0%, oklch(0.65 0.2 50) 50%, transparent 70%),
-        radial-gradient(circle at 50% 90%, oklch(0.7 0.2 140) 0%, oklch(0.6 0.18 120) 50%, transparent 70%),
-        oklch(0.5 0.18 270);
-    background-size: 200% 200%;
-    animation: orb-shift 6s ease-in-out infinite, spinner-rotate 1.4s linear infinite;
-    opacity: 0.85;
-    mask:
-        conic-gradient(from 0deg, transparent 30%, #000 80%),
-        radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2.5px));
-    -webkit-mask:
-        conic-gradient(from 0deg, transparent 30%, #000 80%),
-        radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2.5px));
-    mask-composite: intersect;
-    -webkit-mask-composite: source-in;
+.scroll-highlight {
+    animation: highlight-fade 2s ease-out;
 }
 
-@keyframes spinner-rotate {
-    to { transform: rotate(360deg); }
+@keyframes highlight-fade {
+    0% { background-color: hsl(var(--accent)); }
+    100% { background-color: transparent; }
 }
