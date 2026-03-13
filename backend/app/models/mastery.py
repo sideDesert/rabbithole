@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.models.base import MongoBase, utcnow
 
@@ -46,6 +46,13 @@ class TestResult(MongoBase):
     scores: TestScores
     overall_score: float
     feedback: str
+    # Feynman-specific fields
+    status: Literal["scoring", "scored", "failed"] | None = None
+    strong_topics: list[str] = Field(default_factory=list)
+    weak_areas: list[str] = Field(default_factory=list)
+    missed_topics: list[str] = Field(default_factory=list)
+    improvements: list[str] = Field(default_factory=list)
+    hint_ids: list[str] = Field(default_factory=list)
 
 
 class LearningSession(MongoBase):
