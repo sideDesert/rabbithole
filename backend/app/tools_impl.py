@@ -189,6 +189,30 @@ async def create_plan(
     (plan_dir / "plan.md").write_text(markdown)
 
     tree = parse_plan(markdown)
+
+    # Save structured plan data as JSON for knowledge graph
+    plan_data = {
+        "topic": tree.topic,
+        "depth": tree.depth,
+        "prior_knowledge": tree.prior_knowledge,
+        "phases": [
+            {
+                "title": phase.title,
+                "order": phase.order,
+                "concepts": [
+                    {
+                        "name": concept.name,
+                        "description": concept.description,
+                        "order": concept.order,
+                    }
+                    for concept in phase.concepts
+                ],
+            }
+            for phase in tree.phases
+        ],
+    }
+    (plan_dir / "plan.json").write_text(json.dumps(plan_data, indent=2))
+
     concept_count = sum(len(p.concepts) for p in tree.phases)
 
     return json.dumps({
@@ -291,8 +315,9 @@ async def suggest_branches(
                 "role": "system",
                 "content": (
                     "You suggest 2-3 interesting sub-topics a curious learner might want to explore. "
-                    "Return a JSON array of objects with 'topic' and 'reason' fields. "
-                    "Keep reasons to one sentence. Be specific, not generic."
+                    "Return ONLY a JSON array of objects with 'topic' and 'reason' fields. "
+                    "Keep reasons to one sentence. Be specific, not generic. "
+                    "Example: [{\"topic\": \"...\", \"reason\": \"...\"}]"
                 ),
             },
             {
@@ -300,8 +325,10 @@ async def suggest_branches(
                 "content": f"Current topic: {current_topic}\nContext: {context}",
             },
         ],
-        response_format={"type": "json_object"},
     )
+
+    if not response.choices:
+        return json.dumps({"suggestions": [], "note": "No suggestions available"})
 
     return response.choices[0].message.content or "[]"
 
