@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
   ReactFlow,
@@ -52,8 +52,8 @@ function KnowledgeGraphInner() {
       },
     }));
 
-    const rfEdges: Edge[] = data.prerequisites.map((p, i) => ({
-      id: `e-${i}`,
+    const rfEdges: Edge[] = data.prerequisites.map((p) => ({
+      id: `e-${p.source}-${p.target}`,
       source: p.source,
       target: p.target,
       type: "trail",
@@ -62,25 +62,24 @@ function KnowledgeGraphInner() {
     return layoutGraph(rfNodes, rfEdges, { direction: "LR" });
   }, [data]);
 
-  const onInit = useCallback(() => {
-    if (focusParam && !focusHandled && data?.concepts) {
+  // Handle ?focus param after data loads
+  useEffect(() => {
+    if (focusParam && !focusHandled && data?.concepts && nodes.length > 0) {
       const target = data.concepts.find(
         (c) => c.name.toLowerCase() === focusParam.toLowerCase(),
       );
       if (target) {
         setSelectedConcept(target);
-        setTimeout(() => {
-          const node = nodes.find(
-            (n) => n.id.toLowerCase() === focusParam.toLowerCase(),
+        const node = nodes.find(
+          (n) => n.id.toLowerCase() === focusParam.toLowerCase(),
+        );
+        if (node) {
+          reactFlowInstance.setCenter(
+            node.position.x + 125,
+            node.position.y + 40,
+            { zoom: 1.2, duration: 500 },
           );
-          if (node) {
-            reactFlowInstance.setCenter(
-              node.position.x + 100,
-              node.position.y + 40,
-              { zoom: 1.2, duration: 500 },
-            );
-          }
-        }, 100);
+        }
       }
       setFocusHandled(true);
     }
@@ -126,7 +125,6 @@ function KnowledgeGraphInner() {
         nodes={nodes}
         edges={edges}
         onNodeClick={onNodeClick}
-        onInit={onInit}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         colorMode={resolvedTheme === "dark" ? "dark" : "light"}

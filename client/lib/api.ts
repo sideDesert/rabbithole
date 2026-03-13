@@ -354,6 +354,7 @@ export interface ThreadMapData {
 
 export async function fetchThreadMap(threadId: string): Promise<ThreadMapData> {
   const res = await fetch(`${API_BASE}/threads/${threadId}/map`);
+  if (!res.ok) throw new Error(`Failed to fetch thread map: ${res.status}`);
   return res.json();
 }
 
@@ -372,5 +373,6 @@ export interface KnowledgeGraphData {
 
 export async function fetchKnowledgeGraph(): Promise<KnowledgeGraphData> {
   const res = await fetch(`${API_BASE}/knowledge-graph`);
+  if (!res.ok) throw new Error(`Failed to fetch knowledge graph: ${res.status}`);
   return res.json();
 }
