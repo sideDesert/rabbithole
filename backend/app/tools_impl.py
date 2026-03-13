@@ -28,6 +28,7 @@ class AgentContext:
     group_id: str
     # Populated by present_interview tool so the SSE layer can extract it
     interview_questions: list[dict[str, Any]] | None = None
+    feynman_concept: str | None = None
 
 
 # ── Memory Tools ────────────────────────────────────────────────────────────
@@ -303,3 +304,15 @@ async def suggest_branches(
     )
 
     return response.choices[0].message.content or "[]"
+
+
+@function_tool
+async def trigger_feynman(
+    ctx: RunContextWrapper[AgentContext],
+    concept_name: str,
+) -> str:
+    """Trigger Feynman mode for a concept. Opens a writing interface where the learner
+    explains the concept in their own words. Call this after finishing a subsection
+    to test the learner's understanding."""
+    ctx.context.feynman_concept = concept_name
+    return f"Feynman mode triggered for '{concept_name}'. The learner will now write their explanation."
