@@ -15,9 +15,10 @@ import {
 import { TextSelectionMenu } from "@/components/text-selection-menu";
 import { useChat } from "@/hooks/use-chat";
 import { useTextSelectionMenu } from "@/hooks/use-text-selection-menu";
-import { useBranchout } from "@/hooks/use-branch";
+import { useBranchout, useBranches } from "@/hooks/use-branch";
+import type { Branch } from "@/lib/api";
 import { useRouter, useSearchParams } from "next/navigation";
-import { use, useEffect, useRef, useState } from "react";
+import React, { use, useEffect, useRef, useState } from "react";
 
 export default function Page({
   params,
@@ -111,6 +112,19 @@ export default function Page({
     // TODO: insert quoted text into prompt input
   };
 
+  const { data: branchData } = useBranches(threadId);
+  const annotationsByMessage = React.useMemo(() => {
+    const map = new Map<string, Branch[]>();
+    if (!branchData?.branches) return map;
+    for (const b of branchData.branches) {
+      if (!b.position) continue;
+      const existing = map.get(b.message_id) ?? [];
+      existing.push(b);
+      map.set(b.message_id, existing);
+    }
+    return map;
+  }, [branchData]);
+
   const { branch, isPending: isBranching } = useBranchout({
     onSuccess: (res, vars) => {
       router.push(
@@ -162,6 +176,7 @@ export default function Page({
               trailSteps={msg.trailSteps}
               trailCollapsed={msg.trailCollapsed}
               onTrailToggle={() => toggleTrailCollapsed(msg.id)}
+              annotations={annotationsByMessage.get(msg.id)}
             />
           );
         })}
