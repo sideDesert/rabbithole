@@ -46,6 +46,7 @@ interface UseChatReturn {
   dismissInterview: () => void;
   feynmanOpen: boolean;
   feynmanConcept: string | null;
+  openFeynman: (concept: string) => void;
   dismissFeynman: () => void;
 }
 
@@ -358,6 +359,11 @@ export function useChat({
     setInterviewQuestions(null);
   }, []);
 
+  const openFeynman = useCallback((concept: string) => {
+    setFeynmanOpen(true);
+    setFeynmanConcept(concept);
+  }, []);
+
   const dismissFeynman = useCallback(() => {
     setFeynmanOpen(false);
     setFeynmanConcept(null);
@@ -375,6 +381,7 @@ export function useChat({
     dismissInterview,
     feynmanOpen,
     feynmanConcept,
+    openFeynman,
     dismissFeynman,
   };
 }

@@ -24,7 +24,8 @@ import { useTextSelectionMenu } from "@/hooks/use-text-selection-menu";
 import { useBranchout, useBranches } from "@/hooks/use-branch";
 import type { Branch } from "@/lib/api";
 import { useRouter, useSearchParams } from "next/navigation";
-import React, { use, useEffect, useRef, useState } from "react";
+import React, { use, useCallback, useEffect, useRef, useState } from "react";
+import { getProgress } from "@/lib/api";
 
 export default function Page({
   params,
@@ -32,7 +33,7 @@ export default function Page({
   params: Promise<{ threadId: string }>;
 }) {
   const { threadId } = use(params);
-  const { setThreadId, setTopicSlug } = usePlan();
+  const { activeTab, setActiveTab, setThreadId, setTopicSlug } = usePlan();
   const router = useRouter();
   const [tagged, setTagged] = useState("");
   const [branchMessageId, setBranchMessageId] = useState("");
@@ -64,11 +65,28 @@ export default function Page({
     dismissInterview,
     feynmanOpen,
     feynmanConcept,
+    openFeynman,
     dismissFeynman,
   } = useChat({
     threadId,
     onPlanCreated: (slug) => setTopicSlug(slug),
   });
+
+  // Open Feynman modal when Pen tab is clicked
+  useEffect(() => {
+    if (activeTab !== "feynman-mode") return;
+    // Switch back to chat tab immediately — the modal overlays everything
+    setActiveTab("chat-mode");
+    // Fetch current concept from plan progress
+    getProgress(threadId).then((progress) => {
+      const concept = progress.current_concept;
+      if (concept) {
+        openFeynman(concept);
+      }
+    }).catch(() => {
+      // No plan yet — can't open Feynman mode without a concept
+    });
+  }, [activeTab, setActiveTab, threadId, openFeynman]);
 
   // Auto-send message passed via query param (from branch navigation)
   useEffect(() => {
