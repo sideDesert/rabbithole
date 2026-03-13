@@ -10,12 +10,21 @@ import {
   type InterviewQuestion,
 } from "@/lib/api";
 
+export interface TrailStep {
+  key: string;
+  label: string;
+  type: "status" | "tool_call";
+  done: boolean;
+}
+
 export interface ChatMessage {
   id: string;
   role: "user" | "assistant" | "system";
   content: string;
-  type?: "text" | "plan_card";
+  type?: "text" | "plan_card" | "phase_divider";
   metadata?: { topicSlug?: string };
+  trailSteps?: TrailStep[];
+  trailCollapsed?: boolean;
 }
 
 interface UseChatOptions {
