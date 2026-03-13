@@ -140,18 +140,22 @@ def get_plan_context(topic_slug: str | None) -> tuple[str | None, str | None]:
 
 
 COMPACTION_PROMPT = """\
-Summarize this learning conversation into 2-3 short paragraphs.
-Focus on: what topic is being studied, what has been covered so far, \
-what the learner understands well, and what they were struggling with.
-Keep it factual and concise — this summary will be used as context for a follow-up conversation.
+You will receive a learning conversation and a highlighted branch text. Respond in exactly this format:
+
+TITLE: <short title for the branch, 4-8 words, based on the branch text>
+SUMMARY:
+<2-3 short paragraphs summarizing the conversation so far — what topic is being studied, \
+what has been covered, what the learner understands well, and what they were struggling with. \
+Keep it factual and concise — this summary will be used as context for the branch conversation.>
 """
 
 
 async def compact_parent_context(
     history: list[EasyInputMessageParam],
-    _branch_text: str,
+    branch_text: str,
     parent_title: str,
-) -> str:
+) -> tuple[str, str]:
+    """Return (title, summary) for a branch conversation."""
     lines: list[str] = []
     for msg in history:
         role = msg.get("role", "")
@@ -170,12 +174,26 @@ async def compact_parent_context(
             {"role": "system", "content": COMPACTION_PROMPT},
             {
                 "role": "user",
-                "content": f"Topic: {parent_title}\n\nConversation:\n{transcript}",
+                "content": (
+                    f"Topic: {parent_title}\n"
+                    f"Branch text: {branch_text}\n\n"
+                    f"Conversation:\n{transcript}"
+                ),
             },
         ],
-        max_tokens=300,
+        max_tokens=350,
     )
-    return response.choices[0].message.content or "No summary available."
+    raw = response.choices[0].message.content or ""
+
+    # Parse structured response
+    title = branch_text[:80]
+    summary = raw
+    if "TITLE:" in raw and "SUMMARY:" in raw:
+        title_part, summary_part = raw.split("SUMMARY:", 1)
+        title = title_part.replace("TITLE:", "").strip() or title
+        summary = summary_part.strip() or "No summary available."
+
+    return title, summary
 
 
 # ── Thread CRUD Endpoints ─────────────────────────────────────────────────
@@ -418,6 +436,7 @@ async def create_branch(thread_id: str, req: BranchRequest):
         evermemos_group_id=str(uuid.uuid4()),
         parent_summary=summary,
         branch_text=req.branch_text,
+        branch_source_message_id=req.message_id,
     )
     _ = mongo.threads().insert_one(child.to_doc())
 
@@ -628,6 +647,7 @@ async def chat(thread_id: str, req: ChatRequest):
         t_agent = time.perf_counter()
         full_text = ""
         tool_names_called: list[str] = []
+        pending_tool_names: list[str] = []
         new_topic_slug = ""
 
         result = Runner.run_streamed(
@@ -654,13 +674,16 @@ async def chat(thread_id: str, req: ChatRequest):
                     )
                     if tool_name:
                         tool_names_called.append(tool_name)
+                        pending_tool_names.append(tool_name)
                         yield sse({"type": "tool_call", "name": tool_name})
 
                 elif item.type == "tool_call_output_item":
                     output = str(item.output) if hasattr(item, "output") else ""
+                    result_tool_name = pending_tool_names.pop(0) if pending_tool_names else ""
                     yield sse(
                         {
                             "type": "tool_result",
+                            "name": result_tool_name,
                             "result": output[:500],
                         }
                     )
