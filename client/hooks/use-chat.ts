@@ -9,6 +9,7 @@ import {
   type SSEEvent,
   type InterviewQuestion,
 } from "@/lib/api";
+import { getTrailLabel } from "@/lib/trail-labels";
 
 export interface TrailStep {
   key: string;
@@ -38,13 +39,12 @@ interface UseChatReturn {
   isMessagesLoading: boolean;
   phase: string;
   isStreaming: boolean;
-  isWaiting: boolean;
-  statusMessage: string | null;
   threadId: string | null;
   interviewQuestions: InterviewQuestion[] | null;
   send: (content: string) => Promise<void>;
   submitInterviewAnswers: (answers: Record<number, string>) => Promise<void>;
   dismissInterview: () => void;
+  toggleTrailCollapsed: (messageId: string) => void;
 }
 
 export function useChat({
@@ -56,8 +56,6 @@ export function useChat({
   const [messagesLoading, setMessageLoading] = useState<boolean>(true);
   const [phase, setPhase] = useState("interview");
   const [isStreaming, setIsStreaming] = useState(false);
-  const [isWaiting, setIsWaiting] = useState(false);
-  const [statusMessage, setStatusMessage] = useState<string | null>(null);
   // Only used when no initialThreadId — stores the ID after creating a new thread
   const [createdThreadId, setCreatedThreadId] = useState<string | null>(null);
   const threadId = initialThreadId ?? createdThreadId;
@@ -66,7 +64,7 @@ export function useChat({
     InterviewQuestion[] | null
   >(null);
   const msgCounter = useRef(0);
-  const waitingCleared = useRef(false);
+  const trailCollapsedRef = useRef(false);
   const pendingInterviewRef = useRef<InterviewQuestion[] | null>(null);
 
   // Load existing messages when threadId is provided
@@ -146,10 +144,8 @@ export function useChat({
         { id: userMsgId, role: "user", content },
       ]);
       setIsStreaming(true);
-      setIsWaiting(true);
-      setStatusMessage(null);
       setInterviewQuestions(null);
-      waitingCleared.current = false;
+      trailCollapsedRef.current = false;
       pendingInterviewRef.current = null;
 
       let currentThreadId = initialThreadId ?? createdThreadId;
@@ -165,15 +161,80 @@ export function useChat({
       let currentAiMsgId = aiMsgId;
       setMessages((prev) => [
         ...prev,
-        { id: aiMsgId, role: "assistant", content: "" },
+        { id: aiMsgId, role: "assistant", content: "", trailSteps: [], trailCollapsed: false },
       ]);
+
+      const pushTrailStep = (step: TrailStep) => {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === currentAiMsgId
+              ? { ...m, trailSteps: [...(m.trailSteps ?? []), step] }
+              : m,
+          ),
+        );
+      };
+
+      const replaceOrPushTrailStep = (step: TrailStep) => {
+        setMessages((prev) =>
+          prev.map((m) => {
+            if (m.id !== currentAiMsgId) return m;
+            const existing = (m.trailSteps ?? []).findIndex(
+              (s) => s.key === step.key && s.type === "status",
+            );
+            if (existing >= 0) {
+              const updated = [...(m.trailSteps ?? [])];
+              updated[existing] = step;
+              return { ...m, trailSteps: updated };
+            }
+            return { ...m, trailSteps: [...(m.trailSteps ?? []), step] };
+          }),
+        );
+      };
+
+      const markToolDone = (toolName: string) => {
+        setMessages((prev) =>
+          prev.map((m) => {
+            if (m.id !== currentAiMsgId) return m;
+            const steps = (m.trailSteps ?? []).map((s) =>
+              s.key === toolName && s.type === "tool_call" && !s.done
+                ? { ...s, done: true }
+                : s,
+            );
+            return { ...m, trailSteps: steps };
+          }),
+        );
+      };
+
+      const collapseTrail = () => {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === currentAiMsgId ? { ...m, trailCollapsed: true } : m,
+          ),
+        );
+      };
 
       await streamChat(currentThreadId, content, (event: SSEEvent) => {
         console.log({ event });
         switch (event.type) {
           case "status":
-            setStatusMessage(event.message);
+            pushTrailStep({
+              key: event.step,
+              label: getTrailLabel("status", event.step),
+              type: "status",
+              done: true,
+            });
             console.log(`[chat] ${event.step} — ${event.duration_ms}ms`);
+            break;
+          case "tool_call":
+            replaceOrPushTrailStep({
+              key: event.name,
+              label: getTrailLabel("tool_call", event.name),
+              type: "tool_call",
+              done: false,
+            });
+            break;
+          case "tool_result":
+            markToolDone(event.name);
             break;
           case "message_id": {
             const isUser = event.role === "user";
@@ -188,10 +249,9 @@ export function useChat({
             break;
           }
           case "stream":
-            if (!waitingCleared.current) {
-              waitingCleared.current = true;
-              setIsWaiting(false);
-              setStatusMessage(null);
+            if (!trailCollapsedRef.current) {
+              trailCollapsedRef.current = true;
+              collapseTrail();
             }
             setMessages((prev) =>
               prev.map((m) =>
@@ -206,16 +266,37 @@ export function useChat({
             break;
           case "phase_change":
             setPhase(event.to);
+            setMessages((prev) => [
+              ...prev,
+              {
+                id: `phase-${++msgCounter.current}`,
+                role: "system",
+                content: event.to,
+                type: "phase_divider",
+              },
+            ]);
             break;
           case "interview_questions":
+            pushTrailStep({
+              key: "interview_questions",
+              label: "Preparing questions...",
+              type: "status",
+              done: true,
+            });
+            collapseTrail();
             pendingInterviewRef.current = event.questions;
             setInterviewQuestions(event.questions);
-            setIsWaiting(false);
             break;
           case "plan_created": {
             const slug = event.topic_slug;
             setMessages((prev) => [
               ...prev,
+              {
+                id: `phase-${++msgCounter.current}`,
+                role: "system",
+                content: "plan created",
+                type: "phase_divider",
+              },
               {
                 id: `plan-card-${++msgCounter.current}`,
                 role: "system",
@@ -231,15 +312,28 @@ export function useChat({
             if (event.duration_ms) {
               console.log(`[chat] total — ${event.duration_ms}ms`);
             }
-            // Remove empty assistant message bubbles (e.g. when only tools ran)
             setMessages((prev) =>
-              prev.filter((m) => !(m.role === "assistant" && m.content === "")),
+              prev.filter(
+                (m) =>
+                  !(
+                    m.role === "assistant" &&
+                    m.content === "" &&
+                    !(m.trailSteps?.length)
+                  ),
+              ),
             );
-            setStatusMessage(null);
             setIsStreaming(false);
             break;
           case "error":
-            setStatusMessage(null);
+            setMessages((prev) =>
+              prev.map((m) => {
+                if (m.id !== currentAiMsgId) return m;
+                const steps = (m.trailSteps ?? []).map((s) =>
+                  !s.done ? { ...s, done: true } : s,
+                );
+                return { ...m, trailSteps: steps, content: m.content || event.content };
+              }),
+            );
             setIsStreaming(false);
             break;
         }
@@ -281,17 +375,29 @@ export function useChat({
     setInterviewQuestions(null);
   }, []);
 
+  const toggleTrailCollapsed = useCallback(
+    (messageId: string) => {
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === messageId
+            ? { ...m, trailCollapsed: !m.trailCollapsed }
+            : m,
+        ),
+      );
+    },
+    [],
+  );
+
   return {
     messages,
     isMessagesLoading: messagesLoading,
     phase,
     isStreaming,
-    isWaiting,
-    statusMessage,
     threadId,
     interviewQuestions,
     send,
     submitInterviewAnswers,
     dismissInterview,
+    toggleTrailCollapsed,
   };
 }
