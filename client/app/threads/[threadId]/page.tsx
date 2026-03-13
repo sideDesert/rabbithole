@@ -1,6 +1,6 @@
 "use client";
 
-import { ChatMessage, ROLE_AI, ROLE_USER } from "@/components/chat-message";
+import { ChatMessage, ROLE_AI, ROLE_USER, PhaseDivider } from "@/components/chat-message";
 import { InterviewAnswersCard } from "@/components/interview-answers-card";
 import { InterviewWidget } from "@/components/interview-modal";
 import { PlanCreatedCard } from "@/components/plan-created-card";
@@ -15,7 +15,7 @@ import {
 import { TextSelectionMenu } from "@/components/text-selection-menu";
 import { useChat } from "@/hooks/use-chat";
 import { useTextSelectionMenu } from "@/hooks/use-text-selection-menu";
-import { useBranchout } from "@/hooks/use-branchout";
+import { useBranchout } from "@/hooks/use-branch";
 import { useRouter, useSearchParams } from "next/navigation";
 import { use, useEffect, useRef, useState } from "react";
 
@@ -29,11 +29,16 @@ export default function Page({
   const router = useRouter();
   const [tagged, setTagged] = useState("");
   const [branchMessageId, setBranchMessageId] = useState("");
+  const [branchTextPosition, setBranchTextPosition] = useState<
+    [number, number] | null
+  >(null);
   const [mode, setMode] = useState<Mode>(MODE_DEFAULT);
 
   const searchParams = useSearchParams();
   const pendingMsg = searchParams.get("msg");
   const sentPendingRef = useRef(false);
+  const scrollToId = searchParams.get("scrollTo");
+  const scrolledRef = useRef(false);
 
   // Sync route param into PlanContext so PlanView can fetch progress
   useEffect(() => {
@@ -45,12 +50,11 @@ export default function Page({
     messages,
     isMessagesLoading,
     isStreaming,
-    isWaiting,
-    statusMessage,
     phase,
     interviewQuestions,
     submitInterviewAnswers,
     dismissInterview,
+    toggleTrailCollapsed,
   } = useChat({
     threadId,
     onPlanCreated: (slug) => setTopicSlug(slug),
@@ -71,9 +75,34 @@ export default function Page({
     }
   }, [pendingMsg, send, threadId, router, mode, messages, isMessagesLoading]);
 
+  useEffect(() => {
+    if (
+      scrollToId &&
+      !isMessagesLoading &&
+      messages.length > 0 &&
+      !scrolledRef.current
+    ) {
+      scrolledRef.current = true;
+      requestAnimationFrame(() => {
+        const el = document.querySelector(`[data-message-id="${scrollToId}"]`);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+          el.classList.add("scroll-highlight");
+          setTimeout(() => el.classList.remove("scroll-highlight"), 2000);
+        }
+      });
+    }
+  }, [scrollToId, isMessagesLoading, messages]);
+
   console.log({ messages });
-  const { selectedText, messageId, menuPosition, isVisible, clearSelection } =
-    useTextSelectionMenu();
+  const {
+    selectedText,
+    messageId,
+    menuPosition,
+    isVisible,
+    textPosition,
+    clearSelection,
+  } = useTextSelectionMenu();
 
   const handleQuote = (data: { messageId: string; text: string }) => {
     console.log("Quote:", data);
@@ -93,6 +122,7 @@ export default function Page({
   const handleBranch = async (data: { messageId: string; text: string }) => {
     setTagged(data.text);
     setBranchMessageId(data.messageId);
+    setBranchTextPosition(textPosition);
     setMode(MODE_BRANCH);
   };
 
@@ -107,6 +137,9 @@ export default function Page({
                 topicSlug={msg.metadata?.topicSlug ?? ""}
               />
             );
+          }
+          if (msg.type === "phase_divider") {
+            return <PhaseDivider key={msg.id} label={msg.content} />;
           }
           if (
             msg.role === "user" &&
@@ -126,11 +159,9 @@ export default function Page({
               content={msg.content}
               className={`${msg.role === ROLE_USER && "w-fit self-end"}`}
               isLast={messages.length - 1 === index}
-              streaming={isStreaming}
-              waiting={isWaiting && messages.length - 1 === index}
-              statusMessage={
-                messages.length - 1 === index ? statusMessage : null
-              }
+              trailSteps={msg.trailSteps}
+              trailCollapsed={msg.trailCollapsed}
+              onTrailToggle={() => toggleTrailCollapsed(msg.id)}
             />
           );
         })}
@@ -167,6 +198,7 @@ export default function Page({
                 messageId: branchMessageId,
                 threadId,
                 branchText: tagged,
+                textPosition: branchTextPosition ?? undefined,
                 title: e,
               });
               return;
