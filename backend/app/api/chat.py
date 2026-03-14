@@ -15,7 +15,7 @@ import uuid
 from typing import Literal
 
 from agents import ItemHelpers, Runner
-from fastapi import APIRouter
+from fastapi import APIRouter, BackgroundTasks
 from fastapi.responses import StreamingResponse
 from openai import AsyncOpenAI
 from openai.types.responses import EasyInputMessageParam, ResponseTextDeltaEvent
@@ -24,10 +24,12 @@ from pydantic import BaseModel
 from app.agent.phases import apply_transition, should_transition
 from app.agent_core import build_agent
 from app.config import (
+    COMPACTION_THRESHOLD,
     DEFAULT_MODEL,
     LLM_API_KEY,
     LLM_BASE_URL,
     PLANS_DIR,
+    get_model_context_window,
 )
 from app.db import mongo
 from app.models.base import new_object_id, utcnow
@@ -73,13 +75,12 @@ def sse(data: dict[str, object]) -> str:
     return f"data: {json.dumps(data)}\n\n"
 
 
-def load_history(thread_id: str, limit: int = 50) -> list[EasyInputMessageParam]:
-    """Load recent messages from MongoDB as OpenAI message dicts."""
+def load_history(thread_id: str) -> list[EasyInputMessageParam]:
+    """Load all messages from MongoDB as OpenAI message dicts."""
     docs = list(
         mongo.messages()
         .find({"thread_id": thread_id})
         .sort("created_at", 1)
-        .limit(limit)
     )
     messages: list[EasyInputMessageParam] = []
     for doc in docs:
@@ -94,6 +95,83 @@ def load_history(thread_id: str, limit: int = 50) -> list[EasyInputMessageParam]
             continue
         messages.append({"role": role, "content": text})
     return messages
+
+
+def load_parent_context(thread: dict[str, object]) -> list[EasyInputMessageParam]:
+    """For branch threads, load the full parent conversation as structured context.
+
+    Returns a system message with the parent transcript. The source message
+    (where the learner highlighted text) has the selection wrapped in
+    <highlighted> tags. The branch thread's own messages — including the
+    user's query — are loaded separately as the prompt.
+
+    If the parent's cumulative input tokens exceed COMPACTION_THRESHOLD of the
+    model's context window, we skip full history injection and let the agent
+    rely on the compacted parent_summary in its system prompt instead.
+    """
+    parent_id = thread.get("parent_thread_id")
+    if not parent_id:
+        return []
+
+    parent = mongo.threads().find_one({"_id": str(parent_id)})
+    if not parent:
+        return []
+
+    # Check if parent conversation is too large for full injection
+    parent_token_usage = parent.get("token_usage", {})
+    parent_input_tokens = (
+        parent_token_usage.get("input_tokens", 0)
+        if isinstance(parent_token_usage, dict)
+        else 0
+    )
+    context_window = get_model_context_window()
+    if parent_input_tokens > context_window * COMPACTION_THRESHOLD:
+        logger.info(
+            "[chat] parent too large (%d tokens > %d threshold), using summary",
+            parent_input_tokens,
+            int(context_window * COMPACTION_THRESHOLD),
+        )
+        return []
+
+    parent_history = load_history(str(parent_id))
+    if not parent_history:
+        return []
+
+    # Fetch the source message to identify and mark the highlighted text
+    source_msg_id = str(thread.get("branch_source_message_id", ""))
+    highlighted_text = str(thread.get("branch_text", ""))
+    source_doc = (
+        mongo.messages().find_one({"_id": source_msg_id}) if source_msg_id else None
+    )
+    source_content = ""
+    if source_doc:
+        raw = source_doc.get("content", "")
+        source_content = str(raw) if isinstance(raw, str) else json.dumps(raw)
+
+    # Build transcript — mark highlighted text in the source message
+    lines: list[str] = []
+    for msg in parent_history:
+        role = str(msg.get("role", ""))
+        content = str(msg.get("content", ""))
+        if role not in ("user", "assistant") or not content:
+            continue
+
+        if source_content and content == source_content and highlighted_text:
+            content = content.replace(
+                highlighted_text,
+                f"<highlighted>{highlighted_text}</highlighted>",
+                1,
+            )
+
+        lines.append(f'<message role="{role}">{content}</message>')
+
+    transcript = "\n".join(lines)
+    context_msg = (
+        "The learner branched from the following conversation. "
+        "The text they highlighted is wrapped in <highlighted> tags.\n\n"
+        f"<parent-conversation>\n{transcript}\n</parent-conversation>"
+    )
+    return [{"role": "system", "content": context_msg}]
 
 
 def save_message(
@@ -148,6 +226,41 @@ SUMMARY:
 what has been covered, what the learner understands well, and what they were struggling with. \
 Keep it factual and concise — this summary will be used as context for the branch conversation.>
 """
+
+TITLE_GENERATION_PROMPT = """\
+Generate a concise title (4-8 words) for this learning conversation. \
+Return ONLY the title, no quotes or punctuation wrapping."""
+
+
+def clean_title(raw: str) -> str:
+    """Strip quotes, trailing periods, and cap at 80 chars."""
+    title = raw.strip().strip("\"'`").rstrip(".")
+    return title[:80]
+
+
+async def generate_thread_title(user_msg: str, assistant_msg: str) -> str:
+    """Generate a concise thread title from the first exchange."""
+    try:
+        response = await llm.chat.completions.create(
+            model=DEFAULT_MODEL,
+            messages=[
+                {"role": "system", "content": TITLE_GENERATION_PROMPT},
+                {
+                    "role": "user",
+                    "content": (
+                        f"User: {user_msg[:300]}\n\n"
+                        f"Assistant: {assistant_msg[:300]}"
+                    ),
+                },
+            ],
+            max_tokens=30,
+        )
+        raw = response.choices[0].message.content or ""
+        title = clean_title(raw)
+        return title if title else user_msg[:100]
+    except Exception as e:
+        logger.warning("[chat] title generation failed: %s", e)
+        return user_msg[:100]
 
 
 async def compact_parent_context(
@@ -406,8 +519,33 @@ def get_messages(thread_id: str):
 # ── Branch Endpoints ──────────────────────────────────────────────────────
 
 
+async def _compact_branch_summary(
+    child_thread_id: str,
+    parent_thread_id: str,
+    branch_text: str,
+    parent_title: str,
+) -> None:
+    """Background task: generate a compacted summary and update the child thread."""
+    try:
+        history = load_history(parent_thread_id)
+        generated_title, summary = await compact_parent_context(
+            history=history,
+            branch_text=branch_text,
+            parent_title=parent_title,
+        )
+        mongo.threads().update_one(
+            {"_id": child_thread_id},
+            {"$set": {"parent_summary": summary, "title": generated_title or branch_text[:80]}},
+        )
+        logger.info("[branch] compaction done for child=%s", child_thread_id)
+    except Exception as e:
+        logger.warning("[branch] compaction failed for child=%s: %s", child_thread_id, e)
+
+
 @router.post("/threads/{thread_id}/branch")
-async def create_branch(thread_id: str, req: BranchRequest):
+async def create_branch(
+    thread_id: str, req: BranchRequest, bg: BackgroundTasks
+):
     parent = mongo.threads().find_one({"_id": thread_id})
     if not parent:
         return {"error": "Thread not found"}
@@ -416,14 +554,7 @@ async def create_branch(thread_id: str, req: BranchRequest):
     if not msg:
         return {"error": "Message not found in this thread"}
 
-    history = load_history(thread_id, limit=20)
-    generated_title, summary = await compact_parent_context(
-        history=history,
-        branch_text=req.branch_text,
-        parent_title=str(parent.get("title", "")),
-    )
-
-    title = req.title or generated_title or req.branch_text[:80]
+    title = req.title or req.branch_text[:80]
 
     child = Thread(
         user_id=str(parent["user_id"]),
@@ -434,7 +565,6 @@ async def create_branch(thread_id: str, req: BranchRequest):
         parent_thread_id=thread_id,
         root_thread_id=str(parent.get("root_thread_id", thread_id)),
         evermemos_group_id=str(uuid.uuid4()),
-        parent_summary=summary,
         branch_text=req.branch_text,
         branch_source_message_id=req.message_id,
     )
@@ -461,12 +591,20 @@ async def create_branch(thread_id: str, req: BranchRequest):
         {"_id": child.id}, {"$set": {"branch_point_id": bp.id}}
     )
 
+    # Fire compaction in background — response returns immediately
+    bg.add_task(
+        _compact_branch_summary,
+        child_thread_id=child.id,
+        parent_thread_id=thread_id,
+        branch_text=req.branch_text,
+        parent_title=str(parent.get("title", "")),
+    )
+
     return {
         "thread_id": child.id,
         "branch_point_id": bp.id,
         "title": title,
         "phase": "teaching",
-        "parent_summary": summary,
     }
 
 
@@ -590,11 +728,15 @@ async def chat(thread_id: str, req: ChatRequest):
 
         # 3. Load history BEFORE saving user message to avoid duplication
         t0 = time.perf_counter()
+        parent_context = load_parent_context(thread)
         history = load_history(thread_id)
-        input_messages: list[EasyInputMessageParam] = history + [
+        input_messages: list[EasyInputMessageParam] = parent_context + history + [
             {"role": "user", "content": req.content}
         ]
-        logger.info("[chat] history: %d messages loaded", len(history))
+        logger.info(
+            "[chat] history: %d parent_ctx + %d messages loaded",
+            len(parent_context), len(history),
+        )
         yield _status("load_history", "Loading history...", _ms(t0))
 
         # 4. Save user message
@@ -857,9 +999,20 @@ async def chat(thread_id: str, req: ChatRequest):
                     {"type": "phase_change", "from": "planning", "to": "teaching"}
                 )
 
-        # 13. Update thread timestamp
+        # 13. Update thread timestamp + token usage
+        run_input_tokens = sum(r.usage.input_tokens for r in result.raw_responses)
+        run_output_tokens = sum(r.usage.output_tokens for r in result.raw_responses)
+        run_total_tokens = sum(r.usage.total_tokens for r in result.raw_responses)
         _ = mongo.threads().update_one(
-            {"_id": thread_id}, {"$set": {"updated_at": utcnow()}}
+            {"_id": thread_id},
+            {
+                "$set": {"updated_at": utcnow()},
+                "$inc": {
+                    "token_usage.input_tokens": run_input_tokens,
+                    "token_usage.output_tokens": run_output_tokens,
+                    "token_usage.total_tokens": run_total_tokens,
+                },
+            },
         )
         total_ms = _ms(t_total)
         logger.info(
