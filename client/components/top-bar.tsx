@@ -14,7 +14,6 @@ import {
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { ButtonGroup } from "./ui/button-group";
-import { AgentPill } from "@/components/agent-pill";
 import { TopicProgress } from "@/components/topic-progress";
 
 interface TopBarInterface {

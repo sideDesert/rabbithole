@@ -817,57 +817,61 @@ async def chat(thread_id: str, req: ChatRequest):
             context=agent_ctx,
         )
 
-        async for event in result.stream_events():
-            if event.type == "raw_response_event":
-                if hasattr(event.data, "delta") and isinstance(
-                    event.data, ResponseTextDeltaEvent
-                ):
-                    full_text += event.data.delta
-                    yield sse({"type": "stream", "content": event.data.delta})
+        try:
+            async for event in result.stream_events():
+                if event.type == "raw_response_event":
+                    if hasattr(event.data, "delta") and isinstance(
+                        event.data, ResponseTextDeltaEvent
+                    ):
+                        full_text += event.data.delta
+                        yield sse({"type": "stream", "content": event.data.delta})
 
-            elif event.type == "run_item_stream_event":
-                item = event.item
-                if item.type == "tool_call_item":
-                    tool_name = (
-                        getattr(item.raw_item, "name", "")
-                        if hasattr(item, "raw_item")
-                        else ""
-                    )
-                    if tool_name:
-                        tool_names_called.append(tool_name)
-                        pending_tool_names.append(tool_name)
-                        logger.info("[chat] tool_call: %s", tool_name)
-                        yield sse({"type": "tool_call", "name": tool_name})
+                elif event.type == "run_item_stream_event":
+                    item = event.item
+                    if item.type == "tool_call_item":
+                        tool_name = (
+                            getattr(item.raw_item, "name", "")
+                            if hasattr(item, "raw_item")
+                            else ""
+                        )
+                        if tool_name:
+                            tool_names_called.append(tool_name)
+                            pending_tool_names.append(tool_name)
+                            logger.info("[chat] tool_call: %s", tool_name)
+                            yield sse({"type": "tool_call", "name": tool_name})
 
-                elif item.type == "tool_call_output_item":
-                    output = str(item.output) if hasattr(item, "output") else ""
-                    result_tool_name = pending_tool_names.pop(0) if pending_tool_names else ""
-                    logger.info(
-                        "[chat] tool_result: %s → %s",
-                        result_tool_name,
-                        output[:200],
-                    )
-                    yield sse(
-                        {
-                            "type": "tool_result",
-                            "name": result_tool_name,
-                            "result": output[:500],
-                        }
-                    )
+                    elif item.type == "tool_call_output_item":
+                        output = str(item.output) if hasattr(item, "output") else ""
+                        result_tool_name = pending_tool_names.pop(0) if pending_tool_names else ""
+                        logger.info(
+                            "[chat] tool_result: %s → %s",
+                            result_tool_name,
+                            output[:200],
+                        )
+                        yield sse(
+                            {
+                                "type": "tool_result",
+                                "name": result_tool_name,
+                                "result": output[:500],
+                            }
+                        )
 
-                    # Detect if create_plan was called and extract topic_slug
-                    if "topic_slug" in output:
-                        try:
-                            parsed: dict[str, object] = json.loads(output)
-                            if "topic_slug" in parsed:
-                                new_topic_slug = str(parsed["topic_slug"])
-                        except (json.JSONDecodeError, KeyError):
-                            pass
+                        # Detect if create_plan was called and extract topic_slug
+                        if "topic_slug" in output:
+                            try:
+                                parsed: dict[str, object] = json.loads(output)
+                                if "topic_slug" in parsed:
+                                    new_topic_slug = str(parsed["topic_slug"])
+                            except (json.JSONDecodeError, KeyError):
+                                pass
 
-                elif item.type == "message_output_item":
-                    text = ItemHelpers.text_message_output(item)
-                    if text and not full_text:
-                        full_text = text
+                    elif item.type == "message_output_item":
+                        text = ItemHelpers.text_message_output(item)
+                        if text and not full_text:
+                            full_text = text
+        except Exception as e:
+            logger.error("[chat] agent streaming error: %s", e)
+            yield sse({"type": "error", "content": "The AI provider returned an error. Please try again."})
 
         logger.info(
             "[chat] agent_run — %dms | tools_called=%s response_len=%d",

@@ -2,12 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { type Block } from "@blocknote/core";
-import { filterSuggestionItems } from "@blocknote/core/extensions";
-import {
-  useCreateBlockNote,
-  SuggestionMenuController,
-  getDefaultReactSlashMenuItems,
-} from "@blocknote/react";
+import { useCreateBlockNote } from "@blocknote/react";
 import { BlockNoteView } from "@blocknote/shadcn";
 import "@blocknote/shadcn/style.css";
 import { useTheme } from "next-themes";
@@ -95,15 +90,6 @@ export function FeynmanModal({
     };
   }, []);
 
-  // Close on Escape
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") handleClose();
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [handleClose]);
-
   const handleHintRef = useRef<(() => void) | null>(null);
 
   const handleHint = useCallback(async () => {
@@ -121,22 +107,6 @@ export function FeynmanModal({
   }, [editor, threadId, conceptName, isHintLoading]);
 
   handleHintRef.current = handleHint;
-
-  const getCustomSlashMenuItems = useCallback(
-    (ed: typeof editor) => [
-      ...getDefaultReactSlashMenuItems(ed),
-      {
-        title: "Hint",
-        subtext: "Get a nudge about what to cover next",
-        group: "Other",
-        icon: <span>💡</span>,
-        onItemClick: () => {
-          handleHintRef.current?.();
-        },
-      },
-    ],
-    [],
-  );
 
   const handleDismissHint = useCallback((id: string) => {
     setHints((prev) => prev.filter((h) => h.id !== id));
@@ -186,20 +156,13 @@ export function FeynmanModal({
         <HintBanner hints={hints} onDismiss={handleDismissHint} />
 
         {/* Editor */}
-        <div className="flex-1 overflow-auto px-6 py-4">
+        <div className="flex-1 min-h-0 px-6 py-4">
           <BlockNoteView
             className="bg-transparent"
             editor={editor}
             theme={resolvedTheme === "dark" ? "dark" : "light"}
             data-feynman-editor
-          >
-            <SuggestionMenuController
-              triggerCharacter="/"
-              getItems={async (query) =>
-                filterSuggestionItems(getCustomSlashMenuItems(editor), query)
-              }
-            />
-          </BlockNoteView>
+          />
         </div>
 
         {/* Footer */}

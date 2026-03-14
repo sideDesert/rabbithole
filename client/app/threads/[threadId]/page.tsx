@@ -60,7 +60,7 @@ export default function Page({
   const scrollToId = searchParams.get("scrollTo");
   const branchPointId = searchParams.get("branchPointId");
   const scrolledRef = useRef(false);
-  const promptRef = useRef(null);
+  const promptRef = useRef<null | HTMLInputElement>(null);
 
   // Sync route param into PlanContext so PlanView can fetch progress
   useEffect(() => {

@@ -1,8 +1,17 @@
 from datetime import datetime
 from typing import Any, Literal
 
+from pydantic import BaseModel
 
 from app.models.base import MongoBase
+
+
+class TokenUsage(BaseModel):
+    """Cumulative token usage for a thread across all agent runs."""
+
+    input_tokens: int = 0
+    output_tokens: int = 0
+    total_tokens: int = 0
 
 
 class Thread(MongoBase):
@@ -23,5 +32,6 @@ class Thread(MongoBase):
     phase: Literal["interview", "planning", "teaching"] = "interview"
     interview_context: dict[str, Any] = {}
     current_concept: str | None = None
-    parent_summary: str | None = None   # LLM-compacted summary of parent conversation
+    parent_summary: str | None = None   # LLM-compacted summary of parent conversation (populated async)
     branch_text: str | None = None      # highlighted text / branch topic
+    token_usage: TokenUsage = TokenUsage()

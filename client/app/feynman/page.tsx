@@ -1,14 +1,31 @@
 "use client";
-import { useState, useEffect } from "react";
-import { ChatMessage, ROLE_AI, ROLE_USER } from "@/components/chat-message";
+
+import {
+  ChatMessage,
+  ROLE_AI,
+  ROLE_USER,
+  PhaseDivider,
+} from "@/components/chat-message";
 import { InterviewAnswersCard } from "@/components/interview-answers-card";
 import { InterviewWidget } from "@/components/interview-modal";
 import { PlanCreatedCard } from "@/components/plan-created-card";
-import { PromptInput } from "@/components/prompt-input";
-import { TextSelectionMenu } from "@/components/text-selection-menu";
 import { usePlan } from "@/components/plan-context";
-import { useTextSelectionMenu } from "@/hooks/use-text-selection-menu";
+import {
+  Mode,
+  MODE_BRANCH,
+  MODE_DEFAULT,
+  MODE_TAGGED,
+  PromptInput,
+} from "@/components/prompt-input";
+import { FeynmanModal } from "@/components/feynman-modal";
+import { TextSelectionMenu } from "@/components/text-selection-menu";
 import { useChat } from "@/hooks/use-chat";
+import { useTextSelectionMenu } from "@/hooks/use-text-selection-menu";
+import { useBranchout, useBranches } from "@/hooks/use-branch";
+import type { Branch } from "@/lib/api";
+import { getProgress } from "@/lib/api";
+import { useRouter } from "next/navigation";
+import React, { useEffect, useRef, useState } from "react";
 
 const prompts = [
   "How does gravity actually work?",
@@ -36,17 +53,32 @@ const prompts = [
 export default function Page() {
   const [index, setIndex] = useState(0);
   const [visible, setVisible] = useState(true);
+  const router = useRouter();
 
-  const { setThreadId, setTopicSlug } = usePlan();
+  const { feynmanRequested, setFeynmanRequested, setThreadId, setTopicSlug } =
+    usePlan();
+
+  const [tagged, setTagged] = useState("");
+  const [branchMessageId, setBranchMessageId] = useState("");
+  const [branchTextPosition, setBranchTextPosition] = useState<
+    [number, number] | null
+  >(null);
+  const [mode, setMode] = useState<Mode>(MODE_DEFAULT);
+  const promptRef = useRef<null | HTMLInputElement>(null);
 
   const {
     send,
     messages,
     isStreaming,
+    isLoading,
     threadId,
     interviewQuestions,
     submitInterviewAnswers,
     dismissInterview,
+    feynmanOpen,
+    feynmanConcept,
+    openFeynman,
+    dismissFeynman,
   } = useChat({
     onThreadCreated: (id) => setThreadId(id),
     onPlanCreated: (slug) => setTopicSlug(slug),
@@ -56,8 +88,25 @@ export default function Page() {
     if (threadId) setThreadId(threadId);
   }, [threadId, setThreadId]);
 
+  // Open Feynman modal when Pen tab is clicked
+  useEffect(() => {
+    if (!feynmanRequested || !threadId) return;
+    setFeynmanRequested(false);
+    getProgress(threadId)
+      .then((progress) => {
+        const concept = progress.current_concept;
+        if (concept) {
+          openFeynman(concept);
+        }
+      })
+      .catch(() => {
+        // No plan yet — can't open Feynman mode without a concept
+      });
+  }, [feynmanRequested, setFeynmanRequested, threadId, openFeynman]);
+
   const chatStarted = messages.length > 0;
 
+  // Rotating placeholder prompts
   useEffect(() => {
     if (chatStarted) return;
     const interval = setInterval(() => {
@@ -70,22 +119,56 @@ export default function Page() {
     return () => clearInterval(interval);
   }, [chatStarted]);
 
-  const { selectedText, messageId, menuPosition, isVisible, clearSelection } =
-    useTextSelectionMenu();
+  const { data: branchData } = useBranches(threadId ?? undefined);
+
+  const {
+    selectedText,
+    messageId,
+    menuPosition,
+    isVisible,
+    textPosition,
+    clearSelection,
+  } = useTextSelectionMenu();
 
   const handleQuote = (data: { messageId: string; text: string }) => {
-    console.log("Quote:", data);
+    setTagged(data.text);
+    setMode(MODE_TAGGED);
+    requestAnimationFrame(() => promptRef.current?.focus());
   };
 
-  const handleBranch = (data: { messageId: string; text: string }) => {
-    console.log("Branch Out:", data);
+  const annotationsByMessage = React.useMemo(() => {
+    const map = new Map<string, Branch[]>();
+    if (!branchData?.branches) return map;
+    for (const b of branchData.branches) {
+      if (!b.position) continue;
+      const existing = map.get(b.message_id) ?? [];
+      existing.push(b);
+      map.set(b.message_id, existing);
+    }
+    return map;
+  }, [branchData]);
+
+  const { branch, isPending: isBranching } = useBranchout({
+    onSuccess: (res, vars) => {
+      router.push(
+        `/threads/${res.thread_id}?msg=${encodeURIComponent(vars.title ?? tagged)}`,
+      );
+    },
+  });
+
+  const handleBranch = async (data: { messageId: string; text: string }) => {
+    setTagged(data.text);
+    setBranchMessageId(data.messageId);
+    setBranchTextPosition(textPosition);
+    setMode(MODE_BRANCH);
+    requestAnimationFrame(() => promptRef.current?.focus());
   };
 
   return (
     <div className="px-10 pt-4 h-full max-w-3xl m-auto grid grid-rows-[1fr_auto]">
       {chatStarted ? (
         <div className="flex flex-col overflow-auto relative z-0 gap-4 min-h-0 pb-6">
-          {messages.map((msg, idx) => {
+          {messages.map((msg, index) => {
             if (msg.type === "plan_card") {
               return (
                 <PlanCreatedCard
@@ -93,6 +176,9 @@ export default function Page() {
                   topicSlug={msg.metadata?.topicSlug ?? ""}
                 />
               );
+            }
+            if (msg.type === "phase_divider") {
+              return <PhaseDivider key={msg.id} label={msg.content} />;
             }
             if (
               msg.role === "user" &&
@@ -111,8 +197,12 @@ export default function Page() {
                 role={msg.role as typeof ROLE_USER | typeof ROLE_AI}
                 content={msg.content}
                 className={`${msg.role === ROLE_USER && "w-fit self-end"}`}
-                isLast={messages.length - 1 === idx}
+                isLast={messages.length - 1 === index}
+                isStreaming={messages.length - 1 === index && isStreaming}
+                isLoading={messages.length - 1 === index && isLoading}
                 statusMessage={msg.statusMessage}
+                toolCalls={msg.toolCalls}
+                annotations={annotationsByMessage.get(msg.id)}
               />
             );
           })}
@@ -137,10 +227,37 @@ export default function Page() {
         />
       ) : (
         <PromptInput
-          className="sticky! bottom-0 z-50"
-          onClose={() => {}}
-          onSubmit={(content) => {
-            send(content);
+          ref={promptRef}
+          mode={mode}
+          tagged={tagged}
+          loading={isBranching}
+          onClose={() => {
+            setTagged("");
+            setMode(MODE_DEFAULT);
+          }}
+          onSubmit={async (e) => {
+            if (mode === MODE_DEFAULT) {
+              send(e);
+            }
+            if (mode === MODE_TAGGED) {
+              const mod = `\
+                I am quoting your previous message - "${tagged}"
+                Keeping this in mind : ${e}\
+              `;
+              send(mod);
+            }
+            if (mode === MODE_BRANCH) {
+              if (!threadId) return;
+              branch({
+                messageId: branchMessageId,
+                threadId,
+                branchText: tagged,
+                textPosition: branchTextPosition ?? undefined,
+                title: e,
+              });
+              return;
+            }
+
             if (chatStarted) {
               setTimeout(
                 () =>
@@ -152,6 +269,7 @@ export default function Page() {
               );
             }
           }}
+          className="sticky! bottom-0 z-50"
         />
       )}
       <TextSelectionMenu
@@ -163,6 +281,13 @@ export default function Page() {
         onBranch={handleBranch}
         onActionComplete={clearSelection}
       />
+      {feynmanOpen && feynmanConcept && threadId && (
+        <FeynmanModal
+          threadId={threadId}
+          conceptName={feynmanConcept}
+          onClose={dismissFeynman}
+        />
+      )}
     </div>
   );
 }

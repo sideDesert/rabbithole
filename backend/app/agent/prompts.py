@@ -233,10 +233,11 @@ def build_phase_prompt(
 
     if branch_text:
         sections.append(
-            f"\n## Branch Focus\nThe learner branched from the parent conversation "
-            f"to explore this specific point:\n> {branch_text}\n\n"
-            f"Start by addressing this specific topic. You can reference the parent "
-            f"context above but focus on this branch point.\n"
+            f"\n## Branch Context\nThe learner highlighted the following text from "
+            f"the parent conversation and branched into this thread:\n> {branch_text}\n\n"
+            f"Stay focused on what the learner is asking about in this branch. "
+            f"Do not deviate into other topics or jump ahead to concepts that are planned "
+            f"for later in the learning plan.\n"
         )
 
     if plan_context:

@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   branchout,
   listBranches,
@@ -12,9 +12,13 @@ interface UseBranchoutOptions {
 }
 
 export function useBranchout({ onSuccess }: UseBranchoutOptions = {}) {
+  const queryClient = useQueryClient();
   const mutation = useMutation({
     mutationFn: branchout,
-    onSuccess,
+    onSuccess: (res, vars) => {
+      queryClient.invalidateQueries({ queryKey: ["thread-tree"] });
+      onSuccess?.(res, vars);
+    },
   });
 
   return {
