@@ -25,6 +25,7 @@ export type SSEEvent =
   | { type: "interview_questions"; questions: InterviewQuestion[] }
   | { type: "feynman_prompt"; concept_name: string }
   | { type: "message_id"; role: "user" | "assistant"; message_id: string }
+  | { type: "title_update"; title: string }
   | { type: "end"; duration_ms?: number }
   | { type: "error"; content: string };
 

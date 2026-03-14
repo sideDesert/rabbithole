@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   createThread,
   streamChat,
@@ -56,6 +56,7 @@ export function useChat({
   onThreadCreated,
   onPlanCreated,
 }: UseChatOptions = {}): UseChatReturn {
+  const queryClient = useQueryClient();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [messagesLoading, setMessageLoading] = useState<boolean>(true);
   const [phase, setPhase] = useState("interview");
@@ -139,6 +140,9 @@ export function useChat({
 
   const createThreadMutation = useMutation({
     mutationFn: createThread,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["thread-tree"] });
+    },
   });
 
   const send = useCallback(
@@ -304,6 +308,10 @@ export function useChat({
             onPlanCreated?.(slug);
             break;
           }
+          case "title_update":
+            queryClient.invalidateQueries({ queryKey: ["threads"] });
+            queryClient.invalidateQueries({ queryKey: ["thread-tree"] });
+            break;
           case "end":
             if (event.duration_ms) {
               console.log(`[chat] total — ${event.duration_ms}ms`);
