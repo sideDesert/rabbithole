@@ -808,6 +808,8 @@ async def chat(thread_id: str, req: ChatRequest):
         tool_names_called: list[str] = []
         pending_tool_names: list[str] = []
         new_topic_slug = ""
+        is_first_message = len(history) == 0 and not thread.get("parent_thread_id")
+        new_title = ""
 
         result = Runner.run_streamed(
             agent,
@@ -913,6 +915,12 @@ async def chat(thread_id: str, req: ChatRequest):
                 logger.warning("[chat] evermemos store assistant failed: %s", e)
         yield _status("save_response", "Saving to memory...", _ms(t0))
 
+        # 9b. Generate title on first message (root threads only)
+        if is_first_message and full_text:
+            t0 = time.perf_counter()
+            new_title = await generate_thread_title(req.content, full_text)
+            logger.info("[chat] title generated: %r — %dms", new_title, _ms(t0))
+
         # 10. Emit interview questions if present_interview was called
         if agent_ctx.interview_questions:
             yield sse(
@@ -961,6 +969,15 @@ async def chat(thread_id: str, req: ChatRequest):
 
             yield sse({"type": "plan_created", "topic_slug": new_topic_slug})
 
+            # Update title to plan topic name
+            if not thread.get("parent_thread_id"):
+                plan_path = PLANS_DIR / new_topic_slug / "plan.md"
+                if plan_path.exists():
+                    tree = parse_plan(plan_path.read_text())
+                    if tree.topic:
+                        new_title = tree.topic
+                        logger.info("[chat] title from plan: %r", new_title)
+
         # 12. Check for phase transitions
         for tool_name in tool_names_called:
             new_phase = should_transition(current_phase=phase, tool_called=tool_name)
@@ -999,14 +1016,21 @@ async def chat(thread_id: str, req: ChatRequest):
                     {"type": "phase_change", "from": "planning", "to": "teaching"}
                 )
 
+        # Emit title update if generated
+        if new_title:
+            yield sse({"type": "title_update", "title": new_title})
+
         # 13. Update thread timestamp + token usage
         run_input_tokens = sum(r.usage.input_tokens for r in result.raw_responses)
         run_output_tokens = sum(r.usage.output_tokens for r in result.raw_responses)
         run_total_tokens = sum(r.usage.total_tokens for r in result.raw_responses)
+        update_set: dict[str, object] = {"updated_at": utcnow()}
+        if new_title:
+            update_set["title"] = new_title
         _ = mongo.threads().update_one(
             {"_id": thread_id},
             {
-                "$set": {"updated_at": utcnow()},
+                "$set": update_set,
                 "$inc": {
                     "token_usage.input_tokens": run_input_tokens,
                     "token_usage.output_tokens": run_output_tokens,
