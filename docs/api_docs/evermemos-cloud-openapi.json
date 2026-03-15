@@ -1,0 +1,4591 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "Memory System",
+        "description": "Main application of the memory system",
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "https://api.evermind.ai"
+        }
+    ],
+    "security": [
+        {
+            "bearerAuth": []
+        }
+    ],
+    "paths": {
+        "/api/v0/memories": {
+            "post": {
+                "tags": [
+                    "Core Memory Operation"
+                ],
+                "summary": "Add memories",
+                "description": "Extract memory from message.",
+                "operationId": "memorize_single_message_api_v0_memories_post",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/MemorizeMessageRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "status": {
+                                            "type": "string"
+                                        },
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "request_id": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "status",
+                                        "message",
+                                        "request_id"
+                                    ]
+                                },
+                                "example": {
+                                    "status": "queued",
+                                    "message": "Message accepted and queued for processing",
+                                    "request_id": "xxxx"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Request parameter error",
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "status": "failed",
+                                    "code": "INVALID_PARAMETER",
+                                    "message": "Data format error: Required field message_id is missing",
+                                    "timestamp": "2025-01-15T10:30:00+00:00",
+                                    "path": "/api/v0/memories"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "code": "InternalServiceError",
+                                    "message": "The service encountered an unexpected internal error. Request id: xxx"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": "# To use the Python SDK, install the package:\n# pip install evermemos\n\nfrom evermemos import EverMemOS\n\nmemory = EverMemOS(api_key=\"<api_key>\").v0.memories\n\nresponse = memory.add(\n    message_id=\"<message_id>\",\n    create_time=\"<iso8601_time>\",\n    sender=\"<user_id>\",\n    content=\"<message_content>\"\n)\nprint(response.status, response.request_id)"
+                    },
+                    {
+                        "lang": "cURL",
+                        "source": "curl --request POST \\\n  --url 'https://api.evermind.ai/api/v0/memories' \\\n  --header 'Authorization: Bearer <api_key>' \\\n  --header 'Content-Type: application/json' \\\n  --data '{}'"
+                    }
+                ]
+            },
+            "get": {
+                "tags": [
+                    "Core Memory Operation"
+                ],
+                "summary": "Get memories",
+                "description": "Retrieve memory records by memory_type with optional filters",
+                "operationId": "fetch_memories_api_v0_memories_get",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/FetchMemRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/FetchMemoriesResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Request parameter error",
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "status": "failed",
+                                    "code": "INVALID_PARAMETER",
+                                    "message": "user_id cannot be empty",
+                                    "timestamp": "2024-01-15T10:30:00+00:00",
+                                    "path": "/api/v0/memories"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "status": "failed",
+                                    "code": "SYSTEM_ERROR",
+                                    "message": "Failed to retrieve memory, please try again later",
+                                    "timestamp": "2024-01-15T10:30:00+00:00",
+                                    "path": "/api/v0/memories"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": "# To use the Python SDK, install the package:\n# pip install evermemos\n\nfrom evermemos import EverMemOS\n\nmemory = EverMemOS(api_key=\"<api_key>\").v0.memories\n\nresponse = memory.get(extra_query={\"user_id\": \"<user_id>\"})\nprint(response.result.memories)"
+                    },
+                    {
+                        "lang": "cURL",
+                        "source": "curl --request GET \\\n  --url 'https://api.evermind.ai/api/v0/memories' \\\n  --header 'Authorization: Bearer <api_key>' \\\n  --header 'Content-Type: application/json' \\\n  --data '{}'"
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Core Memory Operation"
+                ],
+                "summary": "Delete memories",
+                "description": "Delete memory records based on combined filter criteria",
+                "operationId": "delete_memories_api_v0_memories_delete",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/DeleteMemoriesRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DeleteMemoriesResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Request parameter error",
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "status": "failed",
+                                    "code": "INVALID_PARAMETER",
+                                    "message": "At least one of memory_id, user_id, or group_id must be provided",
+                                    "timestamp": "2025-01-15T10:30:00+00:00",
+                                    "path": "/api/v0/memories"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Memory not found",
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "status": "failed",
+                                    "code": "RESOURCE_NOT_FOUND",
+                                    "message": "No memories found matching the criteria or already deleted",
+                                    "timestamp": "2025-01-15T10:30:00+00:00",
+                                    "path": "/api/v0/memories"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "status": "failed",
+                                    "code": "SYSTEM_ERROR",
+                                    "message": "Failed to delete memories, please try again later",
+                                    "timestamp": "2025-01-15T10:30:00+00:00",
+                                    "path": "/api/v0/memories"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": "# To use the Python SDK, install the package:\n# pip install evermemos\n\nfrom evermemos import EverMemOS\n\nmemory = EverMemOS(api_key=\"<api_key>\").v0.memories\n\nresponse = memory.delete(extra_body={\"user_id\": \"<user_id>\"})\nprint(response.deleted_count)"
+                    },
+                    {
+                        "lang": "cURL",
+                        "source": "curl --request DELETE \\\n  --url 'https://api.evermind.ai/api/v0/memories' \\\n  --header 'Authorization: Bearer <api_key>' \\\n  --header 'Content-Type: application/json' \\\n  --data '{}'"
+                    }
+                ]
+            }
+        },
+        "/api/v0/memories/search": {
+            "get": {
+                "tags": [
+                    "Core Memory Operation"
+                ],
+                "summary": "Search memories",
+                "description": "Retrieve relevant memory data based on query text using multiple retrieval methods",
+                "operationId": "search_memories_api_v0_memories_search_get",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/RetrieveMemRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SearchMemoriesResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Request parameter error",
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "status": "failed",
+                                    "code": "INVALID_PARAMETER",
+                                    "message": "query cannot be empty",
+                                    "timestamp": "2024-01-15T10:30:00+00:00",
+                                    "path": "/api/v0/memories/search"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "status": "failed",
+                                    "code": "SYSTEM_ERROR",
+                                    "message": "Failed to retrieve memory, please try again later",
+                                    "timestamp": "2024-01-15T10:30:00+00:00",
+                                    "path": "/api/v0/memories/search"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": "# To use the Python SDK, install the package:\n# pip install evermemos\n\nfrom evermemos import EverMemOS\n\nmemory = EverMemOS(api_key=\"<api_key>\").v0.memories\n\nresponse = memory.search(extra_query={\"user_id\": \"<user_id>\", \"query\": \"<query>\"})\nprint(response.result.total_count)"
+                    },
+                    {
+                        "lang": "cURL",
+                        "source": "curl --request GET \\\n  --url 'https://api.evermind.ai/api/v0/memories/search' \\\n  --header 'Authorization: Bearer <api_key>' \\\n  --header 'Content-Type: application/json' \\\n  --data '{}'"
+                    }
+                ]
+            }
+        },
+        "/api/v0/memories/conversation-meta": {
+            "post": {
+                "tags": [
+                    "Conversation Meta Controller"
+                ],
+                "summary": "Set conversation metadata",
+                "description": "Save conversation metadata information, including scene, participants, tags, etc.",
+                "operationId": "save_conversation_meta_api_v0_memories_conversation_meta_post",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ConversationMetaCreateRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SaveConversationMetaResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Request parameter error",
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "status": "failed",
+                                    "code": "INVALID_PARAMETER",
+                                    "message": "Field 'scene': invalid scene value",
+                                    "timestamp": "2025-01-15T10:30:00+00:00",
+                                    "path": "/api/v0/memories/conversation-meta"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "status": "failed",
+                                    "code": "SYSTEM_ERROR",
+                                    "message": "Failed to save conversation metadata, please try again later",
+                                    "timestamp": "2025-01-15T10:30:00+00:00",
+                                    "path": "/api/v0/memories/conversation-meta"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": "# To use the Python SDK, install the package:\n# pip install evermemos\n\nfrom evermemos import EverMemOS\n\nmeta = EverMemOS(api_key=\"<api_key>\").v0.memories.conversation_meta\n\nresponse = meta.create(\n    scene=\"<scene>\",\n    created_at=\"<iso8601_time>\"\n)\nprint(response.status)"
+                    },
+                    {
+                        "lang": "cURL",
+                        "source": "curl --request POST \\\n  --url 'https://api.evermind.ai/api/v0/memories/conversation-meta' \\\n  --header 'Authorization: Bearer <api_key>' \\\n  --header 'Content-Type: application/json' \\\n  --data '{}'"
+                    }
+                ]
+            },
+            "patch": {
+                "tags": [
+                    "Conversation Meta Controller"
+                ],
+                "summary": "Update conversation metadata",
+                "description": "Partially update conversation metadata, only updating provided fields",
+                "operationId": "patch_conversation_meta_api_v0_memories_conversation_meta_patch",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ConversationMetaPatchRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PatchConversationMetaResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Request parameter error",
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "status": "failed",
+                                    "code": "INVALID_PARAMETER",
+                                    "message": "Missing required field group_id",
+                                    "timestamp": "2025-01-15T10:30:00+00:00",
+                                    "path": "/api/v0/memories/conversation-meta"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Conversation metadata not found",
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "status": "failed",
+                                    "code": "RESOURCE_NOT_FOUND",
+                                    "message": "Specified conversation metadata not found: group_123",
+                                    "timestamp": "2025-01-15T10:30:00+00:00",
+                                    "path": "/api/v0/memories/conversation-meta"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "status": "failed",
+                                    "code": "SYSTEM_ERROR",
+                                    "message": "Failed to update conversation metadata, please try again later",
+                                    "timestamp": "2025-01-15T10:30:00+00:00",
+                                    "path": "/api/v0/memories/conversation-meta"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": "# To use the Python SDK, install the package:\n# pip install evermemos\n\nfrom evermemos import EverMemOS\n\nmeta = EverMemOS(api_key=\"<api_key>\").v0.memories.conversation_meta\n\nresponse = meta.update(description=\"<new_description>\")\nprint(response.status)"
+                    },
+                    {
+                        "lang": "cURL",
+                        "source": "curl --request PATCH \\\n  --url 'https://api.evermind.ai/api/v0/memories/conversation-meta' \\\n  --header 'Authorization: Bearer <api_key>' \\\n  --header 'Content-Type: application/json' \\\n  --data '{}'"
+                    }
+                ]
+            },
+            "get": {
+                "tags": [
+                    "Conversation Meta Controller"
+                ],
+                "summary": "Get conversation metadata",
+                "description": "Retrieve conversation metadata by group_id with fallback to default config",
+                "operationId": "get_conversation_meta_api_v0_memories_conversation_meta_get",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ConversationMetaGetRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/GetConversationMetaResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Conversation metadata not found",
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "status": "failed",
+                                    "message": "Conversation metadata not found for group_id: group_123"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": "# To use the Python SDK, install the package:\n# pip install evermemos\n\nfrom evermemos import EverMemOS\n\nmeta = EverMemOS(api_key=\"<api_key>\").v0.memories.conversation_meta\n\nresponse = meta.get()\nprint(response.result)"
+                    },
+                    {
+                        "lang": "cURL",
+                        "source": "curl --request GET \\\n  --url 'https://api.evermind.ai/api/v0/memories/conversation-meta' \\\n  --header 'Authorization: Bearer <api_key>' \\\n  --header 'Content-Type: application/json' \\\n  --data '{}'"
+                    }
+                ]
+            }
+        },
+        "/api/v0/status/request": {
+            "get": {
+                "tags": [
+                    "Status - Request Status"
+                ],
+                "summary": "Get Request Status",
+                "description": "Query the processing status of a specific request",
+                "operationId": "get_request_status_api_v0_status_request_get",
+                "parameters": [
+                    {
+                        "name": "request_id",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "description": "which is returned by add_memories api",
+                            "title": "Request Id"
+                        },
+                        "description": "which is returned by add_memories api"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Query successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RequestStatusResponse"
+                                },
+                                "example": {
+                                    "success": true,
+                                    "found": true,
+                                    "data": {
+                                        "request_id": "req-789",
+                                        "status": "success",
+                                        "url": "/api/v0/memories",
+                                        "method": "POST",
+                                        "http_code": 200,
+                                        "time_ms": 1500,
+                                        "start_time": 1702400000000,
+                                        "end_time": 1702400001500,
+                                        "ttl_seconds": 3500
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Parameter error",
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "detail": "Missing required parameter: request_id (query param / body)"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": "# To use the Python SDK, install the package:\n# pip install evermemos\n\nfrom evermemos import EverMemOS\n\nstatus = EverMemOS(api_key=\"<api_key>\").v0.status\n\nresponse = status.request.get(request_id=\"<request_id>\")\nprint(response.data.status)"
+                    },
+                    {
+                        "lang": "cURL",
+                        "source": "curl --request GET \\\n  --url 'https://api.evermind.ai/api/v0/status/request?request_id=<request_id>' \\\n  --header 'Authorization: Bearer <api_key>'"
+                    }
+                ]
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "ConversationMetaCreateRequest": {
+                "properties": {
+                    "scene": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Scene",
+                        "description": "Scene identifier.\n\nEnum values from ScenarioType:\n- assistant: Ideal for personal assistants, AI companion or multi-party chats centered on the primary user.\n- group_chat: Tailored for group syncs and professional teamwork. It extracts independent, granular memories for every participant.",
+                        "examples": [
+                            "assistant"
+                        ]
+                    },
+                    "scene_desc": {
+                        "anyOf": [
+                            {
+                                "additionalProperties": true,
+                                "type": "object"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Scene Desc",
+                        "description": "Scene description object.\n\nCan include fields like description, type, etc.",
+                        "examples": [
+                            {
+                                "description": "Project discussion group chat",
+                                "type": "project_discussion"
+                            }
+                        ]
+                    },
+                    "llm_custom_setting": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/LlmCustomSetting"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "description": "LLM custom settings for algorithm control.\n\nAllows configuring different LLM providers/models for different tasks like boundary detection and memory extraction.",
+                        "examples": [
+                            {
+                                "boundary": {
+                                    "model": "qwen/qwen3-235b-a22b-2507",
+                                    "provider": "openrouter"
+                                },
+                                "extraction": {
+                                    "model": "qwen/qwen3-235b-a22b-2507",
+                                    "provider": "openrouter"
+                                }
+                            }
+                        ]
+                    },
+                    "description": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Description",
+                        "description": "Conversation description",
+                        "examples": [
+                            "Technical discussion for new feature development"
+                        ]
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "title": "Created At",
+                        "description": "Conversation creation time (ISO 8601 format with Timezone is required)",
+                        "examples": [
+                            "2025-01-15T10:00:00+00:00"
+                        ]
+                    },
+                    "default_timezone": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Default Timezone",
+                        "description": "Default timezone",
+                        "examples": [
+                            "UTC"
+                        ]
+                    },
+                    "user_details": {
+                        "anyOf": [
+                            {
+                                "additionalProperties": {
+                                    "$ref": "#/components/schemas/UserDetail"
+                                },
+                                "type": "object"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "User Details",
+                        "description": "Participant details, key is user ID, value is user detail object",
+                        "examples": [
+                            {
+                                "bot_001": {
+                                    "custom_role": "assistant",
+                                    "extra": {
+                                        "type": "ai"
+                                    },
+                                    "full_name": "AI Assistant",
+                                    "role": "assistant"
+                                },
+                                "user_001": {
+                                    "custom_role": "developer",
+                                    "extra": {
+                                        "department": "Engineering"
+                                    },
+                                    "full_name": "John Smith",
+                                    "role": "user"
+                                }
+                            }
+                        ]
+                    },
+                    "tags": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "type": "string"
+                                },
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Tags",
+                        "description": "Tag list",
+                        "examples": [
+                            [
+                                "work",
+                                "technical"
+                            ]
+                        ]
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "created_at",
+                    "scene"
+                ],
+                "title": "ConversationMetaCreateRequest",
+                "examples": [
+                    {
+                        "summary": "Example",
+                        "value": {
+                            "created_at": "2025-01-15T10:00:00+00:00",
+                            "default_timezone": "UTC",
+                            "description": "Technical discussion for new feature development",
+                            "tags": [
+                                "work",
+                                "technical"
+                            ],
+                            "user_details": {
+                                "bot_001": {
+                                    "full_name": "AI Assistant",
+                                    "role": "assistant"
+                                },
+                                "user_001": {
+                                    "custom_role": "developer",
+                                    "extra": {
+                                        "department": "Engineering"
+                                    },
+                                    "full_name": "John Smith",
+                                    "role": "user"
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "summary": "Example",
+                        "value": {
+                            "created_at": "2025-01-15T10:00:00+00:00",
+                            "default_timezone": "UTC",
+                            "description": "Default settings for group_chat scene",
+                            "scene": "group_chat",
+                            "scene_desc": {
+                                "description": "Default conversation meta config"
+                            },
+                            "tags": [
+                                "default"
+                            ]
+                        }
+                    }
+                ]
+            },
+            "ConversationMetaPatchRequest": {
+                "properties": {
+                    "description": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Description",
+                        "description": "New description",
+                        "examples": [
+                            "Updated description"
+                        ]
+                    },
+                    "scene_desc": {
+                        "anyOf": [
+                            {
+                                "additionalProperties": true,
+                                "type": "object"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Scene Desc",
+                        "description": "New scene description.",
+                        "examples": [
+                            {
+                                "description": "Updated scene description"
+                            }
+                        ]
+                    },
+                    "llm_custom_setting": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/LlmCustomSetting"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "description": "New LLM custom settings.",
+                        "examples": [
+                            {
+                                "boundary": {
+                                    "model": "qwen/qwen3-235b-a22b-2507",
+                                    "provider": "openrouter"
+                                },
+                                "extraction": {
+                                    "model": "qwen/qwen3-235b-a22b-2507",
+                                    "provider": "openrouter"
+                                }
+                            }
+                        ]
+                    },
+                    "tags": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "type": "string"
+                                },
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Tags",
+                        "description": "New tag list",
+                        "examples": [
+                            [
+                                "tag1",
+                                "tag2"
+                            ]
+                        ]
+                    },
+                    "user_details": {
+                        "anyOf": [
+                            {
+                                "additionalProperties": {
+                                    "$ref": "#/components/schemas/UserDetail"
+                                },
+                                "type": "object"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "User Details",
+                        "description": "New user details (will completely replace existing user_details)",
+                        "examples": [
+                            {
+                                "user_001": {
+                                    "custom_role": "lead",
+                                    "full_name": "John Smith",
+                                    "role": "user"
+                                }
+                            }
+                        ]
+                    },
+                    "default_timezone": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Default Timezone",
+                        "description": "New default timezone",
+                        "examples": [
+                            "Asia/Shanghai"
+                        ]
+                    }
+                },
+                "type": "object",
+                "title": "ConversationMetaPatchRequest",
+                "examples": [
+                    {
+                        "summary": "Update group config - can update name",
+                        "value": {
+                            "tags": [
+                                "updated",
+                                "tags"
+                            ]
+                        }
+                    },
+                    {
+                        "summary": "Update global config - can update scene_desc, llm_custom_setting",
+                        "value": {
+                            "llm_custom_setting": {
+                                "boundary": {
+                                    "model": "qwen/qwen3-235b-a22b-2507",
+                                    "provider": "openrouter"
+                                },
+                                "extraction": {
+                                    "model": "qwen/qwen3-235b-a22b-2507",
+                                    "provider": "openrouter"
+                                }
+                            },
+                            "scene_desc": {
+                                "description": "Updated scene description"
+                            }
+                        }
+                    }
+                ]
+            },
+            "DeleteMemoriesRequest": {
+                "properties": {
+                    "memory_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Memory Id",
+                        "description": "Memory id (filter condition)",
+                        "default": "__all__",
+                        "examples": [
+                            "507f1f77bcf86cd799439011",
+                            "__all__"
+                        ]
+                    },
+                    "id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Id",
+                        "description": "Alias for memory_id (backward compatibility)",
+                        "examples": [
+                            "507f1f77bcf86cd799439011"
+                        ]
+                    },
+                    "event_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Event Id",
+                        "description": "Alias for memory_id (backward compatibility)",
+                        "examples": [
+                            "507f1f77bcf86cd799439011"
+                        ]
+                    },
+                    "user_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "User Id",
+                        "description": "User ID (filter condition)",
+                        "default": "__all__",
+                        "examples": [
+                            "user_123",
+                            "__all__"
+                        ]
+                    },
+                    "group_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Group Id",
+                        "description": "Group ID (filter condition)",
+                        "default": "__all__",
+                        "examples": [
+                            "group_456",
+                            "__all__"
+                        ]
+                    }
+                },
+                "type": "object",
+                "title": "DeleteMemoriesRequest",
+                "examples": [
+                    {
+                        "summary": "Delete by memory_id only",
+                        "value": {
+                            "group_id": "__all__",
+                            "memory_id": "507f1f77bcf86cd799439011",
+                            "user_id": "__all__"
+                        }
+                    },
+                    {
+                        "summary": "Delete by user_id only",
+                        "value": {
+                            "group_id": "__all__",
+                            "memory_id": "__all__",
+                            "user_id": "user_123"
+                        }
+                    },
+                    {
+                        "summary": "Delete by user_id and group_id",
+                        "value": {
+                            "group_id": "group_456",
+                            "memory_id": "__all__",
+                            "user_id": "user_123"
+                        }
+                    }
+                ]
+            },
+            "HTTPValidationError": {
+                "properties": {
+                    "detail": {
+                        "items": {
+                            "$ref": "#/components/schemas/ValidationError"
+                        },
+                        "type": "array",
+                        "title": "Detail"
+                    }
+                },
+                "type": "object",
+                "title": "HTTPValidationError"
+            },
+            "MemorizeMessageRequest": {
+                "properties": {
+                    "group_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Group Id",
+                        "description": "Group ID. If not provided, will automatically generate based on hash(sender) + '_group' suffix, representing single-user mode where each user's messages are extracted into separate memory spaces.",
+                        "examples": [
+                            "group_123"
+                        ]
+                    },
+                    "group_name": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Group Name",
+                        "description": "Group name",
+                        "examples": [
+                            "Project Discussion Group"
+                        ]
+                    },
+                    "message_id": {
+                        "type": "string",
+                        "title": "Message Id",
+                        "description": "Message unique identifier",
+                        "examples": [
+                            "msg_001"
+                        ]
+                    },
+                    "create_time": {
+                        "type": "string",
+                        "title": "Create Time",
+                        "description": "Message creation time (ISO 8601 format with Timezone is required)",
+                        "examples": [
+                            "2025-01-15T10:00:00+00:00"
+                        ]
+                    },
+                    "sender": {
+                        "type": "string",
+                        "title": "Sender",
+                        "description": "Sender user ID (required). Also used as user_id internally for memory ownership.",
+                        "examples": [
+                            "user_001"
+                        ]
+                    },
+                    "sender_name": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Sender Name",
+                        "description": "Sender name (uses sender if not provided)",
+                        "examples": [
+                            "John"
+                        ]
+                    },
+                    "role": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Role",
+                        "description": "Message sender role, used to identify the source of the message.\nEnum values from MessageSenderRole:\n- user: Message from a human user\n- assistant: Message from an AI assistant",
+                        "examples": [
+                            "user",
+                            "assistant"
+                        ]
+                    },
+                    "content": {
+                        "type": "string",
+                        "title": "Content",
+                        "description": "Message content",
+                        "examples": [
+                            "Let's discuss the technical solution for the new feature today"
+                        ]
+                    },
+                    "refer_list": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "type": "string"
+                                },
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Refer List",
+                        "description": "List of referenced message IDs",
+                        "examples": [
+                            [
+                                "msg_000"
+                            ]
+                        ]
+                    },
+                    "flush": {
+                        "type": "boolean",
+                        "title": "Flush",
+                        "description": "Force boundary trigger. When True, immediately triggers memory extraction instead of waiting for natural boundary detection.",
+                        "default": false,
+                        "examples": [
+                            false,
+                            true
+                        ]
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "message_id",
+                    "create_time",
+                    "sender",
+                    "content"
+                ],
+                "title": "MemorizeMessageRequest",
+                "examples": [
+                    {
+                        "summary": "With explicit group_id (multi-user group mode)",
+                        "value": {
+                            "content": "Let's discuss the technical solution for the new feature today",
+                            "create_time": "2025-01-15T10:00:00+00:00",
+                            "group_id": "group_123",
+                            "group_name": "Project Discussion Group",
+                            "message_id": "msg_001",
+                            "refer_list": [
+                                "msg_000"
+                            ],
+                            "role": "user",
+                            "sender": "user_001",
+                            "sender_name": "John"
+                        }
+                    },
+                    {
+                        "summary": "Without group_id (single-user mode, auto-generated)",
+                        "value": {
+                            "content": "What's the weather like today?",
+                            "create_time": "2025-01-15T10:05:00+00:00",
+                            "message_id": "msg_002",
+                            "role": "user",
+                            "sender": "user_001",
+                            "sender_name": "John"
+                        }
+                    }
+                ]
+            },
+            "ValidationError": {
+                "properties": {
+                    "loc": {
+                        "items": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "integer"
+                                }
+                            ]
+                        },
+                        "type": "array",
+                        "title": "Location"
+                    },
+                    "msg": {
+                        "type": "string",
+                        "title": "Message"
+                    },
+                    "type": {
+                        "type": "string",
+                        "title": "Error Type"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "loc",
+                    "msg",
+                    "type"
+                ],
+                "title": "ValidationError"
+            },
+            "ConversationMetaGetRequest": {
+                "properties": {},
+                "type": "object",
+                "title": "ConversationMetaGetRequest",
+                "example": {}
+            },
+            "RequestStatusResponse": {
+                "properties": {
+                    "success": {
+                        "type": "boolean",
+                        "title": "Success",
+                        "description": "Whether the query was successful"
+                    },
+                    "found": {
+                        "type": "boolean",
+                        "title": "Found",
+                        "description": "Whether the request status was found",
+                        "default": false
+                    },
+                    "data": {
+                        "anyOf": [
+                            {
+                                "additionalProperties": true,
+                                "type": "object"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Data",
+                        "description": "Request status data"
+                    },
+                    "message": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Message",
+                        "description": "Message"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "success"
+                ],
+                "title": "RequestStatusResponse"
+            },
+            "ConversationMetaResponse": {
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "title": "Id",
+                        "description": "Document ID"
+                    },
+                    "scene": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Scene",
+                        "description": "Scene identifier"
+                    },
+                    "scene_desc": {
+                        "anyOf": [
+                            {
+                                "additionalProperties": true,
+                                "type": "object"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Scene Desc",
+                        "description": "Scene description"
+                    },
+                    "llm_custom_setting": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/LlmCustomSetting"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "description": "LLM custom settings"
+                    },
+                    "description": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Description",
+                        "description": "Description"
+                    },
+                    "conversation_created_at": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Conversation Created At",
+                        "description": "Conversation creation time"
+                    },
+                    "default_timezone": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Default Timezone",
+                        "description": "Default timezone"
+                    },
+                    "user_details": {
+                        "additionalProperties": {
+                            "additionalProperties": true,
+                            "type": "object"
+                        },
+                        "type": "object",
+                        "title": "User Details",
+                        "description": "User details"
+                    },
+                    "tags": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array",
+                        "title": "Tags",
+                        "description": "Tags"
+                    },
+                    "is_default": {
+                        "type": "boolean",
+                        "title": "Is Default",
+                        "description": "Whether this is the global (default) config",
+                        "default": false
+                    },
+                    "created_at": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Created At",
+                        "description": "Record creation time"
+                    },
+                    "updated_at": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Updated At",
+                        "description": "Record update time"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "id"
+                ],
+                "title": "ConversationMetaResponse",
+                "example": {
+                    "conversation_created_at": "2025-01-15T10:00:00+00:00",
+                    "created_at": "2025-01-15T10:00:00+00:00",
+                    "default_timezone": "UTC",
+                    "description": "Technical discussion group",
+                    "id": "507f1f77bcf86cd799439011",
+                    "is_default": false,
+                    "scene": "assistant",
+                    "scene_desc": {
+                        "description": "Project discussion group chat"
+                    },
+                    "tags": [
+                        "work",
+                        "tech"
+                    ],
+                    "updated_at": "2025-01-15T10:00:00+00:00",
+                    "user_details": {
+                        "bot_001": {
+                            "full_name": "AI Assistant",
+                            "role": "assistant"
+                        },
+                        "user_001": {
+                            "custom_role": "developer",
+                            "full_name": "John",
+                            "role": "user"
+                        }
+                    }
+                }
+            },
+            "DeleteMemoriesResponse": {
+                "properties": {
+                    "status": {
+                        "type": "string",
+                        "title": "Status",
+                        "description": "Response status",
+                        "default": "ok",
+                        "examples": [
+                            "ok",
+                            "failed"
+                        ]
+                    },
+                    "message": {
+                        "type": "string",
+                        "title": "Message",
+                        "description": "Response message",
+                        "default": "",
+                        "examples": [
+                            "Operation successful"
+                        ]
+                    },
+                    "result": {
+                        "$ref": "#/components/schemas/DeleteMemoriesResult",
+                        "description": "Delete operation result"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "result"
+                ],
+                "title": "DeleteMemoriesResponse",
+                "examples": [
+                    {
+                        "summary": "Delete by event_id only",
+                        "value": {
+                            "message": "Successfully deleted 1 memory",
+                            "result": {
+                                "count": 1,
+                                "filters": [
+                                    "event_id"
+                                ]
+                            },
+                            "status": "ok"
+                        }
+                    },
+                    {
+                        "summary": "Delete by user_id only",
+                        "value": {
+                            "message": "Successfully deleted 25 memories",
+                            "result": {
+                                "count": 25,
+                                "filters": [
+                                    "user_id"
+                                ]
+                            },
+                            "status": "ok"
+                        }
+                    },
+                    {
+                        "summary": "Delete by user_id and group_id",
+                        "value": {
+                            "message": "Successfully deleted 10 memories",
+                            "result": {
+                                "count": 10,
+                                "filters": [
+                                    "user_id",
+                                    "group_id"
+                                ]
+                            },
+                            "status": "ok"
+                        }
+                    }
+                ]
+            },
+            "DeleteMemoriesResult": {
+                "properties": {
+                    "filters": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array",
+                        "title": "Filters",
+                        "description": "List of filter types used for deletion",
+                        "examples": [
+                            [
+                                "event_id"
+                            ],
+                            [
+                                "user_id",
+                                "group_id"
+                            ]
+                        ]
+                    },
+                    "count": {
+                        "type": "integer",
+                        "title": "Count",
+                        "description": "Number of memories deleted",
+                        "default": 0,
+                        "examples": [
+                            1,
+                            25
+                        ]
+                    }
+                },
+                "type": "object",
+                "title": "DeleteMemoriesResult",
+                "examples": [
+                    {
+                        "summary": "Delete by event_id only",
+                        "value": {
+                            "count": 1,
+                            "filters": [
+                                "event_id"
+                            ]
+                        }
+                    },
+                    {
+                        "summary": "Delete by user_id only",
+                        "value": {
+                            "count": 25,
+                            "filters": [
+                                "user_id"
+                            ]
+                        }
+                    },
+                    {
+                        "summary": "Delete by user_id and group_id",
+                        "value": {
+                            "count": 10,
+                            "filters": [
+                                "user_id",
+                                "group_id"
+                            ]
+                        }
+                    }
+                ]
+            },
+            "EpisodicMemoryModel": {
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "title": "Id"
+                    },
+                    "user_id": {
+                        "type": "string",
+                        "title": "User Id"
+                    },
+                    "episode_id": {
+                        "type": "string",
+                        "title": "Episode Id"
+                    },
+                    "episode": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Episode"
+                    },
+                    "subject": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Subject"
+                    },
+                    "summary": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Summary"
+                    },
+                    "timestamp": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "format": "date-time"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Timestamp"
+                    },
+                    "participants": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array",
+                        "title": "Participants"
+                    },
+                    "location": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Location"
+                    },
+                    "start_time": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Start Time"
+                    },
+                    "end_time": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "format": "date-time"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "End Time"
+                    },
+                    "keywords": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array",
+                        "title": "Keywords"
+                    },
+                    "group_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Group Id"
+                    },
+                    "group_name": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Group Name"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Created At"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Updated At"
+                    },
+                    "metadata": {
+                        "$ref": "#/components/schemas/Metadata"
+                    },
+                    "extend": {
+                        "anyOf": [
+                            {
+                                "additionalProperties": true,
+                                "type": "object"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Extend"
+                    },
+                    "parent_type": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Parent Type"
+                    },
+                    "parent_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Parent Id"
+                    },
+                    "original_data": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "additionalProperties": true,
+                                    "type": "object"
+                                },
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Original Data"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "id",
+                    "user_id",
+                    "episode_id"
+                ],
+                "title": "EpisodicMemoryModel"
+            },
+            "EventLogModel": {
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "title": "Id"
+                    },
+                    "user_id": {
+                        "type": "string",
+                        "title": "User Id"
+                    },
+                    "atomic_fact": {
+                        "type": "string",
+                        "title": "Atomic Fact"
+                    },
+                    "parent_type": {
+                        "type": "string",
+                        "title": "Parent Type"
+                    },
+                    "parent_id": {
+                        "type": "string",
+                        "title": "Parent Id"
+                    },
+                    "timestamp": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Timestamp"
+                    },
+                    "user_name": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "User Name"
+                    },
+                    "group_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Group Id"
+                    },
+                    "group_name": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Group Name"
+                    },
+                    "participants": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "type": "string"
+                                },
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Participants"
+                    },
+                    "vector": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "type": "number"
+                                },
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Vector"
+                    },
+                    "vector_model": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Vector Model"
+                    },
+                    "event_type": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Event Type"
+                    },
+                    "extend": {
+                        "anyOf": [
+                            {
+                                "additionalProperties": true,
+                                "type": "object"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Extend"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Created At"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Updated At"
+                    },
+                    "metadata": {
+                        "$ref": "#/components/schemas/Metadata"
+                    },
+                    "original_data": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "additionalProperties": true,
+                                    "type": "object"
+                                },
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Original Data"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "id",
+                    "user_id",
+                    "atomic_fact",
+                    "parent_type",
+                    "parent_id",
+                    "timestamp"
+                ],
+                "title": "EventLogModel"
+            },
+            "FetchMemRequest": {
+                "properties": {
+                    "user_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "User Id",
+                        "description": "User ID",
+                        "examples": [
+                            "user_123"
+                        ]
+                    },
+                    "group_ids": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "type": "string"
+                                },
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Group Ids",
+                        "description": "List of Group IDs for batch query. Single group also needs array format. Max 50.",
+                        "examples": [
+                            [
+                                "group_1"
+                            ],
+                            [
+                                "group_1",
+                                "group_2",
+                                "group_3"
+                            ]
+                        ]
+                    },
+                    "page": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "title": "Page",
+                        "description": "Page number, starts from 1",
+                        "default": 1,
+                        "examples": [
+                            1
+                        ]
+                    },
+                    "page_size": {
+                        "type": "integer",
+                        "maximum": 100,
+                        "minimum": 1,
+                        "title": "Page Size",
+                        "description": "Number of records per page, default 20, max 100",
+                        "default": 20,
+                        "examples": [
+                            20
+                        ]
+                    },
+                    "memory_type": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/MemoryType"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "description": "Memory type, enum values from MemoryType:\n- profile: user profile\n- episodic_memory: episodic memory (default)\n- foresight: prospective memory\n- event_log: event log (atomic facts)",
+                        "default": "episodic_memory",
+                        "examples": [
+                            "episodic_memory"
+                        ]
+                    },
+                    "start_time": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Start Time",
+                        "description": "Start time for time range filtering (ISO 8601 format with Timezone is required)",
+                        "examples": [
+                            "2024-01-01T00:00:00+00:00"
+                        ]
+                    },
+                    "end_time": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "End Time",
+                        "description": "End time for time range filtering (ISO 8601 format with Timezone is required)",
+                        "examples": [
+                            "2024-12-31T23:59:59+00:00"
+                        ]
+                    }
+                },
+                "type": "object",
+                "title": "FetchMemRequest"
+            },
+            "FetchMemResponse": {
+                "properties": {
+                    "memories": {
+                        "items": {
+                            "anyOf": [
+                                {
+                                    "$ref": "#/components/schemas/ProfileModel"
+                                },
+                                {
+                                    "$ref": "#/components/schemas/EpisodicMemoryModel"
+                                },
+                                {
+                                    "$ref": "#/components/schemas/EventLogModel"
+                                },
+                                {
+                                    "$ref": "#/components/schemas/ForesightModel"
+                                }
+                            ]
+                        },
+                        "type": "array",
+                        "title": "Memories"
+                    },
+                    "total_count": {
+                        "type": "integer",
+                        "title": "Total Count",
+                        "description": "Total number of records matching query conditions (for pagination calculation)",
+                        "default": 0
+                    },
+                    "count": {
+                        "type": "integer",
+                        "title": "Count",
+                        "description": "Number of records in current page (length of memories array)",
+                        "default": 0
+                    },
+                    "metadata": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/Metadata"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Metadata"
+                    }
+                },
+                "type": "object",
+                "title": "FetchMemResponse"
+            },
+            "FetchMemoriesResponse": {
+                "properties": {
+                    "status": {
+                        "type": "string",
+                        "title": "Status",
+                        "description": "Response status",
+                        "default": "ok",
+                        "examples": [
+                            "ok",
+                            "failed"
+                        ]
+                    },
+                    "message": {
+                        "type": "string",
+                        "title": "Message",
+                        "description": "Response message",
+                        "default": "",
+                        "examples": [
+                            "Operation successful"
+                        ]
+                    },
+                    "result": {
+                        "$ref": "#/components/schemas/FetchMemResponse",
+                        "description": "Memory fetch result"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "result"
+                ],
+                "title": "FetchMemoriesResponse",
+                "example": {
+                    "message": "Memory retrieval successful, retrieved 1 memories",
+                    "result": {
+                        "count": 1,
+                        "memories": [
+                            {
+                                "content": "User discussed coffee during the project sync",
+                                "memory_type": "episodic_memory",
+                                "summary": "Project sync coffee note",
+                                "timestamp": "2024-01-15T10:30:00+00:00",
+                                "user_id": "user_123"
+                            }
+                        ],
+                        "metadata": {
+                            "memory_type": "fetch",
+                            "source": "fetch_mem_service",
+                            "user_id": "user_123"
+                        },
+                        "total_count": 100
+                    },
+                    "status": "ok"
+                }
+            },
+            "GetConversationMetaResponse": {
+                "properties": {
+                    "status": {
+                        "type": "string",
+                        "title": "Status",
+                        "description": "Response status",
+                        "default": "ok",
+                        "examples": [
+                            "ok",
+                            "failed"
+                        ]
+                    },
+                    "message": {
+                        "type": "string",
+                        "title": "Message",
+                        "description": "Response message",
+                        "default": "",
+                        "examples": [
+                            "Operation successful"
+                        ]
+                    },
+                    "result": {
+                        "$ref": "#/components/schemas/ConversationMetaResponse",
+                        "description": "Conversation metadata"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "result"
+                ],
+                "title": "GetConversationMetaResponse",
+                "examples": [
+                    {
+                        "summary": "Found by group_id",
+                        "value": {
+                            "message": "Conversation metadata retrieved successfully",
+                            "result": {
+                                "conversation_created_at": "2025-01-15T10:00:00+00:00",
+                                "group_id": "group_123",
+                                "id": "507f1f77bcf86cd799439011",
+                                "is_default": false,
+                                "name": "Project Discussion",
+                                "scene": "group_chat",
+                                "scene_desc": {
+                                    "description": "Project discussion group chat"
+                                }
+                            },
+                            "status": "ok"
+                        }
+                    },
+                    {
+                        "summary": "Fallback to default config",
+                        "value": {
+                            "message": "Using default config",
+                            "result": {
+                                "conversation_created_at": "2025-01-15T10:00:00+00:00",
+                                "id": "507f1f77bcf86cd799439012",
+                                "is_default": true,
+                                "name": "Default Settings",
+                                "scene": "group_chat",
+                                "scene_desc": {
+                                    "description": "Default conversation meta config"
+                                }
+                            },
+                            "status": "ok"
+                        }
+                    }
+                ]
+            },
+            "MemoryType": {
+                "type": "string",
+                "enum": [
+                    "profile",
+                    "episodic_memory",
+                    "foresight",
+                    "event_log"
+                ],
+                "title": "MemoryType"
+            },
+            "Metadata": {
+                "properties": {
+                    "source": {
+                        "type": "string",
+                        "title": "Source"
+                    },
+                    "user_id": {
+                        "type": "string",
+                        "title": "User Id"
+                    },
+                    "memory_types": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array",
+                        "title": "Memory Types"
+                    },
+                    "group_ids": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "type": "string"
+                                },
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Group Ids"
+                    },
+                    "email": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Email"
+                    },
+                    "phone": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Phone"
+                    },
+                    "full_name": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Full Name"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "source",
+                    "user_id",
+                    "memory_types"
+                ],
+                "title": "Metadata"
+            },
+            "PatchConversationMetaResponse": {
+                "properties": {
+                    "status": {
+                        "type": "string",
+                        "title": "Status",
+                        "description": "Response status",
+                        "default": "ok",
+                        "examples": [
+                            "ok",
+                            "failed"
+                        ]
+                    },
+                    "message": {
+                        "type": "string",
+                        "title": "Message",
+                        "description": "Response message",
+                        "default": "",
+                        "examples": [
+                            "Operation successful"
+                        ]
+                    },
+                    "result": {
+                        "$ref": "#/components/schemas/PatchConversationMetaResult",
+                        "description": "Patch result with updated fields"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "result"
+                ],
+                "title": "PatchConversationMetaResponse",
+                "example": {
+                    "message": "Conversation metadata updated successfully, updated 2 fields",
+                    "result": {
+                        "group_id": "group_123",
+                        "id": "507f1f77bcf86cd799439011",
+                        "name": "New conversation name",
+                        "scene": "group_chat",
+                        "updated_at": "2025-01-15T10:30:00+00:00",
+                        "updated_fields": [
+                            "name",
+                            "tags"
+                        ]
+                    },
+                    "status": "ok"
+                }
+            },
+            "PatchConversationMetaResult": {
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "title": "Id",
+                        "description": "Document ID"
+                    },
+                    "group_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Group Id",
+                        "description": "Group ID (null for default config)"
+                    },
+                    "scene": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Scene",
+                        "description": "Scene identifier"
+                    },
+                    "name": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Name",
+                        "description": "Conversation name"
+                    },
+                    "updated_fields": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array",
+                        "title": "Updated Fields",
+                        "description": "List of updated field names"
+                    },
+                    "updated_at": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Updated At",
+                        "description": "Record update time"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "id"
+                ],
+                "title": "PatchConversationMetaResult",
+                "example": {
+                    "group_id": "group_123",
+                    "id": "507f1f77bcf86cd799439011",
+                    "name": "New conversation name",
+                    "scene": "group_chat",
+                    "updated_at": "2025-01-15T10:30:00+00:00",
+                    "updated_fields": [
+                        "name",
+                        "tags"
+                    ]
+                }
+            },
+            "PendingMessage": {
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "title": "Id"
+                    },
+                    "request_id": {
+                        "type": "string",
+                        "title": "Request Id"
+                    },
+                    "message_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Message Id"
+                    },
+                    "group_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Group Id"
+                    },
+                    "user_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "User Id"
+                    },
+                    "sender": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Sender"
+                    },
+                    "sender_name": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Sender Name"
+                    },
+                    "group_name": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Group Name"
+                    },
+                    "content": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Content"
+                    },
+                    "refer_list": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "type": "string"
+                                },
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Refer List"
+                    },
+                    "message_create_time": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Message Create Time"
+                    },
+                    "created_at": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Created At"
+                    },
+                    "updated_at": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Updated At"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "id",
+                    "request_id"
+                ],
+                "title": "PendingMessage"
+            },
+            "ProfileModel": {
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "title": "Id"
+                    },
+                    "user_id": {
+                        "type": "string",
+                        "title": "User Id"
+                    },
+                    "group_id": {
+                        "type": "string",
+                        "title": "Group Id"
+                    },
+                    "profile_data": {
+                        "additionalProperties": true,
+                        "type": "object",
+                        "title": "Profile Data"
+                    },
+                    "scenario": {
+                        "type": "string",
+                        "title": "Scenario",
+                        "default": "group_chat"
+                    },
+                    "confidence": {
+                        "type": "number",
+                        "title": "Confidence",
+                        "default": 0
+                    },
+                    "version": {
+                        "type": "integer",
+                        "title": "Version",
+                        "default": 1
+                    },
+                    "cluster_ids": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array",
+                        "title": "Cluster Ids"
+                    },
+                    "memcell_count": {
+                        "type": "integer",
+                        "title": "Memcell Count",
+                        "default": 0
+                    },
+                    "last_updated_cluster": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Last Updated Cluster"
+                    },
+                    "created_at": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "format": "date-time"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Created At"
+                    },
+                    "updated_at": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "format": "date-time"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Updated At"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "id",
+                    "user_id",
+                    "group_id"
+                ],
+                "title": "ProfileModel"
+            },
+            "RetrieveMemRequest": {
+                "properties": {
+                    "user_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "User Id",
+                        "description": "User ID (at least one of user_id or group_id must be provided)",
+                        "examples": [
+                            "user_123"
+                        ]
+                    },
+                    "memory_types": {
+                        "items": {
+                            "$ref": "#/components/schemas/MemoryType"
+                        },
+                        "type": "array",
+                        "title": "Memory Types",
+                        "description": "List of memory types to retrieve, enum values from MemoryType:\n- profile: user profile (Milvus vector search only)\n- episodic_memory: episodic memory\n- foresight: prospective memory (not yet supported for search)\n- event_log: event log (not yet supported for search)\nNote: Only profile and episodic_memory are supported. Defaults to both if not specified.",
+                        "examples": [
+                            [
+                                "episodic_memory"
+                            ]
+                        ]
+                    },
+                    "include_metadata": {
+                        "type": "boolean",
+                        "title": "Include Metadata",
+                        "description": "Whether to include metadata",
+                        "default": true,
+                        "examples": [
+                            true
+                        ]
+                    },
+                    "start_time": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Start Time",
+                        "description": "Time range start (ISO 8601 format with Timezone is required). Only applies to episodic_memory, ignored for profile",
+                        "examples": [
+                            "2024-01-01T00:00:00+00:00"
+                        ]
+                    },
+                    "end_time": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "End Time",
+                        "description": "Time range end (ISO 8601 format with Timezone is required). Only applies to episodic_memory, ignored for profile",
+                        "examples": [
+                            "2024-12-31T23:59:59+00:00"
+                        ]
+                    },
+                    "query": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Query",
+                        "description": "Search query text",
+                        "examples": [
+                            "coffee preference"
+                        ]
+                    },
+                    "retrieve_method": {
+                        "$ref": "#/components/schemas/RetrieveMethod",
+                        "description": "Retrieval method, enum values from RetrieveMethod:\n- keyword: keyword retrieval (BM25, default)\n- vector: vector semantic retrieval\n- hybrid: hybrid retrieval (keyword + vector)\n- rrf: RRF fusion retrieval (keyword + vector + RRF ranking fusion)\n- agentic: LLM-guided multi-round intelligent retrieval",
+                        "default": "keyword",
+                        "examples": [
+                            "keyword"
+                        ]
+                    },
+                    "current_time": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Current Time",
+                        "description": "Current time, used to filter forward-looking events within validity period"
+                    },
+                    "radius": {
+                        "anyOf": [
+                            {
+                                "type": "number",
+                                "maximum": 1,
+                                "minimum": 0
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Radius",
+                        "description": "COSINE similarity threshold for vector retrieval (only for vector and hybrid methods, default 0.6)",
+                        "examples": [
+                            0.6
+                        ]
+                    },
+                    "top_k": {
+                        "type": "integer",
+                        "maximum": 100,
+                        "minimum": -1,
+                        "title": "Top K",
+                        "description": "Maximum number of results to return. -1 means return all results that meet the threshold (up to 100). Valid values: -1 or 1-100.",
+                        "default": -1,
+                        "examples": [
+                            10,
+                            -1
+                        ]
+                    },
+                    "group_ids": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "type": "string"
+                                },
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Group Ids",
+                        "description": "Array of Group IDs to search (max 10 items). None means search all groups for the user.",
+                        "examples": [
+                            [
+                                "group_456",
+                                "group_789"
+                            ]
+                        ]
+                    }
+                },
+                "type": "object",
+                "title": "RetrieveMemRequest"
+            },
+            "RetrieveMemResponse": {
+                "properties": {
+                    "profiles": {
+                        "items": {
+                            "$ref": "#/components/schemas/ProfileSearchItem"
+                        },
+                        "type": "array",
+                        "title": "Profiles",
+                        "description": "Profile search results (explicit_info and implicit_traits)"
+                    },
+                    "memories": {
+                        "items": {
+                            "anyOf": [
+                                {
+                                    "$ref": "#/components/schemas/EpisodeMemory"
+                                },
+                                {
+                                    "$ref": "#/components/schemas/EventLog"
+                                },
+                                {
+                                    "$ref": "#/components/schemas/Foresight"
+                                }
+                            ]
+                        },
+                        "type": "array",
+                        "title": "Memories"
+                    },
+                    "total_count": {
+                        "type": "integer",
+                        "title": "Total Count",
+                        "default": 0
+                    },
+                    "query_metadata": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/QueryMetadata"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Query Metadata"
+                    },
+                    "metadata": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/Metadata"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Metadata"
+                    },
+                    "pending_messages": {
+                        "items": {
+                            "$ref": "#/components/schemas/PendingMessage"
+                        },
+                        "type": "array",
+                        "title": "Pending Messages"
+                    }
+                },
+                "type": "object",
+                "title": "RetrieveMemResponse"
+            },
+            "RetrieveMethod": {
+                "type": "string",
+                "enum": [
+                    "keyword",
+                    "vector",
+                    "hybrid",
+                    "rrf",
+                    "agentic"
+                ],
+                "title": "RetrieveMethod"
+            },
+            "SaveConversationMetaResponse": {
+                "properties": {
+                    "status": {
+                        "type": "string",
+                        "title": "Status",
+                        "description": "Response status",
+                        "default": "ok",
+                        "examples": [
+                            "ok",
+                            "failed"
+                        ]
+                    },
+                    "message": {
+                        "type": "string",
+                        "title": "Message",
+                        "description": "Response message",
+                        "default": "",
+                        "examples": [
+                            "Operation successful"
+                        ]
+                    },
+                    "result": {
+                        "$ref": "#/components/schemas/ConversationMetaResponse",
+                        "description": "Saved conversation metadata"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "result"
+                ],
+                "title": "SaveConversationMetaResponse",
+                "example": {
+                    "message": "Conversation metadata saved successfully",
+                    "result": {
+                        "conversation_created_at": "2025-01-15T10:00:00+00:00",
+                        "group_id": "group_123",
+                        "id": "507f1f77bcf86cd799439011",
+                        "is_default": false,
+                        "name": "Project Discussion",
+                        "scene": "group_chat",
+                        "scene_desc": {
+                            "description": "Project discussion group chat"
+                        }
+                    },
+                    "status": "ok"
+                }
+            },
+            "SearchMemoriesResponse": {
+                "properties": {
+                    "status": {
+                        "type": "string",
+                        "title": "Status",
+                        "description": "Response status",
+                        "default": "ok",
+                        "examples": [
+                            "ok",
+                            "failed"
+                        ]
+                    },
+                    "message": {
+                        "type": "string",
+                        "title": "Message",
+                        "description": "Response message",
+                        "default": "",
+                        "examples": [
+                            "Operation successful"
+                        ]
+                    },
+                    "result": {
+                        "$ref": "#/components/schemas/RetrieveMemResponse",
+                        "description": "Memory search result"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "result"
+                ],
+                "title": "SearchMemoriesResponse",
+                "example": {
+                    "message": "Memory search successful",
+                    "result": {
+                        "has_more": false,
+                        "memories": [
+                            {
+                                "group_id": "group_456",
+                                "memory_type": "episodic_memory",
+                                "summary": "User mentioned controlling their diet recently, eating only two meals a day, with dinner mainly being salad",
+                                "timestamp": "2024-01-15T10:30:00+00:00",
+                                "user_id": "user_123"
+                            }
+                        ],
+                        "metadata": {
+                            "episodic_count": 1,
+                            "latency_ms": 156,
+                            "profile_count": 2
+                        },
+                        "original_data": [],
+                        "pending_messages": [],
+                        "profiles": [
+                            {
+                                "category": "Dietary Preferences",
+                                "description": "Prefers light flavors, favoring vegetables and seafood",
+                                "item_type": "explicit_info",
+                                "score": 0.89
+                            },
+                            {
+                                "description": "Prioritizes dietary health, preferring low oil and low salt",
+                                "item_type": "implicit_trait",
+                                "score": 0.75,
+                                "trait_name": "Health Conscious"
+                            }
+                        ],
+                        "query_metadata": {
+                            "memory_type": "retrieve",
+                            "source": "hybrid_search",
+                            "user_id": "user_123"
+                        },
+                        "scores": [
+                            0.82
+                        ],
+                        "total_count": 3
+                    },
+                    "status": "ok"
+                }
+            },
+            "UserDetail": {
+                "properties": {
+                    "full_name": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Full Name",
+                        "description": "User full name",
+                        "examples": [
+                            "John Smith"
+                        ]
+                    },
+                    "role": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Role",
+                        "description": "User type role, used to identify if this user is a human or AI.\nEnum values from MessageSenderRole:\n- user: Human user\n- assistant: AI assistant/bot",
+                        "examples": [
+                            "user",
+                            "assistant"
+                        ]
+                    },
+                    "custom_role": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Custom Role",
+                        "description": "User's job/position role (e.g. developer, designer, manager)",
+                        "examples": [
+                            "developer"
+                        ]
+                    },
+                    "extra": {
+                        "anyOf": [
+                            {
+                                "additionalProperties": true,
+                                "type": "object"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Extra",
+                        "description": "Additional information",
+                        "examples": [
+                            {
+                                "department": "Engineering"
+                            }
+                        ]
+                    }
+                },
+                "type": "object",
+                "title": "UserDetail"
+            },
+            "ForesightModel": {
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "title": "Id"
+                    },
+                    "content": {
+                        "type": "string",
+                        "title": "Content"
+                    },
+                    "foresight": {
+                        "type": "string",
+                        "title": "Foresight"
+                    },
+                    "parent_type": {
+                        "type": "string",
+                        "title": "Parent Type"
+                    },
+                    "parent_id": {
+                        "type": "string",
+                        "title": "Parent Id"
+                    },
+                    "user_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "User Id"
+                    },
+                    "user_name": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "User Name"
+                    },
+                    "group_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Group Id"
+                    },
+                    "group_name": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Group Name"
+                    },
+                    "start_time": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Start Time"
+                    },
+                    "end_time": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "End Time"
+                    },
+                    "duration_days": {
+                        "anyOf": [
+                            {
+                                "type": "integer"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Duration Days"
+                    },
+                    "participants": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "type": "string"
+                                },
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Participants"
+                    },
+                    "vector": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "type": "number"
+                                },
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Vector"
+                    },
+                    "vector_model": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Vector Model"
+                    },
+                    "evidence": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Evidence"
+                    },
+                    "extend": {
+                        "anyOf": [
+                            {
+                                "additionalProperties": true,
+                                "type": "object"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Extend"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Created At"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Updated At"
+                    },
+                    "metadata": {
+                        "$ref": "#/components/schemas/Metadata"
+                    },
+                    "original_data": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "additionalProperties": true,
+                                    "type": "object"
+                                },
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Original Data"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "id",
+                    "content",
+                    "foresight",
+                    "parent_type",
+                    "parent_id"
+                ],
+                "title": "ForesightModel"
+            },
+            "CustomProfileData": {
+                "properties": {
+                    "initial_profile": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array",
+                        "title": "Initial Profile",
+                        "description": "List of profile sentences describing the user",
+                        "examples": [
+                            [
+                                "User is a software engineer",
+                                "User is proficient in Python programming",
+                                "User is interested in AI technology"
+                            ]
+                        ]
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "initial_profile"
+                ],
+                "title": "CustomProfileData"
+            },
+            "LlmCustomSetting": {
+                "properties": {
+                    "boundary": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/LlmProviderConfig"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "description": "LLM config for boundary detection (fast, cheap model recommended)",
+                        "examples": [
+                            {
+                                "model": "qwen/qwen3-235b-a22b-2507",
+                                "provider": "openrouter"
+                            }
+                        ]
+                    },
+                    "extraction": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/LlmProviderConfig"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "description": "LLM config for memory extraction (high quality model recommended)",
+                        "examples": [
+                            {
+                                "model": "qwen/qwen3-235b-a22b-2507",
+                                "provider": "openrouter"
+                            }
+                        ]
+                    }
+                },
+                "type": "object",
+                "title": "LlmCustomSetting"
+            },
+            "LlmProviderConfig": {
+                "properties": {
+                    "provider": {
+                        "type": "string",
+                        "enum": [
+                            "openrouter"
+                        ],
+                        "title": "Provider",
+                        "description": "LLM provider name. Currently only `openrouter` is supported.",
+                        "examples": [
+                            "openrouter"
+                        ]
+                    },
+                    "model": {
+                        "type": "string",
+                        "enum": [
+                            "qwen/qwen3-235b-a22b-2507",
+                            "openai/gpt-4.1-mini"
+                        ],
+                        "title": "Model",
+                        "description": "Model name. Available models: `qwen/qwen3-235b-a22b-2507`, `openai/gpt-4.1-mini`.",
+                        "examples": [
+                            "qwen/qwen3-235b-a22b-2507",
+                            "openai/gpt-4.1-mini"
+                        ]
+                    },
+                    "extra": {
+                        "anyOf": [
+                            {
+                                "additionalProperties": true,
+                                "type": "object"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Extra",
+                        "description": "Additional provider-specific configuration",
+                        "examples": [
+                            {
+                                "max_tokens": 1024,
+                                "temperature": 0.7
+                            }
+                        ]
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "provider",
+                    "model"
+                ],
+                "title": "LlmProviderConfig"
+            },
+            "EpisodeMemory": {
+                "properties": {
+                    "memory_type": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/MemoryType"
+                            },
+                            {
+                                "type": "string"
+                            }
+                        ],
+                        "title": "Memory Type"
+                    },
+                    "user_id": {
+                        "type": "string",
+                        "title": "User Id"
+                    },
+                    "timestamp": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Timestamp"
+                    },
+                    "ori_event_id_list": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "type": "string"
+                                },
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Ori Event Id List"
+                    },
+                    "group_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Group Id"
+                    },
+                    "group_name": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Group Name"
+                    },
+                    "participants": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "type": "string"
+                                },
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Participants"
+                    },
+                    "type": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/RawDataType"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "keywords": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "type": "string"
+                                },
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Keywords"
+                    },
+                    "linked_entities": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "type": "string"
+                                },
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Linked Entities"
+                    },
+                    "user_name": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "User Name"
+                    },
+                    "extend": {
+                        "anyOf": [
+                            {
+                                "additionalProperties": true,
+                                "type": "object"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Extend"
+                    },
+                    "vector_model": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Vector Model"
+                    },
+                    "vector": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "type": "number"
+                                },
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Vector"
+                    },
+                    "id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Id"
+                    },
+                    "score": {
+                        "anyOf": [
+                            {
+                                "type": "number"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Score"
+                    },
+                    "original_data": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "additionalProperties": true,
+                                    "type": "object"
+                                },
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Original Data"
+                    },
+                    "subject": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Subject"
+                    },
+                    "summary": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Summary"
+                    },
+                    "episode": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Episode"
+                    },
+                    "parent_type": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Parent Type"
+                    },
+                    "parent_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Parent Id"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "memory_type",
+                    "user_id",
+                    "timestamp"
+                ],
+                "title": "EpisodeMemory"
+            },
+            "EventLog": {
+                "properties": {
+                    "memory_type": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/MemoryType"
+                            },
+                            {
+                                "type": "string"
+                            }
+                        ],
+                        "title": "Memory Type"
+                    },
+                    "user_id": {
+                        "type": "string",
+                        "title": "User Id"
+                    },
+                    "timestamp": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Timestamp"
+                    },
+                    "ori_event_id_list": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "type": "string"
+                                },
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Ori Event Id List"
+                    },
+                    "group_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Group Id"
+                    },
+                    "group_name": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Group Name"
+                    },
+                    "participants": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "type": "string"
+                                },
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Participants"
+                    },
+                    "type": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/RawDataType"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "keywords": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "type": "string"
+                                },
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Keywords"
+                    },
+                    "linked_entities": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "type": "string"
+                                },
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Linked Entities"
+                    },
+                    "user_name": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "User Name"
+                    },
+                    "extend": {
+                        "anyOf": [
+                            {
+                                "additionalProperties": true,
+                                "type": "object"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Extend"
+                    },
+                    "vector_model": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Vector Model"
+                    },
+                    "vector": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "type": "number"
+                                },
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Vector"
+                    },
+                    "id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Id"
+                    },
+                    "score": {
+                        "anyOf": [
+                            {
+                                "type": "number"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Score"
+                    },
+                    "original_data": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "additionalProperties": true,
+                                    "type": "object"
+                                },
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Original Data"
+                    },
+                    "time": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Time"
+                    },
+                    "atomic_fact": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "items": {
+                                    "type": "string"
+                                },
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Atomic Fact"
+                    },
+                    "fact_embeddings": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "items": {
+                                        "type": "number"
+                                    },
+                                    "type": "array"
+                                },
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Fact Embeddings"
+                    },
+                    "parent_type": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Parent Type"
+                    },
+                    "parent_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Parent Id"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "memory_type",
+                    "user_id",
+                    "timestamp"
+                ],
+                "title": "EventLog"
+            },
+            "Foresight": {
+                "properties": {
+                    "memory_type": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/MemoryType"
+                            },
+                            {
+                                "type": "string"
+                            }
+                        ],
+                        "title": "Memory Type"
+                    },
+                    "user_id": {
+                        "type": "string",
+                        "title": "User Id"
+                    },
+                    "timestamp": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Timestamp"
+                    },
+                    "ori_event_id_list": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "type": "string"
+                                },
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Ori Event Id List"
+                    },
+                    "group_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Group Id"
+                    },
+                    "group_name": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Group Name"
+                    },
+                    "participants": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "type": "string"
+                                },
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Participants"
+                    },
+                    "type": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/RawDataType"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "keywords": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "type": "string"
+                                },
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Keywords"
+                    },
+                    "linked_entities": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "type": "string"
+                                },
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Linked Entities"
+                    },
+                    "user_name": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "User Name"
+                    },
+                    "extend": {
+                        "anyOf": [
+                            {
+                                "additionalProperties": true,
+                                "type": "object"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Extend"
+                    },
+                    "vector_model": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Vector Model"
+                    },
+                    "vector": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "type": "number"
+                                },
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Vector"
+                    },
+                    "id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Id"
+                    },
+                    "score": {
+                        "anyOf": [
+                            {
+                                "type": "number"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Score"
+                    },
+                    "original_data": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "additionalProperties": true,
+                                    "type": "object"
+                                },
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Original Data"
+                    },
+                    "foresight": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Foresight"
+                    },
+                    "evidence": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Evidence"
+                    },
+                    "start_time": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Start Time"
+                    },
+                    "end_time": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "End Time"
+                    },
+                    "duration_days": {
+                        "anyOf": [
+                            {
+                                "type": "integer"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Duration Days"
+                    },
+                    "parent_type": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Parent Type"
+                    },
+                    "parent_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Parent Id"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "memory_type",
+                    "user_id",
+                    "timestamp"
+                ],
+                "title": "Foresight"
+            },
+            "ProfileSearchItem": {
+                "properties": {
+                    "item_type": {
+                        "type": "string",
+                        "title": "Item Type",
+                        "description": "Item type: explicit_info or implicit_trait",
+                        "examples": [
+                            "explicit_info",
+                            "implicit_trait"
+                        ]
+                    },
+                    "category": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Category",
+                        "description": "Category name (for explicit_info type)",
+                        "examples": [
+                            "Dietary Preferences",
+                            "Professional Skills"
+                        ]
+                    },
+                    "trait_name": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Trait Name",
+                        "description": "Trait name (for implicit_trait type)",
+                        "examples": [
+                            "Health Conscious",
+                            "Efficiency Focused"
+                        ]
+                    },
+                    "description": {
+                        "type": "string",
+                        "title": "Description",
+                        "description": "Description content",
+                        "default": "",
+                        "examples": [
+                            "Prefers light flavors, favoring vegetables and seafood."
+                        ]
+                    },
+                    "score": {
+                        "type": "number",
+                        "title": "Score",
+                        "description": "Similarity score from Milvus search",
+                        "default": 0,
+                        "examples": [
+                            0.89,
+                            0.75
+                        ]
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "item_type"
+                ],
+                "title": "ProfileSearchItem"
+            },
+            "QueryMetadata": {
+                "properties": {
+                    "user_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "User Id"
+                    },
+                    "group_ids": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array",
+                        "title": "Group Ids"
+                    },
+                    "memory_types": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "type": "string"
+                                },
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Memory Types"
+                    },
+                    "start_time": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Start Time"
+                    },
+                    "end_time": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "End Time"
+                    },
+                    "query": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Query"
+                    },
+                    "retrieve_method": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Retrieve Method"
+                    },
+                    "current_time": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Current Time"
+                    },
+                    "radius": {
+                        "anyOf": [
+                            {
+                                "type": "number"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Radius"
+                    },
+                    "top_k": {
+                        "anyOf": [
+                            {
+                                "type": "integer"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Top K"
+                    }
+                },
+                "type": "object",
+                "title": "QueryMetadata"
+            },
+            "RawDataType": {
+                "type": "string",
+                "enum": [
+                    "Conversation"
+                ],
+                "title": "RawDataType"
+            }
+        },
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "x-default": "Bearer <api_key>",
+                "description": "Bearer authentication header of the form Bearer 'api_key', where 'api_key' is your EverMemOS auth api key."
+            }
+        }
+    }
+}

@@ -1,5 +1,7 @@
+import asyncio
 import logging
 import sys
+from contextlib import asynccontextmanager
 
 logging.basicConfig(
     level=logging.INFO,
@@ -14,6 +16,7 @@ from app.config import MONGO_USER, MONGO_PASSWORD, LLM_API_KEY, PLANS_DIR
 from app.db.mongo import get_client
 from app.db.indexes import ensure_indexes
 from app.api.chat import router as chat_router
+from app.api.ebbinghaus import router as ebbinghaus_router
 from app.api.feynman import router as feynman_router
 from app.api.graph import router as graph_router
 
@@ -33,8 +36,35 @@ except Exception as e:
 ensure_indexes()
 PLANS_DIR.mkdir(parents=True, exist_ok=True)
 
+# --- Foresight polling background loop ---
+
+_logger = logging.getLogger("foresight_poller")
+
+
+async def _foresight_poll_loop():
+    """Poll EverMemOS foresights every hour to create review schedules."""
+    while True:
+        try:
+            from app.services.foresight_poller import poll_foresights
+
+            created = await poll_foresights("user_001")
+            if created:
+                _logger.info("Foresight poll created %d new review schedules", created)
+        except Exception as e:
+            _logger.warning("Foresight poll failed: %s", e)
+        await asyncio.sleep(3600)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    task = asyncio.create_task(_foresight_poll_loop())
+    yield
+    task.cancel()
+    await asyncio.gather(task, return_exceptions=True)
+
+
 # --- App ---
-app = FastAPI(title="Rabbithole")
+app = FastAPI(title="Rabbithole", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -44,6 +74,7 @@ app.add_middleware(
 )
 
 app.include_router(chat_router)
+app.include_router(ebbinghaus_router)
 app.include_router(feynman_router)
 app.include_router(graph_router)
 

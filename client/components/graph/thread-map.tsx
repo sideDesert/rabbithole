@@ -34,8 +34,8 @@ function ThreadMapInner({ threadId }: { threadId: string }) {
   const router = useRouter();
   const { resolvedTheme } = useTheme();
   const [selectedNode, setSelectedNode] = useState<ThreadMapNode | null>(null);
-  const [nodes, setNodes, onNodesChange] = useNodesState([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [nodes, setNodes, onNodesChange] = useNodesState([] as Node[]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState([] as Edge[]);
 
   // Compute layout when data changes, then push into draggable state
   const layouted = useMemo(() => {

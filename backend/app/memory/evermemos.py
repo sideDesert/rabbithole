@@ -115,6 +115,7 @@ async def set_conversation_meta(
     resp = await _get_client().post(
         "/api/v0/memories/conversation-meta",
         json={
+            "group_id": group_id,
             "scene": scene,
             "created_at": _now_iso(),
             "default_timezone": "UTC",

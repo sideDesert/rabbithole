@@ -28,20 +28,20 @@ const tools = [
   { name: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
   { name: "Chat Threads", icon: MessageSquare, href: "/threads" },
   { name: "Knowledge Graph", icon: Network, href: "/knowledge-graph" },
-  { name: "Memories", icon: BrainCircuit, href: "memories" },
+  { name: "Memories", icon: BrainCircuit, href: "/memories" },
 ] as const;
 
 export function AppSidebar() {
   const path = usePathname();
   const router = useRouter();
 
-  const { activeAgent, agents } = useAgent();
+  const { activeAgent, setActiveAgent } = useAgent();
   const { setThreadId } = usePlan();
-  const activeAgentData = agents.find((a) => a.id === activeAgent);
 
-  function handleNewChat() {
-    setThreadId(null);
-    router.push(activeAgentData?.href ?? "/feynman");
+  function handleAgentNav(agentId: string, path: string) {
+    if (agentId === "feynman") setThreadId(null);
+    setActiveAgent(agentId);
+    router.push(path);
   }
 
   return (
@@ -54,16 +54,25 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent className="flex flex-col overflow-hidden">
-        {/* New Chat Button */}
+        {/* Agent Personas */}
         <SidebarGroup>
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton
-                isActive={path.includes("feynman")}
-                onClick={handleNewChat}
+                isActive={activeAgent === "feynman" || path.includes("feynman")}
+                onClick={() => handleAgentNav("feynman", "/feynman")}
               >
                 <SquarePen className="h-4 w-4" />
                 <span>New Chat</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                isActive={activeAgent === "ebbinghaus" || path.includes("ebbinghaus")}
+                onClick={() => handleAgentNav("ebbinghaus", "/ebbinghaus")}
+              >
+                <BrainCircuit className="h-4 w-4" />
+                <span>Ebbinghaus</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>

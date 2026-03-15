@@ -8,8 +8,9 @@ import {
   type PlanConcept,
 } from "@/lib/api";
 import { usePlan } from "./plan-context";
-import { ListTodo, ChevronDown, ChevronRight, Check } from "lucide-react";
+import { ListTodo, ChevronDown, ChevronRight, Check, FlaskConical } from "lucide-react";
 import { useState } from "react";
+import Link from "next/link";
 
 function ProgressBar({ value }: { value: number }) {
   return (
@@ -25,9 +26,11 @@ function ProgressBar({ value }: { value: number }) {
 function ConceptRow({
   concept,
   threadId,
+  topicSlug,
 }: {
   concept: PlanConcept;
   threadId: string;
+  topicSlug: string | null;
 }) {
   const queryClient = useQueryClient();
 
@@ -62,6 +65,16 @@ function ConceptRow({
           </p>
         )}
       </div>
+      {concept.completed && topicSlug && (
+        <Link
+          href={`/ebbinghaus/test?concept=${encodeURIComponent(concept.name)}&topic=${encodeURIComponent(topicSlug)}`}
+          onClick={(e) => e.stopPropagation()}
+          className="shrink-0 mt-0.5 p-1 rounded hover:bg-muted transition-colors opacity-0 group-hover:opacity-100"
+          title="Take a test"
+        >
+          <FlaskConical className="size-3.5 text-muted-foreground" />
+        </Link>
+      )}
     </label>
   );
 }
@@ -69,10 +82,12 @@ function ConceptRow({
 function PhaseSection({
   phase,
   threadId,
+  topicSlug,
   defaultOpen,
 }: {
   phase: PlanPhase;
   threadId: string;
+  topicSlug: string | null;
   defaultOpen: boolean;
 }) {
   const [open, setOpen] = useState(defaultOpen);
@@ -108,6 +123,7 @@ function PhaseSection({
               key={concept.name}
               concept={concept}
               threadId={threadId}
+              topicSlug={topicSlug}
             />
           ))}
         </div>
@@ -117,9 +133,7 @@ function PhaseSection({
 }
 
 export function PlanView() {
-  const { threadId } = usePlan();
-  console.log("[planView]", threadId);
-
+  const { threadId, topicSlug } = usePlan();
   const { data, isLoading } = useQuery({
     queryKey: ["progress", threadId],
     queryFn: () => getProgress(threadId!),
@@ -190,6 +204,7 @@ export function PlanView() {
             key={phase.order}
             phase={phase}
             threadId={threadId}
+            topicSlug={topicSlug}
             defaultOpen={idx === firstIncompletePhaseIdx || idx === 0}
           />
         ))}

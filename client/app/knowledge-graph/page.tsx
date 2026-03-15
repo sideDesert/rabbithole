@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
   ReactFlow,
@@ -39,8 +39,8 @@ function KnowledgeGraphInner() {
   const focusParam = searchParams.get("focus");
   const [selectedConcept, setSelectedConcept] = useState<KnowledgeConcept | null>(null);
   const focusHandledRef = useRef(false);
-  const [nodes, setNodes, onNodesChange] = useNodesState([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [nodes, setNodes, onNodesChange] = useNodesState([] as Node[]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState([] as Edge[]);
 
   // Compute layout when data changes, then push into draggable state
   const layouted = useMemo(() => {
@@ -207,8 +207,10 @@ function KnowledgeGraphInner() {
 
 export default function KnowledgeGraphPage() {
   return (
-    <ReactFlowProvider>
-      <KnowledgeGraphInner />
-    </ReactFlowProvider>
+    <Suspense>
+      <ReactFlowProvider>
+        <KnowledgeGraphInner />
+      </ReactFlowProvider>
+    </Suspense>
   );
 }

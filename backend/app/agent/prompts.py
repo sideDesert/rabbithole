@@ -63,6 +63,99 @@ Rules:
 - Use clear, descriptive names
 """
 
+EBBINGHAUS_GENERATE_PROMPT = """\
+You are an expert assessment designer for spaced repetition learning.
+
+Generate a structured test for a single concept. The test must probe whether the \
+learner truly retained the knowledge or is just pattern-matching.
+
+Concept: {concept_name}
+Concept description: {concept_description}
+Plan context (surrounding concepts): {plan_context}
+
+What the learner previously knew about this concept:
+{memory_context}
+
+Current mastery level: {mastery_tier} ({mastery_score}/1.0)
+Weak subconcepts from last review: {weak_subconcepts}
+
+Generate exactly {num_questions} questions using a mix of these types:
+- "mcq_single": Multiple choice with one correct answer (4 options, labeled A-D)
+- "mcq_multi": Multiple choice where 2+ answers may be correct (4-5 options, labeled A-E)
+- "freeform": Open-ended explanation question
+- "cloze": Fill-in-the-blank with a key term removed (use _____ for the blank)
+- "teach_back": Ask the learner to explain the concept from a specific angle or to a specific audience
+- "scenario": Present a practical scenario and ask how the concept applies
+
+Rules:
+- For weak mastery (0.0-0.4): Focus on mcq_single and cloze — test basic recall
+- For medium mastery (0.4-0.7): Mix in freeform and scenario — test understanding
+- For strong mastery (0.7-1.0): Emphasize teach_back and scenario — test transfer
+- Always include at least one question targeting the weak subconcepts if any exist
+- For MCQs, make distractors plausible but wrong — no obviously silly options
+- For freeform/teach_back, include a brief "explanation_hint" to guide the expected depth
+
+Output a JSON object:
+{{
+  "questions": [
+    {{
+      "id": "q1",
+      "type": "mcq_single|mcq_multi|freeform|cloze|teach_back|scenario",
+      "question": "the question text",
+      "options": ["A) ...", "B) ..."] or null for non-MCQ types,
+      "correct_answer": "B" or ["A", "C"] for MCQ types, null for open-ended,
+      "explanation_hint": "optional hint for open-ended types" or null
+    }}
+  ]
+}}
+"""
+
+EBBINGHAUS_SCORING_PROMPT = """\
+You are an expert learning evaluator. Score a learner's answers to a spaced \
+repetition review test.
+
+Concept being tested: {concept_name}
+
+What the learner knew about this concept (from memory):
+{memory_context}
+
+Questions and answers:
+{questions_and_answers}
+
+For each question, evaluate:
+- For MCQs: check against the correct_answer provided
+- For open-ended questions: score on accuracy and depth of understanding
+
+Then provide an overall assessment across four dimensions (0.0 to 1.0):
+1. **Clarity** — How clearly did they express their understanding?
+2. **Accuracy** — Are the answers factually correct?
+3. **Depth** — Did they show understanding beyond surface level?
+4. **Transferability** — Can they apply the concept to new situations?
+
+Output a JSON object:
+{{
+  "per_question": [
+    {{
+      "question_id": "q1",
+      "correct": true,
+      "score": 0.0,
+      "feedback": "specific feedback for this answer"
+    }}
+  ],
+  "clarity": 0.0,
+  "accuracy": 0.0,
+  "depth": 0.0,
+  "transferability": 0.0,
+  "overall_score": 0.0,
+  "feedback": "2-3 sentence overall assessment",
+  "weak_areas": ["specific subconcepts still weak"]
+}}
+
+The overall_score should be a weighted average: accuracy 35%, depth 30%, \
+clarity 20%, transferability 15%.
+Be honest but encouraging. Identify specific gaps, not vague criticism.
+"""
+
 SCORING_PROMPT = """\
 You are a learning assessment expert. Score the user's explanation of a concept.
 
