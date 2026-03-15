@@ -315,17 +315,24 @@ async def compact_parent_context(
 
 
 @router.post("/threads")
-def create_thread(req: ChatRequest):
+async def create_thread(req: ChatRequest):
+    from app.memory import evermemos
+
     user_id = "user_001"
+    group_id = str(uuid.uuid4())
     thread = Thread(
         user_id=user_id,
         title=req.content[:100],
         topic_slug="",
-        evermemos_group_id=str(uuid.uuid4()),
+        evermemos_group_id=group_id,
         phase="interview",
     )
     thread.root_thread_id = thread.id
     _ = mongo.threads().insert_one(thread.to_doc())
+
+    # Register conversation metadata so EverMemOS knows the scene type
+    await evermemos.ensure_conversation_meta(group_id=group_id, user_id=user_id)
+
     return {"thread_id": thread.id, "phase": "interview"}
 
 
@@ -624,6 +631,13 @@ async def create_branch(
 
     title = req.title or req.branch_text[:80]
 
+    # Inherit the root thread's EverMemOS group_id so all branches share one memory space
+    root_id = str(parent.get("root_thread_id", thread_id))
+    root = mongo.threads().find_one({"_id": root_id})
+    root_group_id = str(
+        (root or parent).get("evermemos_group_id", "")
+    ) or str(parent.get("evermemos_group_id", ""))
+
     child = Thread(
         user_id=str(parent["user_id"]),
         title=title,
@@ -631,8 +645,8 @@ async def create_branch(
         phase="teaching",
         depth=int(parent.get("depth", 0)) + 1,
         parent_thread_id=thread_id,
-        root_thread_id=str(parent.get("root_thread_id", thread_id)),
-        evermemos_group_id=str(uuid.uuid4()),
+        root_thread_id=root_id,
+        evermemos_group_id=root_group_id,
         branch_text=req.branch_text,
         branch_source_message_id=req.message_id,
     )
@@ -697,6 +711,9 @@ async def start_phase(thread_id: str):
 
     first_phase = tree.phases[0]
 
+    # Inherit the root thread's EverMemOS group_id
+    root_group_id = str(parent.get("evermemos_group_id", "")) or str(uuid.uuid4())
+
     child = Thread(
         user_id=str(parent["user_id"]),
         title=f"Phase 1: {first_phase.title}",
@@ -705,7 +722,7 @@ async def start_phase(thread_id: str):
         depth=1,
         parent_thread_id=thread_id,
         root_thread_id=str(parent.get("root_thread_id", thread_id)),
-        evermemos_group_id=str(uuid.uuid4()),
+        evermemos_group_id=root_group_id,
     )
     _ = mongo.threads().insert_one(child.to_doc())
 
@@ -772,6 +789,9 @@ async def create_next_phase_thread(thread_id: str):
         f"Completed phases:\n" + "\n".join(context_lines)
     )
 
+    # Inherit the root thread's EverMemOS group_id
+    root_group_id = str(root.get("evermemos_group_id", "")) or str(uuid.uuid4())
+
     child = Thread(
         user_id=str(root["user_id"]),
         title=f"Phase {next_phase.order}: {next_phase.title}",
@@ -780,7 +800,7 @@ async def create_next_phase_thread(thread_id: str):
         depth=1,
         parent_thread_id=root_id,
         root_thread_id=root_id,
-        evermemos_group_id=str(uuid.uuid4()),
+        evermemos_group_id=root_group_id,
         parent_summary=phase_context,
     )
     _ = mongo.threads().insert_one(child.to_doc())

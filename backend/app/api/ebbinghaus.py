@@ -419,6 +419,10 @@ async def submit_test(req: SubmitRequest):
 
     # 8. Store observation in EverMemOS
     try:
+        ebbinghaus_group = f"ebbinghaus_{user_id}"
+        await evermemos.ensure_conversation_meta(
+            group_id=ebbinghaus_group, user_id=user_id,
+        )
         weak_str = ", ".join(weak_areas) if weak_areas else "none"
         await evermemos.store_memory(
             message_id=req.test_id,
@@ -430,7 +434,7 @@ async def submit_test(req: SubmitRequest):
                 f"Next review: {mastery_update['next_review']}"
             ),
             sender=user_id,
-            group_id=f"ebbinghaus_{user_id}",
+            group_id=ebbinghaus_group,
             role="assistant",
             sender_name="Ebbinghaus",
         )
