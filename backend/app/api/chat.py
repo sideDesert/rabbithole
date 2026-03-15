@@ -38,6 +38,7 @@ from app.models.message import Message
 from app.models.thread import Thread
 from app.plan_parser import parse_plan
 from app.services.concept_extractor import extract_and_update_graph
+from app.services.memory_graph_extractor import extract_memory_graph
 from app.tools_impl import AgentContext
 
 MessageRole = Literal["user", "assistant", "system"]
@@ -988,6 +989,17 @@ async def chat(thread_id: str, req: ChatRequest):
 
             asyncio.ensure_future(_fire_extractor())
             logger.info("[chat] concept extractor fired for thread=%s", thread_id)
+
+        # 9d. Fire memory graph extraction
+        if phase == "teaching" and EXTRACTOR_TRIGGERS & set(tool_names_called):
+            async def _fire_memory_graph():
+                try:
+                    await extract_memory_graph(user_id)
+                except Exception as e:
+                    logger.warning("[chat] memory graph extraction failed: %s", e)
+
+            asyncio.ensure_future(_fire_memory_graph())
+            logger.info("[chat] memory graph extractor fired for user=%s", user_id)
 
         # 9b. Generate title on first message (root threads only)
         if is_first_message and full_text:

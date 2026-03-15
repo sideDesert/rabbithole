@@ -19,6 +19,7 @@ from app.api.chat import router as chat_router
 from app.api.ebbinghaus import router as ebbinghaus_router
 from app.api.feynman import router as feynman_router
 from app.api.graph import router as graph_router
+from app.api.memory_graph import router as memory_graph_router
 
 # --- Validate env ---
 for name, val in [("MONGO_USER", MONGO_USER), ("MONGO_PASSWORD", MONGO_PASSWORD), ("OPENROUTER_API_KEY", LLM_API_KEY)]:
@@ -77,6 +78,7 @@ app.include_router(chat_router)
 app.include_router(ebbinghaus_router)
 app.include_router(feynman_router)
 app.include_router(graph_router)
+app.include_router(memory_graph_router)
 
 
 @app.get("/health")
