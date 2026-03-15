@@ -17,6 +17,11 @@ class ConceptMastery(MongoBase):
     weak_subconcepts: list[str] = []
     strength_trend: Literal["improving", "stable", "declining"] = "stable"
     related_concepts: list[str] = []
+    # V2 fields
+    domain: str = ""  # topic_slug this concept belongs to
+    source: Literal["plan", "extracted", "prerequisite"] = "plan"
+    confidence: float = 1.0  # 0.0-1.0, how certain the system is
+    description: str = ""  # one-line description from plan or extraction
 
 
 class ReviewSchedule(MongoBase):

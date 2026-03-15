@@ -56,3 +56,7 @@ def learning_sessions() -> Collection[dict[str, Any]]:
 
 def feynman_hints() -> Collection[dict[str, Any]]:
     return get_db()["feynman_hints"]
+
+
+def concept_relationships() -> Collection[dict[str, Any]]:
+    return get_db()["concept_relationships"]
