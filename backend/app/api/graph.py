@@ -97,7 +97,8 @@ def get_knowledge_graph(user_id: str = "user_001", domain: str | None = None):
     # Group concepts by domain for hub nodes
     domain_concepts: dict[str, list[dict]] = {}
 
-    nodes = []
+    # Build concept list (always needed for stats + hub aggregation)
+    all_concept_nodes = []
     for doc in concept_docs:
         domain_slug = doc.get("domain", "")
         node = {
@@ -113,21 +114,26 @@ def get_knowledge_graph(user_id: str = "user_001", domain: str | None = None):
             "weak_subconcepts": doc.get("weak_subconcepts", []),
             "node_type": "concept",
         }
-        nodes.append(node)
+        all_concept_nodes.append(node)
         domain_concepts.setdefault(domain_slug, []).append(node)
 
+    # Only include individual concept nodes when a domain filter is active
+    nodes = list(all_concept_nodes) if domain else []
+
     edges = []
-    for doc in rel_docs:
-        from_c = doc.get("from_concept", "")
-        to_c = doc.get("to_concept", "")
-        if domain and (from_c not in concept_names or to_c not in concept_names):
-            continue
-        edges.append({
-            "source": from_c,
-            "target": to_c,
-            "type": doc.get("type", "prerequisite_of"),
-            "weight": 0.3 if doc.get("type") == "prerequisite_of" else doc.get("weight", 1.0),
-        })
+    # Only include concept-to-concept edges when drilling into a domain
+    if domain:
+        for doc in rel_docs:
+            from_c = doc.get("from_concept", "")
+            to_c = doc.get("to_concept", "")
+            if from_c not in concept_names or to_c not in concept_names:
+                continue
+            edges.append({
+                "source": from_c,
+                "target": to_c,
+                "type": doc.get("type", "prerequisite_of"),
+                "weight": 0.3 if doc.get("type") == "prerequisite_of" else doc.get("weight", 1.0),
+            })
 
     # Create topic hub nodes — one per domain
     for d, concepts in domain_concepts.items():
@@ -150,17 +156,21 @@ def get_knowledge_graph(user_id: str = "user_001", domain: str | None = None):
             "display_name": d.replace("-", " ").title(),
             "concept_count": len(concepts),
         })
-        # Connect ALL concepts to their topic hub
-        for concept in concepts:
-            edges.append({
-                "source": hub_name,
-                "target": concept["name"],
-                "type": "part_of",
-                "weight": 0.6,
-            })
+        # Connect concepts to their topic hub (only when drilling in)
+        if domain:
+            for concept in concepts:
+                edges.append({
+                    "source": hub_name,
+                    "target": concept["name"],
+                    "type": "part_of",
+                    "weight": 0.6,
+                })
 
-    # Add thread nodes
-    thread_docs = list(mongo.threads().find({"user_id": user_id} if user_id != "user_001" else {}))
+    # Add thread nodes (filter by domain when drilling in)
+    thread_query: dict = {} if user_id == "user_001" else {"user_id": user_id}
+    if domain:
+        thread_query["topic_slug"] = domain
+    thread_docs = list(mongo.threads().find(thread_query))
     for tdoc in thread_docs:
         tid = str(tdoc["_id"])
         t_slug = tdoc.get("topic_slug", "")

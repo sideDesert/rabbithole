@@ -2,10 +2,8 @@ import {
   forceSimulation,
   forceLink,
   forceManyBody,
-  forceCenter,
   forceCollide,
-  forceX,
-  forceY,
+  forceRadial,
   type SimulationNodeDatum,
   type SimulationLinkDatum,
 } from "d3-force";
@@ -31,16 +29,26 @@ export function layoutGraph(
 
   if (nodes.length === 0) return { nodes, edges };
 
-  const centerX = 600;
-  const centerY = 400;
+  const centerX = 0;
+  const centerY = 0;
 
-  // Build simulation nodes
-  const simNodes: ForceNode[] = nodes.map((n) => ({
-    id: n.id,
-    nodeType: (n.data as Record<string, unknown>)?.node_type as string | undefined,
-    x: centerX + (Math.random() - 0.5) * 1000,
-    y: centerY + (Math.random() - 0.5) * 800,
-  }));
+  const nodeCount = nodes.length;
+  // Scale the initial spread based on node count
+  const spread = Math.max(800, nodeCount * 12);
+
+  // Build simulation nodes — spread out initial positions
+  const simNodes: ForceNode[] = nodes.map((n, i) => {
+    const nodeType = (n.data as Record<string, unknown>)?.node_type as string | undefined;
+    // Place nodes in a circle initially for better convergence
+    const angle = (i / nodeCount) * 2 * Math.PI;
+    const radius = nodeType === "topic_hub" ? spread * 0.4 : spread * 0.3 + Math.random() * spread * 0.4;
+    return {
+      id: n.id,
+      nodeType,
+      x: centerX + Math.cos(angle) * radius,
+      y: centerY + Math.sin(angle) * radius,
+    };
+  });
 
   const nodeMap = new Map(simNodes.map((n) => [n.id, n]));
 
@@ -59,20 +67,20 @@ export function layoutGraph(
       target: e.target,
     }));
 
-  // Strong repulsion to prevent overlapping
+  // Repulsion — stronger for hubs, no distance cap
   const chargeStrength = (d: ForceNode) => {
-    if (d.id === "rabbithole-memory") return -3000;
-    if (d.nodeType === "topic_hub") return -1500;
-    if (d.nodeType === "thread") return -300;
-    return -600;
+    if (d.id === "rabbithole-memory") return -4000;
+    if (d.nodeType === "topic_hub") return -2000;
+    if (d.nodeType === "thread") return -500;
+    return -800;
   };
 
-  // Large collision radius to create gaps between nodes
+  // Collision radius — must exceed half the node width to prevent overlap
   const collisionRadius = (d: ForceNode) => {
-    if (d.id === "rabbithole-memory") return 180;
-    if (d.nodeType === "topic_hub") return 140;
-    if (d.nodeType === "thread") return 60;
-    return 90;
+    if (d.id === "rabbithole-memory") return 100;
+    if (d.nodeType === "topic_hub") return 90;
+    if (d.nodeType === "thread") return 70;
+    return 80;
   };
 
   const simulation = forceSimulation<ForceNode>(simNodes)
@@ -83,23 +91,34 @@ export function layoutGraph(
         .distance((link) => {
           const src = link.source as ForceNode;
           const tgt = link.target as ForceNode;
-          // Longer distance for hub-to-hub, shorter for concept chains
-          if (src.id === "rabbithole-memory" || tgt.id === "rabbithole-memory") return 450;
-          if (src.nodeType === "topic_hub" || tgt.nodeType === "topic_hub") return 280;
-          if (src.nodeType === "thread" || tgt.nodeType === "thread") return 200;
-          return 150;
+          if (src.id === "rabbithole-memory" || tgt.id === "rabbithole-memory") return 400;
+          if (src.nodeType === "topic_hub" || tgt.nodeType === "topic_hub") return 250;
+          if (src.nodeType === "thread" || tgt.nodeType === "thread") return 180;
+          return 120;
         })
-        .strength(0.4),
+        .strength(0.3),
     )
-    .force("charge", forceManyBody<ForceNode>().strength(chargeStrength).distanceMax(800))
-    .force("center", forceCenter(centerX, centerY).strength(0.05))
-    .force("collide", forceCollide<ForceNode>().radius(collisionRadius).strength(1).iterations(3))
-    .force("x", forceX(centerX).strength(0.02))
-    .force("y", forceY(centerY).strength(0.02))
+    .force("charge", forceManyBody<ForceNode>().strength(chargeStrength))
+    .force("collide", forceCollide<ForceNode>().radius(collisionRadius).strength(1).iterations(4))
+    // Gentle radial force keeps topic hubs orbiting the center
+    .force("radial", forceRadial<ForceNode>(
+      (d) => {
+        if (d.id === "rabbithole-memory") return 0;
+        if (d.nodeType === "topic_hub") return spread * 0.35;
+        return spread * 0.5;
+      },
+      centerX,
+      centerY,
+    ).strength((d) => {
+      if (d.id === "rabbithole-memory") return 0;
+      if (d.nodeType === "topic_hub") return 0.15;
+      return 0.03;
+    }))
     .stop();
 
-  // Run simulation — more iterations for better convergence
-  for (let i = 0; i < 600; i++) {
+  // Run simulation
+  const iterations = Math.min(800, 300 + nodeCount * 2);
+  for (let i = 0; i < iterations; i++) {
     simulation.tick();
   }
 
