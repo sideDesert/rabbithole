@@ -24,14 +24,13 @@ import { useAgent } from "@/components/agent-context";
 import { usePlan } from "@/components/plan-context";
 import { ThreadTree } from "@/components/thread-tree";
 
-const tools = [
-  { name: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
-  { name: "Study Plans", icon: Signature, href: "/threads" },
-  { name: "Knowledge Graph", icon: Network, href: "/knowledge-graph" },
-  // { name: "Memories", icon: BrainCircuit, href: "/memories" },
-] as const;
+export type Tool = {
+  name: string;
+  icon: React.ComponentType<{ className?: string }>;
+  href: string;
+};
 
-export function AppSidebar() {
+export function AppSidebar({ tools }: { tools: Tool[] }) {
   const path = usePathname();
   const router = useRouter();
 

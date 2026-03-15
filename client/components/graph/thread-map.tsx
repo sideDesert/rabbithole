@@ -63,7 +63,7 @@ function ThreadMapInner({ threadId }: { threadId: string }) {
       data: { branch_topic: e.branch_topic },
     }));
 
-    return layoutGraph(rfNodes, rfEdges, { direction: "LR" });
+    return layoutGraph(rfNodes, rfEdges);
   }, [data]);
 
   useEffect(() => {

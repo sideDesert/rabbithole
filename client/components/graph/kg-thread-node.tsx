@@ -1,6 +1,7 @@
-import { Handle, Position, type NodeProps } from "@xyflow/react";
+import { type NodeProps } from "@xyflow/react";
 import { MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { NodeHandles } from "./node-handles";
 
 interface KgThreadNodeData {
   display_name: string;
@@ -31,15 +32,13 @@ export function KgThreadNode({ data, selected }: NodeProps) {
         boxShadow: "0 1px 4px rgba(0, 0, 0, 0.3)",
       }}
     >
-      <Handle type="target" position={Position.Left} className="!bg-border !w-2 !h-2" />
+      <NodeHandles />
 
       <div className="flex items-center gap-1.5">
         <MessageSquare className="size-3.5 shrink-0" style={{ color }} />
         <p className="text-[11px] font-medium text-foreground truncate">{d.display_name}</p>
       </div>
       <p className="text-[9px] text-muted-foreground mt-0.5 capitalize">{d.thread_phase}</p>
-
-      <Handle type="source" position={Position.Right} className="!bg-border !w-2 !h-2" />
     </div>
   );
 }

@@ -1,11 +1,19 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
   ReactFlow,
   Background,
   Controls,
+  MiniMap,
   useReactFlow,
   useNodesState,
   useEdgesState,
@@ -14,10 +22,11 @@ import {
   type Edge,
   type NodeTypes,
   type EdgeTypes,
+  ConnectionMode,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useTheme } from "next-themes";
-import { Network, MessageSquare } from "lucide-react";
+import { Network, MessageSquare, ArrowLeft } from "lucide-react";
 
 import { useKnowledgeGraph } from "@/hooks/use-knowledge-graph";
 import { layoutGraph } from "@/lib/graph-layout";
@@ -47,9 +56,17 @@ function StatsBar({ stats }: { stats: GraphStats }) {
       <Sep />
       <Stat label="Mastered" value={stats.mastered} color="text-chart-1" />
       <Sep />
-      <Stat label="In Progress" value={stats.in_progress} color="text-primary" />
+      <Stat
+        label="In Progress"
+        value={stats.in_progress}
+        color="text-primary"
+      />
       <Sep />
-      <Stat label="Undiscovered" value={stats.undiscovered} color="text-muted-foreground" />
+      <Stat
+        label="Undiscovered"
+        value={stats.undiscovered}
+        color="text-muted-foreground"
+      />
       <Sep />
       <Stat label="Topics" value={stats.domain_count} />
       <Sep />
@@ -58,10 +75,22 @@ function StatsBar({ stats }: { stats: GraphStats }) {
   );
 }
 
-function Stat({ label, value, color }: { label: string; value: number; color?: string }) {
+function Stat({
+  label,
+  value,
+  color,
+}: {
+  label: string;
+  value: number;
+  color?: string;
+}) {
   return (
     <div className="text-center">
-      <p className={`text-sm font-semibold tabular-nums ${color ?? "text-foreground"}`}>{value}</p>
+      <p
+        className={`text-sm font-semibold tabular-nums ${color ?? "text-foreground"}`}
+      >
+        {value}
+      </p>
       <p className="text-[10px] text-muted-foreground">{label}</p>
     </div>
   );
@@ -75,55 +104,96 @@ function Sep() {
 
 function EdgeLegend() {
   return (
-    <div className="absolute top-4 right-4 z-10 bg-card/90 backdrop-blur-sm border border-border rounded-xl px-4 py-3 shadow-lg space-y-3">
-      <div className="space-y-2">
-        <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Edges</p>
-        <LegendItem color="#818cf8" label="Prerequisite" />
-        <LegendItem color="#94a3b8" label="Part of" />
-        <LegendItem color="#fbbf24" label="Explored from" dashed />
-        <LegendItem color="#f87171" label="Confused with" dashed />
+    <div className="group absolute bottom-4 right-4 z-10 bg-card/90 backdrop-blur-sm border border-border rounded-xl shadow-lg overflow-hidden transition-[max-height,opacity] duration-300 ease-in-out max-h-8 hover:max-h-[400px]">
+      <div className="px-3 py-1.5 cursor-default">
+        <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+          Legend
+        </p>
       </div>
-      <div className="border-t border-border pt-2 space-y-2">
-        <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Mastery</p>
-        <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded-full" style={{ background: "hsl(0, 84%, 60%)" }} />
-          <span className="text-[10px] text-muted-foreground">Weak</span>
+      <div className="px-4 pb-3 space-y-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-100">
+        <div className="space-y-2">
+          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+            Edges
+          </p>
+          <LegendItem color="#818cf8" label="Prerequisite" />
+          <LegendItem color="#94a3b8" label="Part of" />
+          <LegendItem color="#fbbf24" label="Explored from" dashed />
+          <LegendItem color="#f87171" label="Confused with" dashed />
         </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded-full" style={{ background: "hsl(45, 93%, 47%)" }} />
-          <span className="text-[10px] text-muted-foreground">Medium</span>
+        <div className="border-t border-border pt-2 space-y-2">
+          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+            Mastery
+          </p>
+          <div className="flex items-center gap-1.5">
+            <div
+              className="w-3 h-3 rounded-full"
+              style={{ background: "hsl(0, 84%, 60%)" }}
+            />
+            <span className="text-[10px] text-muted-foreground">Weak</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div
+              className="w-3 h-3 rounded-full"
+              style={{ background: "hsl(45, 93%, 47%)" }}
+            />
+            <span className="text-[10px] text-muted-foreground">Medium</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div
+              className="w-3 h-3 rounded-full"
+              style={{ background: "hsl(142, 71%, 45%)" }}
+            />
+            <span className="text-[10px] text-muted-foreground">Mastered</span>
+          </div>
         </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded-full" style={{ background: "hsl(142, 71%, 45%)" }} />
-          <span className="text-[10px] text-muted-foreground">Mastered</span>
+        <div className="border-t border-border pt-2 space-y-2">
+          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+            Nodes
+          </p>
+          <div className="flex items-center gap-1.5">
+            <div
+              className="w-3 h-3 rounded-sm border"
+              style={{ borderColor: "#64748b" }}
+            />
+            <span className="text-[10px] text-muted-foreground">Concept</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div
+              className="w-3 h-3 rounded-sm"
+              style={{ background: "hsl(200, 60%, 25%)" }}
+            />
+            <span className="text-[10px] text-muted-foreground">Topic</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <MessageSquare className="size-3 text-muted-foreground" />
+            <span className="text-[10px] text-muted-foreground">Thread</span>
+          </div>
         </div>
+        <p className="text-[9px] text-muted-foreground/60 italic">
+          Opacity = relationship strength
+        </p>
       </div>
-      <div className="border-t border-border pt-2 space-y-2">
-        <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Nodes</p>
-        <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded-sm border" style={{ borderColor: "#64748b" }} />
-          <span className="text-[10px] text-muted-foreground">Concept</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded-sm" style={{ background: "hsl(200, 60%, 25%)" }} />
-          <span className="text-[10px] text-muted-foreground">Topic</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <MessageSquare className="size-3 text-muted-foreground" />
-          <span className="text-[10px] text-muted-foreground">Thread</span>
-        </div>
-      </div>
-      <p className="text-[9px] text-muted-foreground/60 italic">Opacity = relationship strength</p>
     </div>
   );
 }
 
-function LegendItem({ color, label, dashed }: { color: string; label: string; dashed?: boolean }) {
+function LegendItem({
+  color,
+  label,
+  dashed,
+}: {
+  color: string;
+  label: string;
+  dashed?: boolean;
+}) {
   return (
     <div className="flex items-center gap-2">
       <svg width="24" height="8">
         <line
-          x1="0" y1="4" x2="24" y2="4"
+          x1="0"
+          y1="4"
+          x2="24"
+          y2="4"
           stroke={color}
           strokeWidth={2}
           strokeDasharray={dashed ? "4 3" : undefined}
@@ -145,9 +215,20 @@ function DomainFilter({
   selected: string | undefined;
   onChange: (domain: string | undefined) => void;
 }) {
-  if (domains.length < 2) return null;
+  if (domains.length < 2 && !selected) return null;
   return (
-    <div className="absolute top-4 left-4 z-10">
+    <div className="absolute top-4 left-4 z-10 flex items-center gap-2">
+      {selected && (
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-8 gap-1.5 text-xs bg-card/90 backdrop-blur-sm shadow-lg"
+          onClick={() => onChange(undefined)}
+        >
+          <ArrowLeft className="size-3" />
+          Overview
+        </Button>
+      )}
       <select
         value={selected ?? ""}
         onChange={(e) => onChange(e.target.value || undefined)}
@@ -174,13 +255,15 @@ function KnowledgeGraphInner() {
   const focusParam = searchParams.get("focus");
   const [domainFilter, setDomainFilter] = useState<string | undefined>();
   const { data, isLoading, error, refetch } = useKnowledgeGraph(domainFilter);
-  const [selectedConcept, setSelectedConcept] = useState<KnowledgeConcept | null>(null);
+  const [selectedConcept, setSelectedConcept] =
+    useState<KnowledgeConcept | null>(null);
   const focusHandledRef = useRef(false);
   const [nodes, setNodes, onNodesChange] = useNodesState([] as Node[]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([] as Edge[]);
 
   const layouted = useMemo(() => {
-    if (!data?.nodes?.length) return { nodes: [] as Node[], edges: [] as Edge[] };
+    if (!data?.nodes?.length)
+      return { nodes: [] as Node[], edges: [] as Edge[] };
 
     const rfNodes: Node[] = data.nodes.map((c) => {
       let nodeType = "concept";
@@ -218,7 +301,7 @@ function KnowledgeGraphInner() {
       data: { edgeType: e.type, weight: e.weight },
     }));
 
-    return layoutGraph(rfNodes, rfEdges, { direction: "LR" });
+    return layoutGraph(rfNodes, rfEdges);
   }, [data]);
 
   useEffect(() => {
@@ -227,7 +310,12 @@ function KnowledgeGraphInner() {
   }, [layouted, setNodes, setEdges]);
 
   useEffect(() => {
-    if (focusParam && !focusHandledRef.current && data?.nodes && nodes.length > 0) {
+    if (
+      focusParam &&
+      !focusHandledRef.current &&
+      data?.nodes &&
+      nodes.length > 0
+    ) {
       const target = data.nodes.find(
         (c) => c.name.toLowerCase() === focusParam.toLowerCase(),
       );
@@ -262,7 +350,7 @@ function KnowledgeGraphInner() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-screen">
+      <div className="flex items-center justify-center h-full">
         <div className="thinking-orb" />
       </div>
     );
@@ -270,16 +358,18 @@ function KnowledgeGraphInner() {
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen gap-3 text-muted-foreground">
+      <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground">
         <p>Failed to load knowledge graph.</p>
-        <Button variant="outline" size="sm" onClick={() => refetch()}>Retry</Button>
+        <Button variant="outline" size="sm" onClick={() => refetch()}>
+          Retry
+        </Button>
       </div>
     );
   }
 
   if (!data?.nodes?.length) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen gap-3 text-muted-foreground">
+      <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground">
         <Network className="size-10 opacity-40" />
         <p>Start a learning thread to build your knowledge map.</p>
       </div>
@@ -287,7 +377,7 @@ function KnowledgeGraphInner() {
   }
 
   return (
-    <div className="relative w-full h-screen">
+    <div className="relative w-full h-full overflow-hidden">
       <DomainFilter
         domains={data.domains}
         selected={domainFilter}
@@ -307,27 +397,27 @@ function KnowledgeGraphInner() {
         colorMode={resolvedTheme === "dark" ? "dark" : "light"}
         fitView
         fitViewOptions={{ padding: 0.2 }}
+        connectionMode={ConnectionMode.Loose}
         nodesConnectable={false}
         elementsSelectable
         minZoom={0.05}
         maxZoom={2}
       >
-        <svg>
-          <defs>
-            <marker
-              id="arrowhead"
-              viewBox="0 0 10 10"
-              refX="10"
-              refY="5"
-              markerWidth="6"
-              markerHeight="6"
-              orient="auto-start-reverse"
-            >
-              <path d="M 0 0 L 10 5 L 0 10 z" fill="#818cf8" fillOpacity="0.6" />
-            </marker>
-          </defs>
-        </svg>
         <Background gap={20} size={1} className="!text-muted" />
+        <MiniMap
+          position="top-right"
+          pannable
+          zoomable
+          style={{ width: 140, height: 100 }}
+          className="bg-card/80! border-border! rounded-lg! shadow-lg!"
+          maskColor="rgba(0, 0, 0, 0.3)"
+          nodeColor={(node) => {
+            if (node.type === "memory_hub") return "hsl(260, 60%, 55%)";
+            if (node.type === "topic_hub") return "hsl(200, 60%, 50%)";
+            if (node.type === "thread") return "hsl(142, 50%, 40%)";
+            return "hsl(220, 20%, 50%)";
+          }}
+        />
         <Controls showInteractive={false} />
       </ReactFlow>
 
@@ -338,19 +428,26 @@ function KnowledgeGraphInner() {
           <div className="space-y-3">
             {selectedConcept.node_type === "thread" ? (
               <div>
-                <h3 className="font-semibold text-sm">{selectedConcept.display_name ?? selectedConcept.name}</h3>
+                <h3 className="font-semibold text-sm">
+                  {selectedConcept.display_name ?? selectedConcept.name}
+                </h3>
                 <p className="text-xs text-muted-foreground mt-1 capitalize">
-                  Phase: {selectedConcept.thread_phase} | Status: {selectedConcept.thread_status}
+                  Phase: {selectedConcept.thread_phase} | Status:{" "}
+                  {selectedConcept.thread_status}
                 </p>
                 {selectedConcept.description && (
-                  <p className="text-xs text-muted-foreground mt-2">{selectedConcept.description}</p>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    {selectedConcept.description}
+                  </p>
                 )}
                 {selectedConcept.threads.length > 0 && (
                   <Button
                     size="sm"
                     variant="outline"
                     className="w-full mt-3 text-xs"
-                    onClick={() => router.push(`/threads/${selectedConcept.threads[0]}`)}
+                    onClick={() =>
+                      router.push(`/threads/${selectedConcept.threads[0]}`)
+                    }
                   >
                     Open thread
                   </Button>
@@ -360,14 +457,19 @@ function KnowledgeGraphInner() {
               /* Topic hub preview */
               <div>
                 <h3 className="font-semibold text-sm capitalize">
-                  {selectedConcept.display_name ?? selectedConcept.domain.replace(/-/g, " ")}
+                  {selectedConcept.display_name ??
+                    selectedConcept.domain.replace(/-/g, " ")}
                 </h3>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {selectedConcept.concept_count} concepts | {Math.round(selectedConcept.mastery_score * 100)}% average mastery
+                  {selectedConcept.concept_count} concepts |{" "}
+                  {Math.round(selectedConcept.mastery_score * 100)}% average
+                  mastery
                 </p>
                 {selectedConcept.threads.length > 0 && (
                   <div className="pt-2">
-                    <p className="text-xs text-muted-foreground mb-1">Threads:</p>
+                    <p className="text-xs text-muted-foreground mb-1">
+                      Threads:
+                    </p>
                     <div className="flex flex-col gap-1">
                       {selectedConcept.threads.map((tid) => (
                         <Button
@@ -395,30 +497,42 @@ function KnowledgeGraphInner() {
             ) : (
               /* Concept preview */
               <div>
-                <h3 className="font-semibold text-sm">{selectedConcept.name}</h3>
+                <h3 className="font-semibold text-sm">
+                  {selectedConcept.name}
+                </h3>
 
                 {selectedConcept.description && (
-                  <p className="text-xs text-muted-foreground mt-1">{selectedConcept.description}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {selectedConcept.description}
+                  </p>
                 )}
 
                 <div className="space-y-2 text-xs mt-3">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Mastery</span>
-                    <span>{Math.round(selectedConcept.mastery_score * 100)}%</span>
+                    <span>
+                      {Math.round(selectedConcept.mastery_score * 100)}%
+                    </span>
                   </div>
                   <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
                     <div
                       className="h-full rounded-full bg-primary"
-                      style={{ width: `${Math.round(selectedConcept.mastery_score * 100)}%` }}
+                      style={{
+                        width: `${Math.round(selectedConcept.mastery_score * 100)}%`,
+                      }}
                     />
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Trend</span>
-                    <span className="capitalize">{selectedConcept.strength_trend}</span>
+                    <span className="capitalize">
+                      {selectedConcept.strength_trend}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Topic</span>
-                    <span className="capitalize">{selectedConcept.domain.replace(/-/g, " ") || "\u2014"}</span>
+                    <span className="capitalize">
+                      {selectedConcept.domain.replace(/-/g, " ") || "\u2014"}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Source</span>
@@ -427,13 +541,21 @@ function KnowledgeGraphInner() {
                   {selectedConcept.confidence < 1.0 && (
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Confidence</span>
-                      <span>{Math.round(selectedConcept.confidence * 100)}%</span>
+                      <span>
+                        {Math.round(selectedConcept.confidence * 100)}%
+                      </span>
                     </div>
                   )}
                   {selectedConcept.last_reviewed && (
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Last reviewed</span>
-                      <span>{new Date(selectedConcept.last_reviewed).toLocaleDateString()}</span>
+                      <span className="text-muted-foreground">
+                        Last reviewed
+                      </span>
+                      <span>
+                        {new Date(
+                          selectedConcept.last_reviewed,
+                        ).toLocaleDateString()}
+                      </span>
                     </div>
                   )}
                   {selectedConcept.weak_subconcepts.length > 0 && (
@@ -450,7 +572,9 @@ function KnowledgeGraphInner() {
 
                 {selectedConcept.threads.length > 0 && (
                   <div className="pt-2">
-                    <p className="text-xs text-muted-foreground mb-1">Covered in:</p>
+                    <p className="text-xs text-muted-foreground mb-1">
+                      Covered in:
+                    </p>
                     <div className="flex flex-col gap-1">
                       {selectedConcept.threads.map((tid) => (
                         <Button

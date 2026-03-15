@@ -44,16 +44,27 @@ export function TrailEdge({
   const opacity = 0.3 + weight * 0.7;
   const strokeWidth = 1.5 + weight * 1.5;
 
+  // Animated flowing dots to show direction instead of arrows
+  const animationDuration = `${2 + (1 - weight) * 2}s`; // faster for stronger edges
+
   return (
-    <path
-      id={id}
-      d={edgePath}
-      fill="none"
-      stroke={style.stroke}
-      strokeWidth={strokeWidth}
-      strokeDasharray={style.dasharray}
-      strokeOpacity={opacity}
-      markerEnd="url(#arrowhead)"
-    />
+    <g>
+      <path
+        id={id}
+        d={edgePath}
+        fill="none"
+        stroke={style.stroke}
+        strokeWidth={strokeWidth}
+        strokeDasharray={style.dasharray}
+        strokeOpacity={opacity * 0.5}
+      />
+      <circle r={strokeWidth} fill={style.stroke} opacity={opacity}>
+        <animateMotion
+          dur={animationDuration}
+          repeatCount="indefinite"
+          path={edgePath}
+        />
+      </circle>
+    </g>
   );
 }

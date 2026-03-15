@@ -1,6 +1,7 @@
-import { Handle, Position, type NodeProps } from "@xyflow/react";
+import { type NodeProps } from "@xyflow/react";
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { NodeHandles } from "./node-handles";
 
 interface ConceptNodeData {
   name: string;
@@ -78,7 +79,7 @@ export function ConceptNode({ data, selected }: NodeProps) {
         boxShadow: "0 2px 8px rgba(0, 0, 0, 0.3)",
       }}
     >
-      <Handle type="target" position={Position.Left} className="!bg-border !w-2 !h-2" />
+      <NodeHandles />
 
       <div className="flex items-center gap-2">
         <MasteryRing score={score} />
@@ -95,8 +96,6 @@ export function ConceptNode({ data, selected }: NodeProps) {
           </div>
         </div>
       </div>
-
-      <Handle type="source" position={Position.Right} className="!bg-border !w-2 !h-2" />
     </div>
   );
 }

@@ -1,6 +1,7 @@
-import { Handle, Position, type NodeProps } from "@xyflow/react";
+import { type NodeProps } from "@xyflow/react";
 import { Rabbit } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { NodeHandles } from "./node-handles";
 
 interface MemoryHubData {
   mastery_score: number;
@@ -25,7 +26,7 @@ export function MemoryHubNode({ data, selected }: NodeProps) {
         minWidth: 160,
       }}
     >
-      <Handle type="target" position={Position.Left} className="!bg-border !w-2 !h-2" />
+      <NodeHandles />
 
       <div className="flex flex-col items-center gap-1.5">
         <Rabbit className="size-7" style={{ color: "hsl(260, 70%, 75%)" }} />
@@ -36,8 +37,6 @@ export function MemoryHubNode({ data, selected }: NodeProps) {
           {d.concept_count} concepts | {Math.round(score * 100)}% avg
         </p>
       </div>
-
-      <Handle type="source" position={Position.Right} className="!bg-border !w-2 !h-2" />
     </div>
   );
 }

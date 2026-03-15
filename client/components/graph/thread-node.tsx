@@ -1,5 +1,6 @@
-import { Handle, Position, type NodeProps } from "@xyflow/react";
+import { type NodeProps } from "@xyflow/react";
 import { cn } from "@/lib/utils";
+import { NodeHandles } from "./node-handles";
 
 interface ThreadNodeData {
   title: string;
@@ -28,18 +29,16 @@ export function ThreadNode({ data, selected }: NodeProps) {
         selected && "ring-2 ring-primary/50",
       )}
     >
-      <Handle type="target" position={Position.Left} className="!bg-border !w-2 !h-2" />
+      <NodeHandles />
 
-      <div className="flex items-center gap-2 mb-1">
-        <span
-          className={cn(
-            "text-[10px] font-medium px-1.5 py-0.5 rounded-full",
-            phaseBadgeColors[d.phase] ?? "bg-muted text-muted-foreground",
-          )}
-        >
-          {d.phase}
-        </span>
-      </div>
+      <span
+        className={cn(
+          "text-[10px] font-medium px-1.5 py-0.5 rounded-full mb-1 inline-block",
+          phaseBadgeColors[d.phase] ?? "bg-muted text-muted-foreground",
+        )}
+      >
+        {d.phase}
+      </span>
 
       <p className="text-sm font-medium text-foreground truncate">{d.title}</p>
 
@@ -57,8 +56,6 @@ export function ThreadNode({ data, selected }: NodeProps) {
           />
         </div>
       )}
-
-      <Handle type="source" position={Position.Right} className="!bg-border !w-2 !h-2" />
     </div>
   );
 }

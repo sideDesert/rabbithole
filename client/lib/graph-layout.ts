@@ -7,17 +7,127 @@ import {
   type SimulationLinkDatum,
 } from "d3-force";
 import type { Node, Edge } from "@xyflow/react";
+import { HANDLE_ID } from "@/components/graph/node-handles";
 
 interface LayoutOptions {
-  direction?: "TB" | "LR";
   nodeWidth?: number;
   nodeHeight?: number;
 }
 
 interface ForceNode extends SimulationNodeDatum {
   id: string;
-  nodeType?: string;
 }
+
+interface ForceParams {
+  chargeStrength: number;
+  linkDistance: number;
+  linkStrength: number;
+  ticks: number;
+}
+
+/* ── Shared helpers ──────────────────────────────────────────────────── */
+
+/** For each edge, pick the source/target handles on the sides closest to each other. */
+function assignNearestHandles(
+  nodes: Node[],
+  edges: Edge[],
+  nodeWidth: number,
+  nodeHeight: number,
+): Edge[] {
+  const posMap = new Map<string, { cx: number; cy: number }>();
+  for (const n of nodes) {
+    posMap.set(n.id, {
+      cx: n.position.x + nodeWidth / 2,
+      cy: n.position.y + nodeHeight / 2,
+    });
+  }
+
+  return edges.map((edge) => {
+    const src = posMap.get(edge.source);
+    const tgt = posMap.get(edge.target);
+    if (!src || !tgt) return edge;
+
+    const dx = tgt.cx - src.cx;
+    const dy = tgt.cy - src.cy;
+
+    if (Math.abs(dx) > Math.abs(dy)) {
+      return {
+        ...edge,
+        sourceHandle: dx > 0 ? HANDLE_ID.sourceRight : HANDLE_ID.sourceLeft,
+        targetHandle: dx > 0 ? HANDLE_ID.targetLeft : HANDLE_ID.targetRight,
+      };
+    }
+    return {
+      ...edge,
+      sourceHandle: dy > 0 ? HANDLE_ID.sourceBottom : HANDLE_ID.sourceTop,
+      targetHandle: dy > 0 ? HANDLE_ID.targetTop : HANDLE_ID.targetBottom,
+    };
+  });
+}
+
+/** Run a D3 force simulation to resolve overlaps, returning positioned nodes. */
+function runForceLayout(
+  nodes: Node[],
+  edges: Edge[],
+  positions: Map<string, { x: number; y: number }>,
+  pinnedId: string | undefined,
+  nodeWidth: number,
+  nodeHeight: number,
+  params: ForceParams,
+): Node[] {
+  const simNodes: ForceNode[] = nodes.map((n) => {
+    const pos = positions.get(n.id) ?? { x: 0, y: 0 };
+    const sn: ForceNode = { id: n.id, x: pos.x, y: pos.y };
+    if (n.id === pinnedId) {
+      sn.fx = pos.x;
+      sn.fy = pos.y;
+    }
+    return sn;
+  });
+
+  const nodeMap = new Map(simNodes.map((n) => [n.id, n]));
+
+  const simLinks: SimulationLinkDatum<ForceNode>[] = edges
+    .filter((e) => nodeMap.has(e.source) && nodeMap.has(e.target))
+    .map((e) => ({ source: e.source, target: e.target }));
+
+  const collideRadius = Math.max(nodeWidth, nodeHeight) / 2 + 20;
+
+  const simulation = forceSimulation<ForceNode>(simNodes)
+    .force(
+      "link",
+      forceLink<ForceNode, SimulationLinkDatum<ForceNode>>(simLinks)
+        .id((d) => d.id)
+        .distance(params.linkDistance)
+        .strength(params.linkStrength),
+    )
+    .force("charge", forceManyBody<ForceNode>().strength(params.chargeStrength))
+    .force(
+      "collide",
+      forceCollide<ForceNode>()
+        .radius(collideRadius)
+        .strength(1)
+        .iterations(4),
+    )
+    .stop();
+
+  for (let i = 0; i < params.ticks; i++) {
+    simulation.tick();
+  }
+
+  return nodes.map((node) => {
+    const simNode = nodeMap.get(node.id);
+    return {
+      ...node,
+      position: {
+        x: (simNode?.x ?? 0) - nodeWidth / 2,
+        y: (simNode?.y ?? 0) - nodeHeight / 2,
+      },
+    };
+  });
+}
+
+/* ── Public API ──────────────────────────────────────────────────────── */
 
 export function layoutGraph(
   nodes: Node[],
@@ -28,10 +138,7 @@ export function layoutGraph(
 
   if (nodes.length === 0) return { nodes, edges };
 
-  // Detect mode: overview (has memory_hub) vs drill-in (no memory_hub)
-  const hasMemoryHub = nodes.some(
-    (n) => (n.data as Record<string, unknown>)?.node_type === "memory_hub",
-  );
+  const hasMemoryHub = nodes.some((n) => n.type === "memory_hub");
 
   if (hasMemoryHub) {
     return layoutOverview(nodes, edges, nodeWidth, nodeHeight);
@@ -50,28 +157,17 @@ function layoutOverview(
   const cx = 0;
   const cy = 0;
 
-  // Separate node types
-  const topicHubs = nodes.filter(
-    (n) => (n.data as Record<string, unknown>)?.node_type === "topic_hub",
-  );
-  const threads = nodes.filter(
-    (n) => (n.data as Record<string, unknown>)?.node_type === "thread",
-  );
-  const memoryHub = nodes.find(
-    (n) => (n.data as Record<string, unknown>)?.node_type === "memory_hub",
-  );
+  const nodeById = new Map(nodes.map((n) => [n.id, n]));
+  const topicHubs = nodes.filter((n) => n.type === "topic_hub");
+  const threads = nodes.filter((n) => n.type === "thread");
+  const memoryHub = nodes.find((n) => n.type === "memory_hub");
 
   // Build a map of topic_hub edges to find which threads connect to which hub
   const hubForThread = new Map<string, string>();
   for (const e of edges) {
-    const srcNode = nodes.find((n) => n.id === e.source);
-    const tgtNode = nodes.find((n) => n.id === e.target);
-    if (
-      srcNode &&
-      (srcNode.data as Record<string, unknown>)?.node_type === "topic_hub" &&
-      tgtNode &&
-      (tgtNode.data as Record<string, unknown>)?.node_type === "thread"
-    ) {
+    const srcNode = nodeById.get(e.source);
+    const tgtNode = nodeById.get(e.target);
+    if (srcNode?.type === "topic_hub" && tgtNode?.type === "thread") {
       hubForThread.set(e.target, e.source);
     }
   }
@@ -109,9 +205,8 @@ function layoutOverview(
   for (const [hubId, hubThreads] of threadsByHub) {
     const hubPos = positions.get(hubId);
     if (!hubPos) continue;
-    // Find the angle from center to hub
     const hubAngle = Math.atan2(hubPos.y - cy, hubPos.x - cx);
-    const spreadAngle = Math.PI * 0.4; // spread threads in a 72° arc around hub
+    const spreadAngle = Math.PI * 0.4;
     hubThreads.forEach((t, i) => {
       const offset =
         hubThreads.length === 1
@@ -136,15 +231,14 @@ function layoutOverview(
     });
   });
 
-  const layoutedNodes = nodes.map((node) => {
-    const pos = positions.get(node.id) ?? { x: 0, y: 0 };
-    return {
-      ...node,
-      position: { x: pos.x - nodeWidth / 2, y: pos.y - nodeHeight / 2 },
-    };
+  const layoutedNodes = runForceLayout(nodes, edges, positions, memoryHub?.id, nodeWidth, nodeHeight, {
+    chargeStrength: -300,
+    linkDistance: 200,
+    linkStrength: 0.1,
+    ticks: 60,
   });
 
-  return { nodes: layoutedNodes, edges };
+  return { nodes: layoutedNodes, edges: assignNearestHandles(layoutedNodes, edges, nodeWidth, nodeHeight) };
 }
 
 /* ── Drill-in: topic hub + concepts + threads ────────────────────────── */
@@ -158,20 +252,12 @@ function layoutDrillIn(
   const cx = 0;
   const cy = 0;
 
-  // Find the topic hub — pin it to center
-  const topicHub = nodes.find(
-    (n) => (n.data as Record<string, unknown>)?.node_type === "topic_hub",
-  );
-  const concepts = nodes.filter(
-    (n) => (n.data as Record<string, unknown>)?.node_type === "concept",
-  );
-  const threads = nodes.filter(
-    (n) => (n.data as Record<string, unknown>)?.node_type === "thread",
-  );
+  const topicHub = nodes.find((n) => n.type === "topic_hub");
+  const concepts = nodes.filter((n) => n.type === "concept");
+  const threads = nodes.filter((n) => n.type === "thread");
 
   const positions = new Map<string, { x: number; y: number }>();
 
-  // Topic hub at center
   if (topicHub) {
     positions.set(topicHub.id, { x: cx, y: cy });
   }
@@ -203,56 +289,12 @@ function layoutDrillIn(
     });
   }
 
-  // Now run a short force simulation to untangle edges
-  const simNodes: ForceNode[] = nodes.map((n) => {
-    const pos = positions.get(n.id) ?? { x: 0, y: 0 };
-    const nodeType = (n.data as Record<string, unknown>)?.node_type as string | undefined;
-    const sn: ForceNode = { id: n.id, nodeType, x: pos.x, y: pos.y };
-    if (topicHub && n.id === topicHub.id) {
-      sn.fx = cx;
-      sn.fy = cy;
-    }
-    return sn;
+  const layoutedNodes = runForceLayout(nodes, edges, positions, topicHub?.id, nodeWidth, nodeHeight, {
+    chargeStrength: -500,
+    linkDistance: 200,
+    linkStrength: 0.15,
+    ticks: 80,
   });
 
-  const nodeMap = new Map(simNodes.map((n) => [n.id, n]));
-
-  const simLinks: SimulationLinkDatum<ForceNode>[] = edges
-    .filter((e) => nodeMap.has(e.source) && nodeMap.has(e.target))
-    .map((e) => ({ source: e.source, target: e.target }));
-
-  const simulation = forceSimulation<ForceNode>(simNodes)
-    .force(
-      "link",
-      forceLink<ForceNode, SimulationLinkDatum<ForceNode>>(simLinks)
-        .id((d) => d.id)
-        .distance(180)
-        .strength(0.15),
-    )
-    .force("charge", forceManyBody<ForceNode>().strength(-400))
-    .force(
-      "collide",
-      forceCollide<ForceNode>()
-        .radius(85)
-        .strength(1)
-        .iterations(4),
-    )
-    .stop();
-
-  for (let i = 0; i < 300; i++) {
-    simulation.tick();
-  }
-
-  const layoutedNodes = nodes.map((node) => {
-    const simNode = nodeMap.get(node.id);
-    return {
-      ...node,
-      position: {
-        x: (simNode?.x ?? 0) - nodeWidth / 2,
-        y: (simNode?.y ?? 0) - nodeHeight / 2,
-      },
-    };
-  });
-
-  return { nodes: layoutedNodes, edges };
+  return { nodes: layoutedNodes, edges: assignNearestHandles(layoutedNodes, edges, nodeWidth, nodeHeight) };
 }

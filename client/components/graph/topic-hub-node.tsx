@@ -1,5 +1,6 @@
-import { Handle, Position, type NodeProps } from "@xyflow/react";
+import { type NodeProps } from "@xyflow/react";
 import { cn } from "@/lib/utils";
+import { NodeHandles } from "./node-handles";
 
 interface TopicHubData {
   name: string;
@@ -33,7 +34,7 @@ export function TopicHubNode({ data, selected }: NodeProps) {
         border: `2px solid hsl(${hue}, 60%, 50%)`,
       }}
     >
-      <Handle type="target" position={Position.Left} className="!bg-border !w-2 !h-2" />
+      <NodeHandles />
 
       <div className="text-center">
         <p
@@ -58,8 +59,6 @@ export function TopicHubNode({ data, selected }: NodeProps) {
           />
         </div>
       </div>
-
-      <Handle type="source" position={Position.Right} className="!bg-border !w-2 !h-2" />
     </div>
   );
 }

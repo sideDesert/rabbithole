@@ -276,7 +276,7 @@ export default function Page() {
                 <CarouselContent className="-ml-4 p-2">
                   {topics.map((topic, i) => (
                     <CarouselItem
-                      key={topic.root_thread_id}
+                      key={`${topic.root_thread_id}-${topic.latest_thread.id}`}
                       className="pl-4 basis-1/2"
                     >
                       <StudyTopicCard topic={topic} />
