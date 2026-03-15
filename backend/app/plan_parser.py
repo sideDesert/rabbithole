@@ -56,6 +56,27 @@ class PlanTree:
         return None
 
 
+def phase_for_concept(
+    tree: PlanTree, concept_name: str
+) -> tuple[PlanPhase, PlanConcept, bool] | None:
+    """Find the phase containing a concept and whether it's the last uncompleted concept in that phase.
+
+    Returns (phase, concept, is_last_in_phase) or None if not found.
+    is_last_in_phase is True when marking this concept complete would make phase.progress == 1.0.
+    """
+    stripped = concept_name.strip("*")
+    for phase in tree.phases:
+        for concept in phase.concepts:
+            if concept.name == stripped or concept.name == concept_name:
+                # Count remaining uncompleted concepts (excluding the one being completed)
+                remaining = sum(
+                    1 for c in phase.concepts
+                    if not c.completed and c.name != concept.name
+                )
+                return phase, concept, remaining == 0
+    return None
+
+
 def parse_plan(markdown: str) -> PlanTree:
     """Parse a markdown learning plan into a PlanTree."""
     lines = markdown.strip().splitlines()

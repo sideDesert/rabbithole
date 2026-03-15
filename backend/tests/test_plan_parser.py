@@ -1,6 +1,6 @@
 """Tests for the markdown plan parser."""
 
-from app.plan_parser import parse_plan
+from app.plan_parser import parse_plan, phase_for_concept
 
 SAMPLE_PLAN = """\
 # Operating Systems
@@ -104,3 +104,41 @@ def test_empty_phases_progress():
 """
     tree = parse_plan(plan)
     assert tree.overall_progress == 0.0
+
+
+# --- phase_for_concept tests ---
+
+PHASE_CONCEPT_PLAN = """\
+# Test Topic
+
+> **Depth:** beginner | **Prior knowledge:** none
+
+## Phase 1: Basics
+- [x] Concept A — first concept
+- [ ] Concept B — second concept
+
+## Phase 2: Advanced
+- [ ] Concept C — third concept
+- [ ] Concept D — fourth concept
+"""
+
+
+def test_phase_for_concept_found():
+    tree = parse_plan(PHASE_CONCEPT_PLAN)
+    phase, concept, is_last = phase_for_concept(tree, "Concept B")
+    assert phase.title == "Basics"
+    assert concept.name == "Concept B"
+    assert is_last is True  # last uncompleted in phase 1
+
+
+def test_phase_for_concept_not_last():
+    tree = parse_plan(PHASE_CONCEPT_PLAN)
+    phase, concept, is_last = phase_for_concept(tree, "Concept C")
+    assert phase.title == "Advanced"
+    assert is_last is False  # Concept D still uncompleted
+
+
+def test_phase_for_concept_not_found():
+    tree = parse_plan(PHASE_CONCEPT_PLAN)
+    result = phase_for_concept(tree, "Nonexistent")
+    assert result is None
