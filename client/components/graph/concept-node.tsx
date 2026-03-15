@@ -6,6 +6,18 @@ interface ConceptNodeData {
   name: string;
   mastery_score: number;
   strength_trend: "improving" | "stable" | "declining";
+  domain: string;
+  source: "plan" | "extracted" | "prerequisite";
+  confidence: number;
+}
+
+// Deterministic color from domain string — maps to hsl hue
+function domainHue(domain: string): number {
+  let hash = 0;
+  for (let i = 0; i < domain.length; i++) {
+    hash = domain.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return Math.abs(hash) % 360;
 }
 
 function MasteryRing({ score }: { score: number }) {
@@ -40,11 +52,15 @@ const TrendIcon = ({ trend }: { trend: string }) => {
 export function ConceptNode({ data, selected }: NodeProps) {
   const d = data as unknown as ConceptNodeData;
   const score = d.mastery_score;
+  const confidence = d.confidence ?? 1.0;
 
   const isMastered = score >= 0.7;
   const isMedium = score >= 0.4 && score < 0.7;
   const isWeak = score > 0 && score < 0.4;
   const isUndiscovered = score === 0;
+
+  const hue = d.domain ? domainHue(d.domain) : 0;
+  const domainBorder = d.domain ? `hsl(${hue}, 60%, 50%)` : undefined;
 
   return (
     <div
@@ -52,10 +68,15 @@ export function ConceptNode({ data, selected }: NodeProps) {
         "bg-card rounded-lg px-4 py-3 min-w-[180px] max-w-[240px] cursor-pointer transition-all",
         isMastered && "border-2 border-primary shadow-sm",
         isMedium && "border border-muted-foreground",
-        isWeak && "border border-dashed border-muted-foreground opacity-70",
-        isUndiscovered && "border border-dashed border-border opacity-40 blur-[0.5px]",
+        isWeak && "border border-dashed border-muted-foreground",
+        isUndiscovered && "border border-dashed border-border",
         selected && "ring-2 ring-primary/50",
       )}
+      style={{
+        opacity: confidence < 0.5 ? 0.5 : confidence < 0.8 ? 0.75 : 1,
+        borderLeftColor: domainBorder,
+        borderLeftWidth: domainBorder ? 3 : undefined,
+      }}
     >
       <Handle type="target" position={Position.Left} className="!bg-border !w-2 !h-2" />
 
@@ -68,6 +89,9 @@ export function ConceptNode({ data, selected }: NodeProps) {
               {Math.round(score * 100)}%
             </span>
             <TrendIcon trend={d.strength_trend} />
+            {d.source === "extracted" && (
+              <span className="text-[9px] text-muted-foreground/60 italic">inferred</span>
+            )}
           </div>
         </div>
       </div>

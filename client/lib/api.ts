@@ -520,15 +520,31 @@ export interface KnowledgeConcept {
   strength_trend: "improving" | "stable" | "declining";
   threads: string[];
   last_reviewed: string | null;
+  domain: string;
+  source: "plan" | "extracted" | "prerequisite";
+  confidence: number;
+  description: string;
+  weak_subconcepts: string[];
+}
+
+export interface KnowledgeEdge {
+  source: string;
+  target: string;
+  type: "prerequisite_of" | "part_of" | "explored_from" | "confused_with";
+  weight: number;
 }
 
 export interface KnowledgeGraphData {
-  concepts: KnowledgeConcept[];
-  prerequisites: { source: string; target: string }[];
+  nodes: KnowledgeConcept[];
+  edges: KnowledgeEdge[];
+  domains: string[];
 }
 
-export async function fetchKnowledgeGraph(): Promise<KnowledgeGraphData> {
-  const res = await fetch(`${API_BASE}/knowledge-graph`);
+export async function fetchKnowledgeGraph(domain?: string): Promise<KnowledgeGraphData> {
+  const params = new URLSearchParams();
+  if (domain) params.set("domain", domain);
+  const qs = params.toString();
+  const res = await fetch(`${API_BASE}/knowledge-graph${qs ? `?${qs}` : ""}`);
   if (!res.ok) throw new Error(`Failed to fetch knowledge graph: ${res.status}`);
   return res.json();
 }
