@@ -4,11 +4,10 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Rabbit,
-  MessageSquare,
   Signature,
-  Network,
   BrainCircuit,
   LayoutDashboard,
+  Network,
   SquarePen,
 } from "lucide-react";
 import {
@@ -28,7 +27,7 @@ import { ThreadTree } from "@/components/thread-tree";
 const tools = [
   { name: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
   { name: "Study Plans", icon: Signature, href: "/threads" },
-  // { name: "Knowledge Graph", icon: Network, href: "/knowledge-graph" },
+  { name: "Knowledge Graph", icon: Network, href: "/knowledge-graph" },
   // { name: "Memories", icon: BrainCircuit, href: "/memories" },
 ] as const;
 

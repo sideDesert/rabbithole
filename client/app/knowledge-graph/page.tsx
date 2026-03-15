@@ -30,23 +30,51 @@ import type { KnowledgeConcept } from "@/lib/api";
 const nodeTypes: NodeTypes = { concept: ConceptNode };
 const edgeTypes: EdgeTypes = { trail: TrailEdge };
 
+function DomainFilter({
+  domains,
+  selected,
+  onChange,
+}: {
+  domains: string[];
+  selected: string | undefined;
+  onChange: (domain: string | undefined) => void;
+}) {
+  if (domains.length < 2) return null;
+  return (
+    <div className="absolute top-4 left-4 z-10 flex items-center gap-2">
+      <select
+        value={selected ?? ""}
+        onChange={(e) => onChange(e.target.value || undefined)}
+        className="text-xs bg-card border border-border rounded-md px-2 py-1.5 text-foreground"
+      >
+        <option value="">All domains</option>
+        {domains.map((d) => (
+          <option key={d} value={d}>
+            {d.replace(/-/g, " ")}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
 function KnowledgeGraphInner() {
-  const { data, isLoading, error, refetch } = useKnowledgeGraph();
   const searchParams = useSearchParams();
   const router = useRouter();
   const { resolvedTheme } = useTheme();
   const reactFlowInstance = useReactFlow();
   const focusParam = searchParams.get("focus");
+  const [domainFilter, setDomainFilter] = useState<string | undefined>();
+  const { data, isLoading, error, refetch } = useKnowledgeGraph(domainFilter);
   const [selectedConcept, setSelectedConcept] = useState<KnowledgeConcept | null>(null);
   const focusHandledRef = useRef(false);
   const [nodes, setNodes, onNodesChange] = useNodesState([] as Node[]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([] as Edge[]);
 
-  // Compute layout when data changes, then push into draggable state
   const layouted = useMemo(() => {
-    if (!data?.concepts?.length) return { nodes: [] as Node[], edges: [] as Edge[] };
+    if (!data?.nodes?.length) return { nodes: [] as Node[], edges: [] as Edge[] };
 
-    const rfNodes: Node[] = data.concepts.map((c) => ({
+    const rfNodes: Node[] = data.nodes.map((c) => ({
       id: c.name,
       type: "concept",
       position: { x: 0, y: 0 },
@@ -54,14 +82,18 @@ function KnowledgeGraphInner() {
         name: c.name,
         mastery_score: c.mastery_score,
         strength_trend: c.strength_trend,
+        domain: c.domain,
+        source: c.source,
+        confidence: c.confidence,
       },
     }));
 
-    const rfEdges: Edge[] = data.prerequisites.map((p) => ({
-      id: `e-${p.source}-${p.target}`,
-      source: p.source,
-      target: p.target,
+    const rfEdges: Edge[] = data.edges.map((e) => ({
+      id: `e-${e.source}-${e.target}-${e.type}`,
+      source: e.source,
+      target: e.target,
       type: "trail",
+      data: { edgeType: e.type },
     }));
 
     return layoutGraph(rfNodes, rfEdges, { direction: "LR" });
@@ -74,8 +106,8 @@ function KnowledgeGraphInner() {
 
   // Handle ?focus param after data loads
   useEffect(() => {
-    if (focusParam && !focusHandledRef.current && data?.concepts && nodes.length > 0) {
-      const target = data.concepts.find(
+    if (focusParam && !focusHandledRef.current && data?.nodes && nodes.length > 0) {
+      const target = data.nodes.find(
         (c) => c.name.toLowerCase() === focusParam.toLowerCase(),
       );
       if (target) {
@@ -99,7 +131,7 @@ function KnowledgeGraphInner() {
 
   const onNodeClick = useCallback(
     (_: React.MouseEvent, node: Node) => {
-      const concept = data?.concepts.find((c) => c.name === node.id);
+      const concept = data?.nodes.find((c) => c.name === node.id);
       setSelectedConcept(concept ?? null);
     },
     [data],
@@ -124,7 +156,7 @@ function KnowledgeGraphInner() {
     );
   }
 
-  if (!data?.concepts?.length) {
+  if (!data?.nodes?.length) {
     return (
       <div className="flex flex-col items-center justify-center h-screen gap-3 text-muted-foreground">
         <Network className="size-10 opacity-40" />
@@ -135,6 +167,12 @@ function KnowledgeGraphInner() {
 
   return (
     <div className="relative w-full h-screen">
+      <DomainFilter
+        domains={data.domains}
+        selected={domainFilter}
+        onChange={setDomainFilter}
+      />
+
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -158,6 +196,11 @@ function KnowledgeGraphInner() {
         {selectedConcept && (
           <div className="space-y-3">
             <h3 className="font-semibold text-sm">{selectedConcept.name}</h3>
+
+            {selectedConcept.description && (
+              <p className="text-xs text-muted-foreground">{selectedConcept.description}</p>
+            )}
+
             <div className="space-y-2 text-xs">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Mastery</span>
@@ -173,13 +216,38 @@ function KnowledgeGraphInner() {
                 <span className="text-muted-foreground">Trend</span>
                 <span className="capitalize">{selectedConcept.strength_trend}</span>
               </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Domain</span>
+                <span>{selectedConcept.domain.replace(/-/g, " ") || "\u2014"}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Source</span>
+                <span className="capitalize">{selectedConcept.source}</span>
+              </div>
+              {selectedConcept.confidence < 1.0 && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Confidence</span>
+                  <span>{Math.round(selectedConcept.confidence * 100)}%</span>
+                </div>
+              )}
               {selectedConcept.last_reviewed && (
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Last reviewed</span>
                   <span>{new Date(selectedConcept.last_reviewed).toLocaleDateString()}</span>
                 </div>
               )}
+              {selectedConcept.weak_subconcepts.length > 0 && (
+                <div>
+                  <span className="text-muted-foreground">Weak areas:</span>
+                  <ul className="mt-1 list-disc list-inside text-muted-foreground">
+                    {selectedConcept.weak_subconcepts.map((w) => (
+                      <li key={w}>{w}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
+
             {selectedConcept.threads.length > 0 && (
               <div className="pt-1">
                 <p className="text-xs text-muted-foreground mb-1">Covered in:</p>
