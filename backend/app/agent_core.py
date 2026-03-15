@@ -13,6 +13,9 @@ from app.agent.prompts import build_phase_prompt
 from app.tools_impl import (
     AgentContext,
     create_plan,
+    get_parked_topics,
+    offer_branch,
+    park_topic,
     present_interview,
     read_plan,
     recall_memory,
@@ -45,6 +48,9 @@ PHASE_TOOLS = {
         read_plan,
         update_plan_progress,
         trigger_feynman,
+        park_topic,
+        get_parked_topics,
+        offer_branch,
     ],
 }
 

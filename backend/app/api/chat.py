@@ -1041,6 +1041,14 @@ async def chat(thread_id: str, req: ChatRequest):
                 "concept_name": agent_ctx.feynman_concept,
             })
 
+        # Branch suggestion — show a clickable card to branch into an off-topic
+        if agent_ctx.branch_suggestion:
+            yield sse({
+                "type": "branch_suggestion",
+                "topic": agent_ctx.branch_suggestion["topic"],
+                "reason": agent_ctx.branch_suggestion["reason"],
+            })
+
         # 11. Update topic_slug if create_plan was called
         if new_topic_slug:
             _ = mongo.threads().update_one(

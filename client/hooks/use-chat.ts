@@ -18,6 +18,12 @@ export interface ToolCallEntry {
   result?: string;
 }
 
+export interface BranchSuggestion {
+  topic: string;
+  reason: string;
+  messageId: string;
+}
+
 export interface ChatMessage {
   id: string;
   role: "user" | "assistant" | "system";
@@ -49,6 +55,8 @@ interface UseChatReturn {
   feynmanConcept: string | null;
   openFeynman: (concept: string) => void;
   dismissFeynman: () => void;
+  branchSuggestion: BranchSuggestion | null;
+  dismissBranchSuggestion: () => void;
 }
 
 export function useChat({
@@ -74,6 +82,12 @@ export function useChat({
   const [feynmanOpen, setFeynmanOpen] = useState(false);
   const [feynmanConcept, setFeynmanConcept] = useState<string | null>(null);
   const pendingFeynmanRef = useRef<string | null>(null);
+  const [branchSuggestion, setBranchSuggestion] =
+    useState<BranchSuggestion | null>(null);
+  const pendingBranchSuggestionRef = useRef<{
+    topic: string;
+    reason: string;
+  } | null>(null);
 
   // Load existing messages when threadId is provided
   useQuery({
@@ -157,6 +171,8 @@ export function useChat({
       setIsLoading(true);
       setInterviewQuestions(null);
       pendingInterviewRef.current = null;
+      setBranchSuggestion(null);
+      pendingBranchSuggestionRef.current = null;
 
       let currentThreadId = initialThreadId ?? createdThreadId;
       if (!currentThreadId) {
@@ -287,6 +303,12 @@ export function useChat({
             // This prevents opening the modal while streaming is still in progress.
             pendingFeynmanRef.current = event.concept_name;
             break;
+          case "branch_suggestion":
+            pendingBranchSuggestionRef.current = {
+              topic: event.topic,
+              reason: event.reason,
+            };
+            break;
           case "plan_created": {
             const slug = event.topic_slug;
             setMessages((prev) => [
@@ -338,6 +360,14 @@ export function useChat({
               setFeynmanOpen(true);
               setFeynmanConcept(pendingFeynmanRef.current);
               pendingFeynmanRef.current = null;
+            }
+            // Apply pending branch suggestion after streaming ends
+            if (pendingBranchSuggestionRef.current) {
+              setBranchSuggestion({
+                ...pendingBranchSuggestionRef.current,
+                messageId: currentAiMsgId,
+              });
+              pendingBranchSuggestionRef.current = null;
             }
             break;
           case "error":
@@ -401,6 +431,10 @@ export function useChat({
     setFeynmanConcept(null);
   }, []);
 
+  const dismissBranchSuggestion = useCallback(() => {
+    setBranchSuggestion(null);
+  }, []);
+
   return {
     messages,
     isMessagesLoading: messagesLoading,
@@ -416,5 +450,7 @@ export function useChat({
     feynmanConcept,
     openFeynman,
     dismissFeynman,
+    branchSuggestion,
+    dismissBranchSuggestion,
   };
 }

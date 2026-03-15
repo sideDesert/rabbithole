@@ -16,6 +16,9 @@ const toolCallLabels: Record<string, string> = {
   read_plan: "Checking the map...",
   update_plan_progress: "Ticking off progress...",
   suggest_branches: "Spotting rabbit holes...",
+  offer_branch: "Offering a rabbit hole...",
+  park_topic: "Bookmarking for later...",
+  get_parked_topics: "Checking bookmarks...",
 };
 
 export function getTrailLabel(

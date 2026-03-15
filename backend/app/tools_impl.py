@@ -31,6 +31,7 @@ class AgentContext:
     # Populated by present_interview tool so the SSE layer can extract it
     interview_questions: list[dict[str, Any]] | None = None
     feynman_concept: str | None = None
+    branch_suggestion: dict[str, str] | None = None
 
 
 # ── Memory Tools ────────────────────────────────────────────────────────────
@@ -408,3 +409,144 @@ async def trigger_feynman(
     to test the learner's understanding."""
     ctx.context.feynman_concept = concept_name
     return f"Feynman mode triggered for '{concept_name}'. The learner will now write their explanation."
+
+
+# ── Drift Management / Parked Topics Tools ────────────────────────────────
+
+
+def _load_parked_topics(slug: str) -> list[dict[str, Any]]:
+    """Load parked.json for a topic slug. Returns [] if missing or corrupt."""
+    try:
+        return json.loads((PLANS_DIR / slug / "parked.json").read_text())
+    except (FileNotFoundError, json.JSONDecodeError):
+        return []
+
+
+def _save_parked_topics(slug: str, parked: list[dict[str, Any]]) -> None:
+    """Save parked topics, dropping already-surfaced entries to prevent unbounded growth."""
+    active = [e for e in parked if not e.get("surfaced")]
+    (PLANS_DIR / slug / "parked.json").write_text(json.dumps(active, indent=2))
+
+
+@function_tool
+async def park_topic(
+    ctx: RunContextWrapper[AgentContext],
+    question: str,
+    asked_during: str,
+    target_concept: str,
+) -> str:
+    """Park a learner's question for later when it maps to a future concept in the plan.
+
+    Call this when the learner asks about something that will be covered later.
+    The question will be surfaced when you reach that concept, creating a
+    personalized callback moment.
+
+    Args:
+        question: The learner's original question or a concise summary of it.
+        asked_during: The concept name the learner was studying when they asked.
+        target_concept: The concept name from the plan where this should be surfaced.
+    """
+    slug = ctx.context.topic_slug
+    if not slug:
+        return json.dumps({"error": "No topic_slug set"})
+
+    plan_path = PLANS_DIR / slug / "plan.md"
+    if not plan_path.exists():
+        return json.dumps({"error": "No plan found — cannot park topic"})
+
+    # Validate that target_concept actually exists in the plan
+    tree = parse_plan(plan_path.read_text())
+    all_concepts = [c.name for p in tree.phases for c in p.concepts]
+    # Case-insensitive match — resolve to the canonical name from the plan
+    canonical_target = None
+    for name in all_concepts:
+        if name.lower() == target_concept.lower():
+            canonical_target = name
+            break
+    if not canonical_target:
+        return json.dumps({
+            "error": f"Concept '{target_concept}' not found in plan",
+            "available_concepts": all_concepts,
+        })
+
+    parked = _load_parked_topics(slug)
+    parked.append({
+        "question": question,
+        "asked_during": asked_during,
+        "target_concept": canonical_target,
+        "parked_at": datetime.now(timezone.utc).isoformat(),
+        "surfaced": False,
+    })
+    _save_parked_topics(slug, parked)
+
+    return json.dumps({
+        "status": "parked",
+        "question": question,
+        "target_concept": canonical_target,
+        "total_parked": len(parked),
+    })
+
+
+@function_tool
+async def get_parked_topics(
+    ctx: RunContextWrapper[AgentContext],
+    concept_name: str,
+) -> str:
+    """Retrieve parked questions for a concept. Call this when starting a new
+    concept to check if the learner previously asked questions about it.
+
+    Matching topics are automatically marked as surfaced so they won't
+    appear again.
+    """
+    slug = ctx.context.topic_slug
+    if not slug:
+        return json.dumps({"error": "No topic_slug set"})
+
+    parked = _load_parked_topics(slug)
+
+    concept_lower = concept_name.lower()
+    matching = []
+    for entry in parked:
+        target = entry.get("target_concept", "")
+        if target.lower() == concept_lower and not entry.get("surfaced"):
+            matching.append({
+                "question": entry["question"],
+                "asked_during": entry.get("asked_during", "unknown"),
+                "parked_at": entry.get("parked_at", ""),
+            })
+            entry["surfaced"] = True
+
+    if matching:
+        _save_parked_topics(slug, parked)
+
+    return json.dumps({
+        "parked_topics": matching,
+        "count": len(matching),
+    })
+
+
+# ── Branch Suggestion Tool ────────────────────────────────────────────────
+
+
+@function_tool
+async def offer_branch(
+    ctx: RunContextWrapper[AgentContext],
+    topic: str,
+    reason: str,
+) -> str:
+    """Offer the learner a one-click option to branch into an off-topic rabbit hole.
+
+    Call this when the learner asks about something completely unrelated to the
+    current plan. The frontend will show a clickable card so the learner can
+    branch out with a single click, keeping the current thread on track.
+
+    Args:
+        topic: A concise name for the off-topic subject (e.g. "Quantum Computing").
+        reason: A short reason why this is worth exploring (1 sentence).
+    """
+    ctx.context.branch_suggestion = {"topic": topic, "reason": reason}
+    return json.dumps({
+        "status": "branch_offered",
+        "topic": topic,
+        "note": "A branch suggestion card will appear for the learner.",
+    })
