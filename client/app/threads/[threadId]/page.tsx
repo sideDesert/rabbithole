@@ -19,6 +19,7 @@ import {
 } from "@/components/prompt-input";
 import { BranchSuggestionCard } from "@/components/branch-suggestion-card";
 import { FeynmanModal } from "@/components/feynman-modal";
+import { PhaseActionButton } from "@/components/phase-action-button";
 import { TextSelectionMenu } from "@/components/text-selection-menu";
 import { useChat } from "@/hooks/use-chat";
 import { useTextSelectionMenu } from "@/hooks/use-text-selection-menu";
@@ -27,7 +28,8 @@ import { useThread } from "@/hooks/use-thread";
 import type { Branch } from "@/lib/api";
 import { useRouter, useSearchParams } from "next/navigation";
 import React, { use, useEffect, useRef, useState } from "react";
-import { getProgress } from "@/lib/api";
+import { getProgress, startPhase, createNextPhaseThread } from "@/lib/api";
+import { useQueryClient } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import {
   Item,
@@ -36,7 +38,7 @@ import {
   ItemMedia,
   ItemTitle,
 } from "@/components/ui/item";
-import { GitBranchIcon } from "lucide-react";
+import { BranchingPathsDownBoldDuotone } from "solar-icon-set";
 
 export default function Page({
   params,
@@ -45,6 +47,7 @@ export default function Page({
 }) {
   const { threadId } = use(params);
   const { thread } = useThread(threadId);
+  const queryClient = useQueryClient();
   const { feynmanRequested, setFeynmanRequested, setThreadId, setTopicSlug } =
     usePlan();
   const router = useRouter();
@@ -84,6 +87,8 @@ export default function Page({
     dismissFeynman,
     branchSuggestion,
     dismissBranchSuggestion,
+    phaseComplete,
+    dismissPhaseComplete,
   } = useChat({
     threadId,
     onPlanCreated: (slug) => setTopicSlug(slug),
@@ -202,7 +207,7 @@ export default function Page({
         {thread && thread.depth > 0 && (
           <Item variant="muted" size="sm">
             <ItemMedia>
-              <GitBranchIcon className="size-4" />
+              <BranchingPathsDownBoldDuotone className="size-4" />
             </ItemMedia>
             <ItemContent>
               <ItemTitle>
@@ -220,10 +225,23 @@ export default function Page({
         {messages.map((msg, index) => {
           if (msg.type === "plan_card") {
             return (
-              <PlanCreatedCard
-                key={msg.id}
-                topicSlug={msg.metadata?.topicSlug ?? ""}
-              />
+              <React.Fragment key={msg.id}>
+                <PlanCreatedCard
+                  topicSlug={msg.metadata?.topicSlug ?? ""}
+                />
+                {index === messages.length - 1 && thread?.phase === "planning" && (
+                  <PhaseActionButton
+                    label="Start Learning"
+                    sublabel="Begin Phase 1 of your learning plan"
+                    onClick={async () => {
+                      const result = await startPhase(threadId);
+                      queryClient.invalidateQueries({ queryKey: ["threads"] });
+                      queryClient.invalidateQueries({ queryKey: ["thread-tree"] });
+                      router.push(`/threads/${result.thread_id}`);
+                    }}
+                  />
+                )}
+              </React.Fragment>
             );
           }
           if (msg.type === "phase_divider") {
@@ -269,6 +287,29 @@ export default function Page({
               });
             }}
             onDismiss={dismissBranchSuggestion}
+          />
+        )}
+        {phaseComplete && !phaseComplete.isFinalPhase && !feynmanOpen && (
+          <PhaseActionButton
+            label="Continue to Next Phase"
+            sublabel={`You've completed ${phaseComplete.phaseTitle}! Up next: ${phaseComplete.nextPhaseTitle}`}
+            onClick={async () => {
+              const result = await createNextPhaseThread(threadId);
+              if (result.error) return;
+              dismissPhaseComplete();
+              queryClient.invalidateQueries({ queryKey: ["threads"] });
+              queryClient.invalidateQueries({ queryKey: ["thread-tree"] });
+              router.push(`/threads/${result.thread_id}`);
+            }}
+          />
+        )}
+        {phaseComplete && phaseComplete.isFinalPhase && !feynmanOpen && (
+          <PhaseActionButton
+            label="View Results"
+            sublabel={`Congratulations! You've completed all phases of your learning plan.`}
+            onClick={async () => {
+              router.push(`/threads`);
+            }}
           />
         )}
       </div>
@@ -337,6 +378,10 @@ export default function Page({
           threadId={threadId}
           conceptName={feynmanConcept}
           onClose={dismissFeynman}
+          onSubmitComplete={() => {
+            // phaseComplete state is already set from SSE — it will render
+            // the "Continue to Next Phase" button after modal closes
+          }}
         />
       )}
     </div>
