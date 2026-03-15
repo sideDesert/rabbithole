@@ -1,15 +1,18 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import { useThreads } from "@/hooks/use-threads";
-import { useQueries, useQuery } from "@tanstack/react-query";
-import { getProgress, getPendingTests, type Thread, type PendingTest } from "@/lib/api";
+import { useStudyTopics } from "@/hooks/use-study-topics";
+import { useQuery } from "@tanstack/react-query";
+import { getPendingTests, type PendingTest } from "@/lib/api";
+import { StudyTopicCard } from "@/components/study-topic-card";
+import { Input } from "@/components/ui/input";
+import { Search } from "lucide-react";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-  CardDescription,
   CardFooter,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,92 +24,17 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import { Badge } from "@/components/ui/badge";
-import { ChevronRightIcon } from "lucide-react";
+import { ChevronRightIcon, Plus } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 function Heading({ children }: { children?: React.ReactNode }) {
-  return (
-    <h2 className="text-2xl font-medium text-dark-1 dark:text-light-1">
-      {children}
-    </h2>
-  );
+  return <h2 className="text-lg font-semibold text-foreground">{children}</h2>;
 }
 
-function ProgressBar({ value }: { value: number }) {
-  return (
-    <div className="h-1.5 w-full rounded-full bg-muted">
-      <div
-        className="h-full rounded-full bg-primary transition-all"
-        style={{ width: `${Math.round(value * 100)}%` }}
-      />
-    </div>
-  );
-}
-
-function phaseLabel(phase: string) {
-  if (phase === "interview") return "Interview";
-  if (phase === "planning") return "Planning";
-  if (phase === "teaching") return "Learning";
-  return phase;
-}
-
-function ThreadCard({
-  thread,
-  progress,
-}: {
-  thread: Thread;
-  progress?: number;
-}) {
-  const description =
-    thread.summary || thread.branch_text || thread.current_concept;
-
-  return (
-    <Link href={`/threads/${thread.id}`} className="block h-full">
-      <Card
-        size="sm"
-        className="hover:ring-foreground/20 transition-shadow cursor-pointer h-full flex flex-col"
-      >
-        <CardHeader>
-          <CardTitle className="line-clamp-2 text-base">
-            {thread.title || thread.topic_slug}
-          </CardTitle>
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <Badge variant="secondary">{phaseLabel(thread.phase)}</Badge>
-            <Badge variant="outline">
-              {new Date(thread.updated_at).toLocaleDateString()}
-            </Badge>
-          </div>
-        </CardHeader>
-        <CardContent className="flex-1 space-y-2">
-          {description && (
-            <p className="text-sm text-muted-foreground line-clamp-2">
-              {description}
-            </p>
-          )}
-          {thread.parent_summary && (
-            <p className="text-xs text-muted-foreground/70 line-clamp-2 italic">
-              {thread.parent_summary}
-            </p>
-          )}
-        </CardContent>
-        <CardFooter className="flex-col gap-2">
-          {progress != null && (
-            <div className="w-full flex items-center gap-2">
-              <ProgressBar value={progress} />
-              <span className="text-xs text-muted-foreground shrink-0">
-                {Math.round(progress * 100)}%
-              </span>
-            </div>
-          )}
-          <Button variant="ghost" size="sm" className="ml-auto">
-            Continue <ChevronRightIcon className="ml-1 size-4" />
-          </Button>
-        </CardFooter>
-      </Card>
-    </Link>
-  );
-}
-
-const TIER_VARIANTS: Record<string, "destructive" | "secondary" | "default" | "outline"> = {
+const TIER_VARIANTS: Record<
+  string,
+  "destructive" | "secondary" | "default" | "outline"
+> = {
   weak: "destructive",
   medium: "secondary",
   strong: "default",
@@ -175,14 +103,11 @@ function TestsSection() {
         </p>
       )}
       {!isLoading && tests.length > 0 && (
-        <div className="mt-4 px-14">
+        <div className="mt-4">
           <Carousel opts={{ align: "start" }}>
             <CarouselContent className="-ml-4 p-2">
               {tests.slice(0, 5).map((test) => (
-                <CarouselItem
-                  key={test.id}
-                  className="pl-4 basis-1/2 sm:basis-1/3 lg:basis-1/4"
-                >
+                <CarouselItem key={test.id} className="pl-4 basis-1/2">
                   <TestCard test={test} />
                 </CarouselItem>
               ))}
@@ -196,59 +121,165 @@ function TestsSection() {
   );
 }
 
-export default function Page() {
-  const { threads, isLoading } = useThreads();
+function SkeletonCards({ count = 4 }: { count?: number }) {
+  return (
+    <>
+      {Array.from({ length: count }).map((_, i) => (
+        <div
+          key={i}
+          className="flex flex-col rounded-xl border overflow-hidden"
+        >
+          <Skeleton className="h-28 rounded-none" />
+          <div className="p-4 space-y-3">
+            <Skeleton className="h-5 w-3/4" />
+            <Skeleton className="h-4 w-1/2" />
+            <Skeleton className="h-3 w-1/3" />
+          </div>
+          <div className="p-4 pt-0 flex justify-between">
+            <Skeleton className="h-3 w-12" />
+            <Skeleton className="h-8 w-24" />
+          </div>
+        </div>
+      ))}
+    </>
+  );
+}
 
-  const sorted = (threads?.threads ?? [])
-    .slice()
-    .sort(
-      (a, b) =>
-        new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime(),
-    );
+function NewTopicCard() {
+  return (
+    <Link href="/feynman" className="block h-full">
+      <div className="flex flex-col items-center justify-center h-full min-h-[280px] rounded-xl border-2 border-dashed border-muted-foreground/25 hover:border-muted-foreground/50 transition-colors cursor-pointer">
+        <div className="flex items-center justify-center size-12 rounded-full border-2 border-dashed border-muted-foreground/25 mb-3">
+          <Plus className="size-5 text-muted-foreground" />
+        </div>
+        <p className="text-sm font-medium text-muted-foreground">
+          Start a new topic
+        </p>
+      </div>
+    </Link>
+  );
+}
 
-  const progressQueries = useQueries({
-    queries: sorted.map((t) => ({
-      queryKey: ["progress", t.id],
-      queryFn: () => getProgress(t.id),
-      enabled: t.phase === "teaching",
-      staleTime: 60_000,
-    })),
-  });
+function ThreadsSection() {
+  const { topics: allTopics, isLoading } = useStudyTopics();
+  const [search, setSearch] = useState("");
+  const [groupByTopic, setGroupByTopic] = useState(false);
 
-  const progressMap = new Map<string, number>();
-  sorted.forEach((t, i) => {
-    const data = progressQueries[i]?.data;
-    if (data?.overall_progress != null) {
-      progressMap.set(t.id, data.overall_progress);
-    }
-  });
+  const query = search.toLowerCase().trim();
+  const filtered = query
+    ? allTopics.filter(
+        (t) =>
+          t.topic.toLowerCase().includes(query) ||
+          (t.current_concept?.toLowerCase().includes(query) ?? false) ||
+          t.latest_thread.title.toLowerCase().includes(query),
+      )
+    : allTopics;
 
   return (
-    <div className="w-full px-6 pb-6">
+    <div>
+      <Heading>Threads</Heading>
+
+      {!isLoading && (
+        <div className="flex items-center gap-3 mt-4">
+          <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
+            <Input
+              placeholder="Search topics..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-8"
+            />
+          </div>
+          <Button
+            variant={groupByTopic ? "secondary" : "outline"}
+            size="sm"
+            onClick={() => setGroupByTopic((g) => !g)}
+          >
+            Group by topic
+          </Button>
+        </div>
+      )}
+
+      {!isLoading && filtered.length === 0 && query && (
+        <p className="text-muted-foreground text-sm mt-4">
+          No threads match your search.
+        </p>
+      )}
+
+      {(isLoading || (!groupByTopic && (filtered.length > 0 || !query))) && (
+        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {isLoading && <SkeletonCards />}
+          {!isLoading && !query && <NewTopicCard />}
+          {!isLoading &&
+            filtered.map((topic) => (
+              <StudyTopicCard key={topic.latest_thread.id} topic={topic} />
+            ))}
+        </div>
+      )}
+
+      {!isLoading && filtered.length > 0 && groupByTopic && (
+        <div className="mt-4 space-y-6">
+          {!query && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <NewTopicCard />
+            </div>
+          )}
+          {Object.entries(
+            filtered.reduce<Record<string, typeof filtered>>((acc, t) => {
+              (acc[t.topic] ??= []).push(t);
+              return acc;
+            }, {}),
+          ).map(([topicName, items]) => (
+            <div key={topicName}>
+              <h3 className="text-lg font-medium text-foreground mb-3">
+                {topicName}
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {items.map((topic) => (
+                  <StudyTopicCard key={topic.latest_thread.id} topic={topic} />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function Page() {
+  const { topics, isLoading: topicsLoading } = useStudyTopics(5);
+
+  return (
+    <div className="w-full max-w-3xl mx-auto px-6 py-8 space-y-10">
+      <div>
+        <h1 className="text-3xl font-semibold">Dashboard</h1>
+        <p className="text-muted-foreground mt-1">Overview</p>
+      </div>
       <div className="w-full space-y-8">
         <div>
-          <Heading>Continue</Heading>
-          {isLoading && (
+          <Heading>Continue Learning</Heading>
+          {topicsLoading && (
             <p className="text-muted-foreground text-sm mt-4">Loading…</p>
           )}
-          {!isLoading && sorted.length === 0 && (
+          {!topicsLoading && topics.length === 0 && (
             <p className="text-muted-foreground text-sm mt-4">
-              No threads yet.
+              No study topics yet.{" "}
+              <Link href="/feynman" className="underline">
+                Start learning
+              </Link>
             </p>
           )}
-          {!isLoading && sorted.length > 0 && (
-            <div className="mt-4 px-14">
+          {!topicsLoading && topics.length > 0 && (
+            <div className="mt-4">
               <Carousel opts={{ align: "start" }}>
                 <CarouselContent className="-ml-4 p-2">
-                  {sorted.slice(0, 5).map((thread) => (
+                  {topics.map((topic, i) => (
                     <CarouselItem
-                      key={thread.id}
-                      className="pl-4 basis-1/2 sm:basis-1/3 lg:basis-1/4"
+                      key={topic.root_thread_id}
+                      className="pl-4 basis-1/2"
                     >
-                      <ThreadCard
-                        thread={thread}
-                        progress={progressMap.get(thread.id)}
-                      />
+                      <StudyTopicCard topic={topic} />
                     </CarouselItem>
                   ))}
                 </CarouselContent>
@@ -262,9 +293,7 @@ export default function Page() {
         <div>
           <Heading>Suggestions</Heading>
         </div>
-        <div>
-          <Heading>Threads</Heading>
-        </div>
+        <ThreadsSection />
       </div>
     </div>
   );

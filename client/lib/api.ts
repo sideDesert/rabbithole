@@ -119,6 +119,30 @@ export async function fetchThreadTrees(): Promise<{
   return res.json();
 }
 
+// ── Study Topics ─────────────────────────────────────────────────────────
+
+export interface StudyTopicThread {
+  id: string;
+  title: string;
+  updated_at: string;
+}
+
+export interface StudyTopic {
+  root_thread_id: string;
+  topic: string;
+  topic_slug: string;
+  current_concept: string | null;
+  progress: number;
+  phase: string;
+  latest_thread: StudyTopicThread;
+}
+
+export async function getStudyTopics(limit?: number): Promise<{ topics: StudyTopic[] }> {
+  const params = limit != null ? `?limit=${limit}` : "";
+  const res = await fetch(`${API_BASE}/threads/study-topics${params}`);
+  return res.json();
+}
+
 // ── Plan ──────────────────────────────────────────────────────────────────
 
 export interface PlanConcept {

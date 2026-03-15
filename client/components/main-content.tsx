@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode } from "react";
+import { type ReactNode, useEffect } from "react";
 import { Tabs } from "./ui/tabs";
 import { TopBar } from "./top-bar";
 import { PlanView } from "./plan-view";
@@ -15,12 +15,20 @@ export function MainContent({ children }: { children: ReactNode }) {
   const { activeTab, setActiveTab, setFeynmanRequested } = usePlan();
   const router = useRouter();
   const params = useParams();
+
   const threadId = params?.threadId as string;
   const { thread } = useThread(threadId);
   const { rootOrigin } = useRootOrigin(threadId);
+  useEffect(() => {
+    return () => setActiveTab("chat-mode");
+  }, [threadId, setActiveTab]);
+
+  const hasThread = !!threadId;
   const config = {
     back: false,
     title: "",
+    progress: hasThread,
+    tabs: hasThread,
   };
 
   if (thread?.title && thread?.title.length > 0) {
@@ -50,9 +58,7 @@ export function MainContent({ children }: { children: ReactNode }) {
               const scrollParam = rootOrigin.rootMessageId
                 ? `?scrollTo=${rootOrigin.rootMessageId}`
                 : "";
-              router.push(
-                `/threads/${rootOrigin.rootThread.id}${scrollParam}`,
-              );
+              router.push(`/threads/${rootOrigin.rootThread.id}${scrollParam}`);
             } else if (thread?.root_thread_id) {
               router.push(`/threads/${thread.root_thread_id}`);
             }
@@ -72,7 +78,9 @@ export function MainContent({ children }: { children: ReactNode }) {
           {children}
         </div>
         {activeTab === "plan-mode" && <PlanView />}
-        {activeTab === "graph-mode" && threadId && <ThreadMap threadId={threadId} />}
+        {activeTab === "graph-mode" && threadId && (
+          <ThreadMap threadId={threadId} />
+        )}
       </main>
     </Tabs>
   );

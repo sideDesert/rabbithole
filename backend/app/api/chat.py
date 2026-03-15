@@ -373,6 +373,61 @@ def get_all_trees():
     return {"trees": trees}
 
 
+@router.get("/threads/study-topics")
+def get_study_topics(limit: int | None = None):
+    """Return every thread as a study topic entry, with progress info."""
+    user_id = "user_001"
+    all_threads = list(mongo.threads().find({"user_id": user_id, "agent": "feynman"}))
+
+    # Build a map so we can look up root threads for topic name
+    thread_map: dict[str, dict[str, object]] = {}
+    for t in all_threads:
+        thread_map[str(t["_id"])] = t
+
+    topics = []
+    for t in all_threads:
+        tid = str(t["_id"])
+        root_id = str(t.get("root_thread_id") or tid)
+        root = thread_map.get(root_id, t)
+        root_title = str(root.get("title", ""))
+        topic_slug = str(t.get("topic_slug", "") or root.get("topic_slug", ""))
+
+        # Get progress from plan if available
+        progress = 0.0
+        current_concept = str(t.get("current_concept", "") or "")
+        if topic_slug:
+            plan_path = PLANS_DIR / topic_slug / "plan.md"
+            if plan_path.exists():
+                tree = parse_plan(plan_path.read_text())
+                progress = tree.overall_progress
+                if not current_concept:
+                    first = tree.first_uncompleted_concept()
+                    if first:
+                        current_concept = first.name
+
+        phase = str(t.get("phase", "interview"))
+
+        topics.append({
+            "root_thread_id": root_id,
+            "topic": root_title,
+            "topic_slug": topic_slug,
+            "current_concept": current_concept or None,
+            "progress": progress,
+            "phase": phase,
+            "latest_thread": {
+                "id": tid,
+                "title": str(t.get("title", "")),
+                "updated_at": str(t.get("updated_at", "")),
+            },
+        })
+
+    # Sort by most recently active
+    topics.sort(key=lambda t: t["latest_thread"]["updated_at"], reverse=True)  # type: ignore[index]
+    if limit is not None:
+        topics = topics[:limit]
+    return {"topics": topics}
+
+
 @router.delete("/threads/{thread_id}")
 def delete_thread(thread_id: str):
     doc = mongo.threads().find_one({"_id": thread_id})

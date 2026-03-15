@@ -15,11 +15,14 @@ import {
 import { Button } from "./ui/button";
 import { ButtonGroup } from "./ui/button-group";
 import { TopicProgress } from "@/components/topic-progress";
+import { useParams } from "next/navigation";
 
 interface TopBarInterface {
   config?: {
     back?: boolean;
     title?: string;
+    progress?: boolean;
+    tabs?: boolean;
   };
   backToRootHandler: () => void;
   backToParentHandler: () => void;
@@ -65,24 +68,28 @@ export function TopBar({
         <AgentPill />
       </div>*/}
 
-      <div className="flex items-center gap-2">
-        <TopicProgress />
-        <TabsList>
-          <TabsTrigger value="chat-mode">
-            <MessageCircle />
-          </TabsTrigger>
-          <TabsTrigger value="feynman-mode">
-            <Pen />
-          </TabsTrigger>
-          <TabsTrigger value="plan-mode">
-            <ListTodo />
-          </TabsTrigger>
-          <TabsTrigger value="graph-mode">
-            <NetworkIcon />
-          </TabsTrigger>
-        </TabsList>
-        <ThemeToggle />
-      </div>
+      {(config?.progress || config?.tabs) && (
+        <div className="flex items-center gap-2">
+          {config?.progress && <TopicProgress />}
+          {config?.tabs && (
+            <TabsList>
+              <TabsTrigger value="chat-mode">
+                <MessageCircle />
+              </TabsTrigger>
+              <TabsTrigger value="feynman-mode">
+                <Pen />
+              </TabsTrigger>
+              <TabsTrigger value="plan-mode">
+                <ListTodo />
+              </TabsTrigger>
+              <TabsTrigger value="graph-mode">
+                <NetworkIcon />
+              </TabsTrigger>
+            </TabsList>
+          )}
+          <ThemeToggle />
+        </div>
+      )}
     </div>
   );
 }

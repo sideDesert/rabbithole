@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   Rabbit,
   MessageSquare,
+  Signature,
   Network,
   BrainCircuit,
   LayoutDashboard,
@@ -26,9 +27,9 @@ import { ThreadTree } from "@/components/thread-tree";
 
 const tools = [
   { name: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
-  { name: "Chat Threads", icon: MessageSquare, href: "/threads" },
-  { name: "Knowledge Graph", icon: Network, href: "/knowledge-graph" },
-  { name: "Memories", icon: BrainCircuit, href: "/memories" },
+  { name: "Study Plans", icon: Signature, href: "/threads" },
+  // { name: "Knowledge Graph", icon: Network, href: "/knowledge-graph" },
+  // { name: "Memories", icon: BrainCircuit, href: "/memories" },
 ] as const;
 
 export function AppSidebar() {
@@ -59,7 +60,7 @@ export function AppSidebar() {
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton
-                isActive={activeAgent === "feynman" || path.includes("feynman")}
+                isActive={path.includes("feynman")}
                 onClick={() => handleAgentNav("feynman", "/feynman")}
               >
                 <SquarePen className="h-4 w-4" />
@@ -68,7 +69,9 @@ export function AppSidebar() {
             </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton
-                isActive={activeAgent === "ebbinghaus" || path.includes("ebbinghaus")}
+                isActive={
+                  activeAgent === "ebbinghaus" || path.includes("ebbinghaus")
+                }
                 onClick={() => handleAgentNav("ebbinghaus", "/ebbinghaus")}
               >
                 <BrainCircuit className="h-4 w-4" />
@@ -105,7 +108,7 @@ export function AppSidebar() {
         {/* Thread Tree */}
         <SidebarGroup className="flex-1 overflow-auto">
           <p className="px-2 pb-1 text-sm font-semibold text-sidebar-foreground/90">
-            History
+            Topics
           </p>
           <ThreadTree />
         </SidebarGroup>
