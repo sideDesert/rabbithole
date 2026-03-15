@@ -3,7 +3,6 @@ import {
   forceLink,
   forceManyBody,
   forceCollide,
-  forceRadial,
   type SimulationNodeDatum,
   type SimulationLinkDatum,
 } from "d3-force";
@@ -29,100 +28,221 @@ export function layoutGraph(
 
   if (nodes.length === 0) return { nodes, edges };
 
-  const centerX = 0;
-  const centerY = 0;
+  // Detect mode: overview (has memory_hub) vs drill-in (no memory_hub)
+  const hasMemoryHub = nodes.some(
+    (n) => (n.data as Record<string, unknown>)?.node_type === "memory_hub",
+  );
 
-  const nodeCount = nodes.length;
-  // Scale the initial spread based on node count
-  const spread = Math.max(800, nodeCount * 12);
+  if (hasMemoryHub) {
+    return layoutOverview(nodes, edges, nodeWidth, nodeHeight);
+  }
+  return layoutDrillIn(nodes, edges, nodeWidth, nodeHeight);
+}
 
-  // Build simulation nodes — spread out initial positions
-  const simNodes: ForceNode[] = nodes.map((n, i) => {
-    const nodeType = (n.data as Record<string, unknown>)?.node_type as string | undefined;
-    // Place nodes in a circle initially for better convergence
-    const angle = (i / nodeCount) * 2 * Math.PI;
-    const radius = nodeType === "topic_hub" ? spread * 0.4 : spread * 0.3 + Math.random() * spread * 0.4;
+/* ── Overview: memory hub + topic hubs + threads ─────────────────────── */
+
+function layoutOverview(
+  nodes: Node[],
+  edges: Edge[],
+  nodeWidth: number,
+  nodeHeight: number,
+): { nodes: Node[]; edges: Edge[] } {
+  const cx = 0;
+  const cy = 0;
+
+  // Separate node types
+  const topicHubs = nodes.filter(
+    (n) => (n.data as Record<string, unknown>)?.node_type === "topic_hub",
+  );
+  const threads = nodes.filter(
+    (n) => (n.data as Record<string, unknown>)?.node_type === "thread",
+  );
+  const memoryHub = nodes.find(
+    (n) => (n.data as Record<string, unknown>)?.node_type === "memory_hub",
+  );
+
+  // Build a map of topic_hub edges to find which threads connect to which hub
+  const hubForThread = new Map<string, string>();
+  for (const e of edges) {
+    const srcNode = nodes.find((n) => n.id === e.source);
+    const tgtNode = nodes.find((n) => n.id === e.target);
+    if (
+      srcNode &&
+      (srcNode.data as Record<string, unknown>)?.node_type === "topic_hub" &&
+      tgtNode &&
+      (tgtNode.data as Record<string, unknown>)?.node_type === "thread"
+    ) {
+      hubForThread.set(e.target, e.source);
+    }
+  }
+
+  const positions = new Map<string, { x: number; y: number }>();
+
+  // Memory hub at center
+  if (memoryHub) {
+    positions.set(memoryHub.id, { x: cx, y: cy });
+  }
+
+  // Topic hubs in a circle
+  const hubRadius = Math.max(350, topicHubs.length * 45);
+  topicHubs.forEach((hub, i) => {
+    const angle = (i / topicHubs.length) * 2 * Math.PI - Math.PI / 2;
+    positions.set(hub.id, {
+      x: cx + Math.cos(angle) * hubRadius,
+      y: cy + Math.sin(angle) * hubRadius,
+    });
+  });
+
+  // Threads near their topic hub, offset outward
+  const threadsByHub = new Map<string, Node[]>();
+  const unattachedThreads: Node[] = [];
+  for (const t of threads) {
+    const hubId = hubForThread.get(t.id);
+    if (hubId) {
+      if (!threadsByHub.has(hubId)) threadsByHub.set(hubId, []);
+      threadsByHub.get(hubId)!.push(t);
+    } else {
+      unattachedThreads.push(t);
+    }
+  }
+
+  for (const [hubId, hubThreads] of threadsByHub) {
+    const hubPos = positions.get(hubId);
+    if (!hubPos) continue;
+    // Find the angle from center to hub
+    const hubAngle = Math.atan2(hubPos.y - cy, hubPos.x - cx);
+    const spreadAngle = Math.PI * 0.4; // spread threads in a 72° arc around hub
+    hubThreads.forEach((t, i) => {
+      const offset =
+        hubThreads.length === 1
+          ? 0
+          : ((i / (hubThreads.length - 1)) - 0.5) * spreadAngle;
+      const angle = hubAngle + offset;
+      const dist = 140 + i * 20;
+      positions.set(t.id, {
+        x: hubPos.x + Math.cos(angle) * dist,
+        y: hubPos.y + Math.sin(angle) * dist,
+      });
+    });
+  }
+
+  // Unattached threads in an outer ring
+  unattachedThreads.forEach((t, i) => {
+    const angle = (i / Math.max(1, unattachedThreads.length)) * 2 * Math.PI;
+    const dist = hubRadius + 250;
+    positions.set(t.id, {
+      x: cx + Math.cos(angle) * dist,
+      y: cy + Math.sin(angle) * dist,
+    });
+  });
+
+  const layoutedNodes = nodes.map((node) => {
+    const pos = positions.get(node.id) ?? { x: 0, y: 0 };
     return {
-      id: n.id,
-      nodeType,
-      x: centerX + Math.cos(angle) * radius,
-      y: centerY + Math.sin(angle) * radius,
+      ...node,
+      position: { x: pos.x - nodeWidth / 2, y: pos.y - nodeHeight / 2 },
     };
+  });
+
+  return { nodes: layoutedNodes, edges };
+}
+
+/* ── Drill-in: topic hub + concepts + threads ────────────────────────── */
+
+function layoutDrillIn(
+  nodes: Node[],
+  edges: Edge[],
+  nodeWidth: number,
+  nodeHeight: number,
+): { nodes: Node[]; edges: Edge[] } {
+  const cx = 0;
+  const cy = 0;
+
+  // Find the topic hub — pin it to center
+  const topicHub = nodes.find(
+    (n) => (n.data as Record<string, unknown>)?.node_type === "topic_hub",
+  );
+  const concepts = nodes.filter(
+    (n) => (n.data as Record<string, unknown>)?.node_type === "concept",
+  );
+  const threads = nodes.filter(
+    (n) => (n.data as Record<string, unknown>)?.node_type === "thread",
+  );
+
+  const positions = new Map<string, { x: number; y: number }>();
+
+  // Topic hub at center
+  if (topicHub) {
+    positions.set(topicHub.id, { x: cx, y: cy });
+  }
+
+  // Concepts in concentric circles around the hub
+  const conceptRadius = Math.max(300, concepts.length * 18);
+  const conceptsPerRing = Math.max(8, Math.ceil(Math.sqrt(concepts.length) * 2.5));
+  concepts.forEach((c, i) => {
+    const ring = Math.floor(i / conceptsPerRing);
+    const indexInRing = i % conceptsPerRing;
+    const nodesInThisRing = Math.min(conceptsPerRing, concepts.length - ring * conceptsPerRing);
+    const angle = (indexInRing / nodesInThisRing) * 2 * Math.PI - Math.PI / 2;
+    const r = conceptRadius * 0.5 + ring * 200;
+    positions.set(c.id, {
+      x: cx + Math.cos(angle) * r,
+      y: cy + Math.sin(angle) * r,
+    });
+  });
+
+  // Threads in a separate ring outside concepts
+  if (threads.length > 0) {
+    const outerRadius = conceptRadius + 200;
+    threads.forEach((t, i) => {
+      const angle = (i / threads.length) * 2 * Math.PI - Math.PI / 4;
+      positions.set(t.id, {
+        x: cx + Math.cos(angle) * outerRadius,
+        y: cy + Math.sin(angle) * outerRadius,
+      });
+    });
+  }
+
+  // Now run a short force simulation to untangle edges
+  const simNodes: ForceNode[] = nodes.map((n) => {
+    const pos = positions.get(n.id) ?? { x: 0, y: 0 };
+    const nodeType = (n.data as Record<string, unknown>)?.node_type as string | undefined;
+    const sn: ForceNode = { id: n.id, nodeType, x: pos.x, y: pos.y };
+    if (topicHub && n.id === topicHub.id) {
+      sn.fx = cx;
+      sn.fy = cy;
+    }
+    return sn;
   });
 
   const nodeMap = new Map(simNodes.map((n) => [n.id, n]));
 
-  // Pin the memory hub to center
-  const memHub = simNodes.find((n) => n.id === "rabbithole-memory");
-  if (memHub) {
-    memHub.fx = centerX;
-    memHub.fy = centerY;
-  }
-
-  // Build simulation links — only include edges where both endpoints exist
   const simLinks: SimulationLinkDatum<ForceNode>[] = edges
     .filter((e) => nodeMap.has(e.source) && nodeMap.has(e.target))
-    .map((e) => ({
-      source: e.source,
-      target: e.target,
-    }));
-
-  // Repulsion — stronger for hubs, no distance cap
-  const chargeStrength = (d: ForceNode) => {
-    if (d.id === "rabbithole-memory") return -4000;
-    if (d.nodeType === "topic_hub") return -2000;
-    if (d.nodeType === "thread") return -500;
-    return -800;
-  };
-
-  // Collision radius — must exceed half the node width to prevent overlap
-  const collisionRadius = (d: ForceNode) => {
-    if (d.id === "rabbithole-memory") return 100;
-    if (d.nodeType === "topic_hub") return 90;
-    if (d.nodeType === "thread") return 70;
-    return 80;
-  };
+    .map((e) => ({ source: e.source, target: e.target }));
 
   const simulation = forceSimulation<ForceNode>(simNodes)
     .force(
       "link",
       forceLink<ForceNode, SimulationLinkDatum<ForceNode>>(simLinks)
         .id((d) => d.id)
-        .distance((link) => {
-          const src = link.source as ForceNode;
-          const tgt = link.target as ForceNode;
-          if (src.id === "rabbithole-memory" || tgt.id === "rabbithole-memory") return 400;
-          if (src.nodeType === "topic_hub" || tgt.nodeType === "topic_hub") return 250;
-          if (src.nodeType === "thread" || tgt.nodeType === "thread") return 180;
-          return 120;
-        })
-        .strength(0.3),
+        .distance(180)
+        .strength(0.15),
     )
-    .force("charge", forceManyBody<ForceNode>().strength(chargeStrength))
-    .force("collide", forceCollide<ForceNode>().radius(collisionRadius).strength(1).iterations(4))
-    // Gentle radial force keeps topic hubs orbiting the center
-    .force("radial", forceRadial<ForceNode>(
-      (d) => {
-        if (d.id === "rabbithole-memory") return 0;
-        if (d.nodeType === "topic_hub") return spread * 0.35;
-        return spread * 0.5;
-      },
-      centerX,
-      centerY,
-    ).strength((d) => {
-      if (d.id === "rabbithole-memory") return 0;
-      if (d.nodeType === "topic_hub") return 0.15;
-      return 0.03;
-    }))
+    .force("charge", forceManyBody<ForceNode>().strength(-400))
+    .force(
+      "collide",
+      forceCollide<ForceNode>()
+        .radius(85)
+        .strength(1)
+        .iterations(4),
+    )
     .stop();
 
-  // Run simulation
-  const iterations = Math.min(800, 300 + nodeCount * 2);
-  for (let i = 0; i < iterations; i++) {
+  for (let i = 0; i < 300; i++) {
     simulation.tick();
   }
 
-  // Map positions back to React Flow nodes
   const layoutedNodes = nodes.map((node) => {
     const simNode = nodeMap.get(node.id);
     return {
