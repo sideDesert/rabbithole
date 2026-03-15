@@ -7,12 +7,14 @@ They receive context via RunContextWrapper[AgentContext].
 import json
 import re
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from typing import Any
 
 from agents import RunContextWrapper, function_tool
 from openai import AsyncOpenAI
 
 from app.config import PLANS_DIR, LLM_API_KEY, LLM_BASE_URL, PLANNING_MODEL
+from app.db import mongo
 from app.memory import evermemos
 from app.models.base import new_object_id
 from app.plan_parser import parse_plan
@@ -156,6 +158,66 @@ Rules:
 """
 
 
+def _seed_graph_from_plan(
+    user_id: str, topic_slug: str, plan_data: dict[str, Any]
+) -> None:
+    """Upsert concept nodes and prerequisite edges from a freshly created plan."""
+    now = datetime.now(timezone.utc)
+    for phase in plan_data.get("phases", []):
+        phase_concepts = phase.get("concepts", [])
+        prev_name: str | None = None
+        for concept in phase_concepts:
+            name = concept["name"]
+            description = concept.get("description", "")
+
+            # Upsert concept node (don't overwrite mastery if it already exists)
+            mongo.concept_mastery().update_one(
+                {"user_id": user_id, "concept_name": name},
+                {
+                    "$setOnInsert": {
+                        "mastery_score": 0.0,
+                        "attempts": 0,
+                        "score_history": [],
+                        "strength_trend": "stable",
+                        "confidence": 1.0,
+                        "source": "plan",
+                        "created_at": now,
+                        "last_reviewed": None,
+                        "last_score": 0.0,
+                        "weak_subconcepts": [],
+                        "related_concepts": [],
+                    },
+                    "$set": {
+                        "domain": topic_slug,
+                        "description": description,
+                        "updated_at": now,
+                    },
+                },
+                upsert=True,
+            )
+
+            # Create prerequisite edge from previous concept in phase
+            if prev_name:
+                mongo.concept_relationships().update_one(
+                    {
+                        "user_id": user_id,
+                        "from_concept": prev_name,
+                        "to_concept": name,
+                        "type": "prerequisite_of",
+                    },
+                    {
+                        "$setOnInsert": {
+                            "weight": 1.0,
+                            "source_thread": "",
+                            "created_at": now,
+                        },
+                        "$set": {"updated_at": now},
+                    },
+                    upsert=True,
+                )
+            prev_name = name
+
+
 @function_tool
 async def create_plan(
     ctx: RunContextWrapper[AgentContext],
@@ -212,6 +274,9 @@ async def create_plan(
         ],
     }
     (plan_dir / "plan.json").write_text(json.dumps(plan_data, indent=2))
+
+    # Seed knowledge graph with concepts and prerequisite edges
+    _seed_graph_from_plan(ctx.context.user_id, slug, plan_data)
 
     concept_count = sum(len(p.concepts) for p in tree.phases)
 

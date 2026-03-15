@@ -1,7 +1,5 @@
 """Graph visualization endpoints."""
 
-import json as _json
-
 from fastapi import APIRouter
 
 from app.api.tree_helpers import load_thread_tree
@@ -71,102 +69,58 @@ def get_thread_map(thread_id: str):
     return {"nodes": nodes, "edges": edges}
 
 
-def _load_all_plans() -> list[tuple[str, dict]]:
-    """Load all plans. Prefers plan.json, falls back to parsing plan.md."""
-    plans = []
-    if not PLANS_DIR.exists():
-        return plans
-    for slug_dir in PLANS_DIR.iterdir():
-        if not slug_dir.is_dir():
-            continue
-        # Prefer structured JSON if available
-        json_path = slug_dir / "plan.json"
-        if json_path.exists():
-            try:
-                data = _json.loads(json_path.read_text())
-                plans.append((slug_dir.name, data))
-                continue
-            except (ValueError, OSError):
-                pass
-        # Fall back to parsing markdown
-        md_path = slug_dir / "plan.md"
-        if md_path.exists():
-            try:
-                tree = parse_plan(md_path.read_text())
-                data = {
-                    "topic": tree.topic,
-                    "phases": [
-                        {
-                            "title": phase.title,
-                            "order": phase.order,
-                            "concepts": [
-                                {"name": c.name, "description": c.description}
-                                for c in phase.concepts
-                            ],
-                        }
-                        for phase in tree.phases
-                    ],
-                }
-                plans.append((slug_dir.name, data))
-            except Exception:
-                continue
-    return plans
-
-
-def _find_threads_for_slug(topic_slug: str) -> list[str]:
-    """Find all thread IDs that use this topic_slug."""
-    docs = mongo.threads().find(
-        {"topic_slug": topic_slug},
-        {"_id": 1},
-    )
-    return [str(doc["_id"]) for doc in docs]
-
-
 @router.get("/knowledge-graph")
-def get_knowledge_graph():
-    plans = _load_all_plans()
-    if not plans:
-        return {"concepts": [], "prerequisites": []}
+def get_knowledge_graph(user_id: str = "user_001", domain: str | None = None):
+    """Return the learner's knowledge graph: concept nodes + relationship edges."""
+    query: dict[str, str] = {"user_id": user_id}
+    if domain:
+        query["domain"] = domain
 
-    concepts_map: dict[str, dict] = {}
-    prerequisites: list[dict[str, str]] = []
+    concept_docs = list(mongo.get_db()["concept_mastery"].find(query))
+    rel_docs = list(mongo.get_db()["concept_relationships"].find({"user_id": user_id}))
 
-    for topic_slug, plan_data in plans:
-        thread_ids = _find_threads_for_slug(topic_slug)
+    # If domain filter is active, only include edges where both ends are in result set
+    concept_names = {doc.get("concept_name", "") for doc in concept_docs}
 
-        for phase in plan_data.get("phases", []):
-            phase_concepts = phase.get("concepts", [])
-            prev_name = None
-            for concept in phase_concepts:
-                name = concept["name"]
-                if name not in concepts_map:
-                    concepts_map[name] = {
-                        "name": name,
-                        "mastery_score": 0.0,
-                        "strength_trend": "stable",
-                        "threads": [],
-                        "last_reviewed": None,
-                    }
-                for tid in thread_ids:
-                    if tid not in concepts_map[name]["threads"]:
-                        concepts_map[name]["threads"].append(tid)
+    nodes = []
+    for doc in concept_docs:
+        # Find thread IDs that use this concept's domain (topic_slug)
+        domain_slug = doc.get("domain", "")
+        thread_ids: list[str] = []
+        if domain_slug:
+            thread_docs = mongo.threads().find(
+                {"topic_slug": domain_slug}, {"_id": 1}
+            )
+            thread_ids = [str(t["_id"]) for t in thread_docs]
 
-                if prev_name and prev_name != name:
-                    edge = {"source": prev_name, "target": name}
-                    if edge not in prerequisites:
-                        prerequisites.append(edge)
-                prev_name = name
+        nodes.append({
+            "name": doc.get("concept_name", ""),
+            "mastery_score": doc.get("mastery_score", 0.0),
+            "strength_trend": doc.get("strength_trend", "stable"),
+            "threads": thread_ids,
+            "last_reviewed": str(doc["last_reviewed"]) if doc.get("last_reviewed") else None,
+            "domain": doc.get("domain", ""),
+            "source": doc.get("source", "plan"),
+            "confidence": doc.get("confidence", 1.0),
+            "description": doc.get("description", ""),
+            "weak_subconcepts": doc.get("weak_subconcepts", []),
+        })
 
-    # Overlay mastery data from ConceptMastery collection
-    mastery_docs = list(mongo.get_db()["concept_mastery"].find({"user_id": "user_001"}))
-    for doc in mastery_docs:
-        name = doc.get("concept_name", "")
-        if name in concepts_map:
-            concepts_map[name]["mastery_score"] = doc.get("mastery_score", 0.0)
-            concepts_map[name]["strength_trend"] = doc.get("strength_trend", "stable")
-            concepts_map[name]["last_reviewed"] = str(doc["last_reviewed"]) if doc.get("last_reviewed") else None
+    edges = []
+    for doc in rel_docs:
+        from_c = doc.get("from_concept", "")
+        to_c = doc.get("to_concept", "")
+        # If filtering by domain, skip edges that cross out of the filtered set
+        if domain and (from_c not in concept_names or to_c not in concept_names):
+            continue
+        edges.append({
+            "source": from_c,
+            "target": to_c,
+            "type": doc.get("type", "prerequisite_of"),
+            "weight": doc.get("weight", 1.0),
+        })
 
-    return {
-        "concepts": list(concepts_map.values()),
-        "prerequisites": prerequisites,
-    }
+    # Collect unique domains for filter dropdown
+    domains = sorted({n["domain"] for n in nodes if n["domain"]})
+
+    return {"nodes": nodes, "edges": edges, "domains": domains}
