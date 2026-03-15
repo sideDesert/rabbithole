@@ -1055,6 +1055,23 @@ async def chat(thread_id: str, req: ChatRequest):
                             except (json.JSONDecodeError, KeyError):
                                 pass
 
+                        # Auto-trigger Feynman after concept completion
+                        if result_tool_name == "update_plan_progress" and "updated" in output:
+                            try:
+                                parsed_result: dict[str, object] = json.loads(output)
+                                if parsed_result.get("updated"):
+                                    concept = str(parsed_result.get("concept", ""))
+                                    if concept:
+                                        # Override any agent-initiated feynman trigger
+                                        agent_ctx.feynman_concept = concept
+                                        # Store phase completion info for later SSE emission
+                                        agent_ctx.phase_completed = parsed_result.get("is_last_in_phase", False)
+                                        agent_ctx.phase_is_final = parsed_result.get("is_last_phase", False)
+                                        agent_ctx.next_phase_title = str(parsed_result.get("next_phase_title", ""))
+                                        agent_ctx.completed_phase_title = str(parsed_result.get("phase_title", ""))
+                            except (json.JSONDecodeError, KeyError):
+                                pass
+
                     elif item.type == "message_output_item":
                         text = ItemHelpers.text_message_output(item)
                         if text and not full_text:
@@ -1164,6 +1181,15 @@ async def chat(thread_id: str, req: ChatRequest):
             yield sse({
                 "type": "feynman_prompt",
                 "concept_name": agent_ctx.feynman_concept,
+            })
+
+        # Phase completion — tell frontend to show "Continue to Next Phase" after Feynman test
+        if agent_ctx.phase_completed:
+            yield sse({
+                "type": "phase_complete",
+                "phase_title": agent_ctx.completed_phase_title,
+                "is_final_phase": agent_ctx.phase_is_final,
+                "next_phase_title": agent_ctx.next_phase_title,
             })
 
         # Branch suggestion — show a clickable card to branch into an off-topic

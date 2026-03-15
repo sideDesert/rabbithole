@@ -32,6 +32,11 @@ class AgentContext:
     interview_questions: list[dict[str, Any]] | None = None
     feynman_concept: str | None = None
     branch_suggestion: dict[str, str] | None = None
+    # Phase completion tracking (set by chat.py when update_plan_progress runs)
+    phase_completed: bool = False
+    phase_is_final: bool = False
+    next_phase_title: str = ""
+    completed_phase_title: str = ""
 
 
 # ── Memory Tools ────────────────────────────────────────────────────────────
