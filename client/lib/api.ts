@@ -510,7 +510,7 @@ export interface ThreadMapData {
 }
 
 export async function fetchThreadMap(threadId: string): Promise<ThreadMapData> {
-  const res = await fetch(`${API_BASE}/threads/${threadId}/map`);
+  const res = await fetch(`${API_BASE}/threads/${threadId}/tree`);
   if (!res.ok) throw new Error(`Failed to fetch thread map: ${res.status}`);
   return res.json();
 }

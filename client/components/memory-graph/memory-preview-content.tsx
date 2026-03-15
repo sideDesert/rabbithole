@@ -1,4 +1,5 @@
 import type { MemoryEntity } from "@/lib/api";
+import { ENTITY_COLORS, type EntityType } from "./shared";
 
 function Row({ label, value }: { label: string; value: string | null | undefined }) {
   if (!value) return null;
@@ -19,18 +20,8 @@ export function MemoryPreviewContent({ entity }: { entity: MemoryEntity }) {
       <span
         className="inline-block text-[10px] px-1.5 py-0.5 rounded capitalize"
         style={{
-          background:
-            e.type === "concept" ? "hsla(175, 60%, 40%, 0.2)" :
-            e.type === "person" ? "hsla(270, 60%, 50%, 0.2)" :
-            e.type === "fact" ? "hsla(210, 70%, 50%, 0.2)" :
-            e.type === "belief" ? "hsla(45, 93%, 47%, 0.2)" :
-            "hsla(220, 10%, 50%, 0.2)",
-          color:
-            e.type === "concept" ? "#2dd4bf" :
-            e.type === "person" ? "#a78bfa" :
-            e.type === "fact" ? "#60a5fa" :
-            e.type === "belief" ? "#fbbf24" :
-            "#94a3b8",
+          background: ENTITY_COLORS[e.type as EntityType]?.bg ?? ENTITY_COLORS.resource.bg,
+          color: ENTITY_COLORS[e.type as EntityType]?.border ?? ENTITY_COLORS.resource.border,
         }}
       >
         {e.type}
@@ -48,7 +39,7 @@ export function MemoryPreviewContent({ entity }: { entity: MemoryEntity }) {
               <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
                 <div
                   className="h-full rounded-full"
-                  style={{ width: `${Math.round(e.mastery * 100)}%`, background: "#2dd4bf" }}
+                  style={{ width: `${Math.round(e.mastery * 100)}%`, background: ENTITY_COLORS.concept.border }}
                 />
               </div>
             </div>

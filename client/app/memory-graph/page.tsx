@@ -25,12 +25,15 @@ import { FactNode } from "@/components/memory-graph/fact-node";
 import { BeliefNode } from "@/components/memory-graph/belief-node";
 import { ResourceNode } from "@/components/memory-graph/resource-node";
 import { MemoryEdge } from "@/components/memory-graph/memory-edge";
+import { MemoryHubNode } from "@/components/memory-graph/memory-hub-node";
 import { PreviewPanel } from "@/components/graph/preview-panel";
 import { MemoryPreviewContent } from "@/components/memory-graph/memory-preview-content";
+import { ENTITY_COLORS } from "@/components/memory-graph/shared";
 import { Button } from "@/components/ui/button";
-import type { MemoryEntity } from "@/lib/api";
+import type { MemoryEntity, MemoryGraphStats } from "@/lib/api";
 
 const nodeTypes: NodeTypes = {
+  mg_hub: MemoryHubNode,
   mg_concept: ConceptMgNode,
   mg_person: PersonNode,
   mg_fact: FactNode,
@@ -47,7 +50,7 @@ const NODE_TYPE_MAP: Record<string, string> = {
   resource: "mg_resource",
 };
 
-function StatsBar({ stats }: { stats: Record<string, number> }) {
+function StatsBar({ stats }: { stats: MemoryGraphStats }) {
   return (
     <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-4 bg-card/90 backdrop-blur-sm border border-border rounded-xl px-5 py-2.5 shadow-lg">
       <Stat label="Concepts" value={stats.concept_count} color="text-teal-400" />
@@ -122,13 +125,9 @@ function FilterBar({
 }
 
 function Legend() {
-  const items = [
-    { label: "Concept", color: "#2dd4bf" },
-    { label: "Person", color: "#a78bfa" },
-    { label: "Fact", color: "#60a5fa" },
-    { label: "Belief", color: "#fbbf24" },
-    { label: "Resource", color: "#64748b" },
-  ];
+  const items = (Object.entries(ENTITY_COLORS) as [string, { border: string }][]).map(
+    ([type, c]) => ({ label: type.charAt(0).toUpperCase() + type.slice(1), color: c.border }),
+  );
   const edges = [
     { label: "part_of", color: "#2dd4bf", dash: false },
     { label: "led_to", color: "#fbbf24", dash: true },
@@ -180,7 +179,15 @@ function MemoryGraphInner() {
   const layouted = useMemo(() => {
     if (!data?.nodes?.length) return { nodes: [] as Node[], edges: [] as Edge[] };
 
-    const rfNodes: Node[] = data.nodes.map((e) => ({
+    // Central hub node
+    const hubNode: Node = {
+      id: "__memory_hub__",
+      type: "mg_hub",
+      position: { x: 0, y: 0 },
+      data: { name: "Memory" },
+    };
+
+    const entityNodes: Node[] = data.nodes.map((e) => ({
       id: e.slug,
       type: NODE_TYPE_MAP[e.type] ?? "mg_concept",
       position: { x: 0, y: 0 },
@@ -198,13 +205,27 @@ function MemoryGraphInner() {
       },
     }));
 
-    const rfEdges: Edge[] = data.edges.map((e) => ({
+    const rfNodes: Node[] = [hubNode, ...entityNodes];
+
+    // Edges from data + hub-to-concept edges
+    const conceptSlugs = data.nodes.filter((n) => n.type === "concept").map((n) => n.slug);
+    const hubEdges: Edge[] = conceptSlugs.map((slug) => ({
+      id: `e-hub-${slug}`,
+      source: "__memory_hub__",
+      target: slug,
+      type: "memory_edge",
+      data: { edgeType: "part_of", weight: 0.6 },
+    }));
+
+    const dataEdges: Edge[] = data.edges.map((e) => ({
       id: `e-${e.source}-${e.target}-${e.type}`,
       source: e.source,
       target: e.target,
       type: "memory_edge",
       data: { edgeType: e.type, weight: e.weight },
     }));
+
+    const rfEdges: Edge[] = [...hubEdges, ...dataEdges];
 
     return layoutMemoryGraph(rfNodes, rfEdges);
   }, [data]);
@@ -226,7 +247,7 @@ function MemoryGraphInner() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-screen">
+      <div className="flex items-center justify-center h-full">
         <div className="thinking-orb" />
       </div>
     );
@@ -234,7 +255,7 @@ function MemoryGraphInner() {
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen gap-3 text-muted-foreground">
+      <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground">
         <p>Failed to load memory graph.</p>
         <Button variant="outline" size="sm" onClick={() => refetch()}>Retry</Button>
       </div>
@@ -243,7 +264,7 @@ function MemoryGraphInner() {
 
   if (!data?.nodes?.length) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen gap-3 text-muted-foreground">
+      <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground">
         <Brain className="size-10 opacity-40" />
         <p>No memory data yet.</p>
         <Button
@@ -260,7 +281,7 @@ function MemoryGraphInner() {
   }
 
   return (
-    <div className="relative w-full h-screen">
+    <div className="relative w-full h-full">
       <FilterBar
         entityTypes={data.entity_types}
         domains={data.domains}

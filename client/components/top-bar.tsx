@@ -68,28 +68,26 @@ export function TopBar({
         <AgentPill />
       </div>*/}
 
-      {(config?.progress || config?.tabs) && (
-        <div className="flex items-center gap-2">
-          {config?.progress && <TopicProgress />}
-          {config?.tabs && (
-            <TabsList>
-              <TabsTrigger value="chat-mode">
-                <MessageCircle />
-              </TabsTrigger>
-              <TabsTrigger value="feynman-mode">
-                <Pen />
-              </TabsTrigger>
-              <TabsTrigger value="plan-mode">
-                <ListTodo />
-              </TabsTrigger>
-              <TabsTrigger value="graph-mode">
-                <NetworkIcon />
-              </TabsTrigger>
-            </TabsList>
-          )}
-          <ThemeToggle />
-        </div>
-      )}
+      <div className="flex items-center gap-2">
+        {config?.progress && <TopicProgress />}
+        {config?.tabs && (
+          <TabsList>
+            <TabsTrigger value="chat-mode">
+              <MessageCircle />
+            </TabsTrigger>
+            <TabsTrigger value="feynman-mode">
+              <Pen />
+            </TabsTrigger>
+            <TabsTrigger value="plan-mode">
+              <ListTodo />
+            </TabsTrigger>
+            <TabsTrigger value="graph-mode">
+              <NetworkIcon />
+            </TabsTrigger>
+          </TabsList>
+        )}
+        <ThemeToggle />
+      </div>
     </div>
   );
 }

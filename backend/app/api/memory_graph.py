@@ -64,6 +64,22 @@ def get_memory_graph(
             "to_type": doc.get("to_type", "concept"),
         })
 
+    # Synthesize implicit edges: facts/beliefs → their about_concept_slug
+    edge_keys = {(e["source"], e["target"], e["type"]) for e in edges}
+    for n in nodes:
+        if n["type"] in ("fact", "belief") and n["about_concept_slug"]:
+            parent = n["about_concept_slug"]
+            if parent in entity_slugs and (n["slug"], parent, "part_of") not in edge_keys:
+                edges.append({
+                    "source": n["slug"],
+                    "target": parent,
+                    "type": "part_of",
+                    "weight": 0.8,
+                    "from_type": n["type"],
+                    "to_type": "concept",
+                })
+                edge_keys.add((n["slug"], parent, "part_of"))
+
     entity_types = sorted({n["type"] for n in nodes})
     domains = sorted({n["domain"] for n in nodes if n["domain"]})
 

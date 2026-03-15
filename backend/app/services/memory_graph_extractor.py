@@ -9,12 +9,15 @@ import logging
 from datetime import datetime, timezone
 
 from openai import AsyncOpenAI
+from pymongo import UpdateOne
 
 from app.config import LLM_API_KEY, LLM_BASE_URL, DEFAULT_MODEL
 from app.db import mongo
 from app.memory import evermemos
 
 logger = logging.getLogger(__name__)
+
+_llm = AsyncOpenAI(base_url=LLM_BASE_URL, api_key=LLM_API_KEY)
 
 EXTRACTION_PROMPT = """\
 You are analyzing a learner's memory records to build a knowledge graph of \
@@ -83,7 +86,11 @@ async def _fetch_memcells(user_id: str) -> list[dict]:
                     page=page,
                     page_size=20,
                 )
-                memories = resp.get("result", resp.get("memories", []))
+                result = resp.get("result", {})
+                if isinstance(result, dict):
+                    memories = result.get("memories", [])
+                else:
+                    memories = resp.get("memories", [])
                 if not memories:
                     break
                 all_memcells.extend(memories)
@@ -131,8 +138,7 @@ async def _do_extraction(user_id: str) -> None:
 
     memcell_ids = [str(mc.get("id", mc.get("_id", ""))) for mc in memcells if mc.get("id") or mc.get("_id")]
 
-    llm = AsyncOpenAI(base_url=LLM_BASE_URL, api_key=LLM_API_KEY)
-    response = await llm.chat.completions.create(
+    response = await _llm.chat.completions.create(
         model=DEFAULT_MODEL,
         messages=[
             {"role": "system", "content": EXTRACTION_PROMPT},
@@ -166,63 +172,64 @@ async def _do_extraction(user_id: str) -> None:
     _upsert_relationships(user_id, relationships, memcell_ids, now)
 
 
+def _entity_set_fields(e: dict, name: str, etype: str, now: datetime) -> dict:
+    """Build the $set fields for an entity upsert based on its type."""
+    fields: dict = {"name": name, "last_seen": now, "updated_at": now}
+    if etype == "concept":
+        fields["domain"] = e.get("domain", "")
+        mastery = e.get("mastery", 0.0)
+        if isinstance(mastery, (int, float)):
+            fields["mastery"] = mastery
+        fields["confidence"] = e.get("confidence", 0.8)
+    elif etype == "person":
+        fields["role"] = e.get("role", "")
+    elif etype == "fact":
+        fields["statement"] = e.get("statement", "")
+        fields["about_concept_slug"] = e.get("about_concept_slug", "")
+        fields["verified"] = e.get("verified")
+    elif etype == "belief":
+        fields["statement"] = e.get("statement", "")
+        fields["about_concept_slug"] = e.get("about_concept_slug", "")
+        fields["correct"] = e.get("correct")
+        fields["superseded_by"] = e.get("superseded_by", "")
+    elif etype == "resource":
+        fields["title"] = e.get("title", name)
+        fields["url"] = e.get("url", "")
+        fields["resource_type"] = e.get("resource_type", "")
+    return fields
+
+
+_VALID_ENTITY_TYPES = {"concept", "person", "fact", "belief", "resource"}
+
+
 def _upsert_entities(
     user_id: str,
     entities: list[dict],
     memcell_ids: list[str],
     now: datetime,
 ) -> None:
+    ops: list[UpdateOne] = []
     for e in entities:
         slug = e.get("slug", "").strip()
         etype = e.get("type", "").strip()
         name = e.get("name", "").strip()
-        if not slug or not etype or not name:
-            continue
-        if etype not in ("concept", "person", "fact", "belief", "resource"):
+        if not slug or not etype or not name or etype not in _VALID_ENTITY_TYPES:
             continue
 
-        set_fields: dict = {
-            "name": name,
-            "last_seen": now,
-            "updated_at": now,
-        }
-
-        if etype == "concept":
-            set_fields["domain"] = e.get("domain", "")
-            mastery = e.get("mastery", 0.0)
-            if isinstance(mastery, (int, float)):
-                set_fields["mastery"] = mastery
-            set_fields["confidence"] = e.get("confidence", 0.8)
-        elif etype == "person":
-            set_fields["role"] = e.get("role", "")
-        elif etype == "fact":
-            set_fields["statement"] = e.get("statement", "")
-            set_fields["about_concept_slug"] = e.get("about_concept_slug", "")
-            set_fields["verified"] = e.get("verified")
-        elif etype == "belief":
-            set_fields["statement"] = e.get("statement", "")
-            set_fields["about_concept_slug"] = e.get("about_concept_slug", "")
-            set_fields["correct"] = e.get("correct")
-            set_fields["superseded_by"] = e.get("superseded_by", "")
-        elif etype == "resource":
-            set_fields["title"] = e.get("title", name)
-            set_fields["url"] = e.get("url", "")
-            set_fields["resource_type"] = e.get("resource_type", "")
-
-        mongo.memory_entities().update_one(
+        ops.append(UpdateOne(
             {"user_id": user_id, "type": etype, "slug": slug},
             {
-                "$set": set_fields,
-                "$setOnInsert": {
-                    "first_seen": now,
-                    "created_at": now,
-                },
-                "$addToSet": {
-                    "source_memcell_ids": {"$each": memcell_ids},
-                },
+                "$set": _entity_set_fields(e, name, etype, now),
+                "$setOnInsert": {"first_seen": now, "created_at": now},
+                "$addToSet": {"source_memcell_ids": {"$each": memcell_ids}},
             },
             upsert=True,
-        )
+        ))
+    if ops:
+        mongo.memory_entities().bulk_write(ops, ordered=False)
+
+
+_VALID_REL_TYPES = {"part_of", "led_to", "confused_with", "contradicts", "derived_from", "learned_from"}
 
 
 def _upsert_relationships(
@@ -231,21 +238,16 @@ def _upsert_relationships(
     memcell_ids: list[str],
     now: datetime,
 ) -> None:
-    valid_types = {"part_of", "led_to", "confused_with", "contradicts", "derived_from", "learned_from"}
+    ops: list[UpdateOne] = []
     for r in relationships:
         from_slug = r.get("from_slug", "").strip()
         to_slug = r.get("to_slug", "").strip()
         rtype = r.get("type", "").strip()
-        if not from_slug or not to_slug or rtype not in valid_types:
+        if not from_slug or not to_slug or rtype not in _VALID_REL_TYPES:
             continue
 
-        mongo.memory_relationships().update_one(
-            {
-                "user_id": user_id,
-                "from_slug": from_slug,
-                "to_slug": to_slug,
-                "type": rtype,
-            },
+        ops.append(UpdateOne(
+            {"user_id": user_id, "from_slug": from_slug, "to_slug": to_slug, "type": rtype},
             {
                 "$set": {
                     "from_type": r.get("from_type", "concept"),
@@ -253,12 +255,10 @@ def _upsert_relationships(
                     "weight": r.get("weight", 1.0),
                     "updated_at": now,
                 },
-                "$setOnInsert": {
-                    "created_at": now,
-                },
-                "$addToSet": {
-                    "source_memcell_ids": {"$each": memcell_ids},
-                },
+                "$setOnInsert": {"created_at": now},
+                "$addToSet": {"source_memcell_ids": {"$each": memcell_ids}},
             },
             upsert=True,
-        )
+        ))
+    if ops:
+        mongo.memory_relationships().bulk_write(ops, ordered=False)

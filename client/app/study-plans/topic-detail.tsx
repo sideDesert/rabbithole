@@ -78,7 +78,9 @@ function PhaseGroup({
           ) : (
             <ChevronRight className="size-3.5 text-muted-foreground" />
           )}
-          <span className="text-sm font-semibold text-foreground">{phase.title}</span>
+          <span className="text-sm font-semibold text-foreground">
+            {phase.title}
+          </span>
         </div>
         <span className="text-xs text-muted-foreground tabular-nums">
           {completed}/{phase.concepts.length}
@@ -146,10 +148,18 @@ function ThreadNode({ node, style }: NodeRendererProps<ThreadTreeNode>) {
             node.toggle();
           }}
         >
-          {node.isOpen ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+          {node.isOpen ? (
+            <ChevronDown className="h-3.5 w-3.5" />
+          ) : (
+            <ChevronRight className="h-3.5 w-3.5" />
+          )}
         </button>
       )}
-      {isRoot ? <MessageSquare className="h-3.5 w-3.5 shrink-0" /> : <GitBranch className="h-3.5 w-3.5 shrink-0" />}
+      {isRoot ? (
+        <MessageSquare className="h-3.5 w-3.5 shrink-0" />
+      ) : (
+        <GitBranch className="h-3.5 w-3.5 shrink-0" />
+      )}
       <span className="truncate flex-1">{node.data.title}</span>
     </div>
   );
@@ -185,7 +195,7 @@ export function TopicDetail({
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <Button variant="ghost" size="sm" onClick={onBack} className="mb-4 -ml-2">
+        <Button variant="secondary" onClick={onBack} className="mb-4 -ml-2">
           <ArrowLeft className="size-4 mr-1" /> All Study Plans
         </Button>
         <div className="flex items-start justify-between gap-4">
@@ -225,22 +235,31 @@ export function TopicDetail({
           </div>
         ) : progressError ? (
           <div className="rounded-lg border border-border p-4 flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Failed to load plan progress.</span>
+            <span className="text-sm text-muted-foreground">
+              Failed to load plan progress.
+            </span>
             <Button variant="ghost" size="sm" onClick={() => refetchProgress()}>
               Retry
             </Button>
           </div>
         ) : !progress?.phases?.length ? (
           <div className="rounded-lg border border-border p-4 text-sm text-muted-foreground">
-            Plan not yet created. Complete the interview to generate a study plan.
+            Plan not yet created. Complete the interview to generate a study
+            plan.
           </div>
         ) : (
           <div className="rounded-lg border border-border p-4">
             <div className="flex items-center justify-between mb-4 pb-3 border-b border-border">
-              <span className="text-sm font-medium text-muted-foreground">Progress</span>
+              <span className="text-sm font-medium text-muted-foreground">
+                Progress
+              </span>
               <span className="text-sm text-muted-foreground tabular-nums">
-                {progress.phases.reduce((s, p) => s + p.concepts.filter((c) => c.completed).length, 0)}/
-                {progress.phases.reduce((s, p) => s + p.concepts.length, 0)} concepts
+                {progress.phases.reduce(
+                  (s, p) => s + p.concepts.filter((c) => c.completed).length,
+                  0,
+                )}
+                /{progress.phases.reduce((s, p) => s + p.concepts.length, 0)}{" "}
+                concepts
               </span>
             </div>
             <div className="divide-y divide-border">
@@ -260,9 +279,10 @@ export function TopicDetail({
       <section>
         <h2 className="text-lg font-semibold mb-3">Tests</h2>
         <div className="rounded-lg border border-dashed border-border p-6 flex flex-col items-center justify-center text-center">
-          <FlaskConical className="size-8 text-muted-foreground/40 mb-2" />
+          <FlaskConical className="size-8 text-muted-foreground mb-2" />
           <p className="text-sm text-muted-foreground">
-            Mastery tests coming soon. You&apos;ll be able to track Feynman test scores for each concept here.
+            Mastery tests coming soon. You&apos;ll be able to track Feynman test
+            scores for each concept here.
           </p>
         </div>
       </section>
@@ -281,11 +301,13 @@ export function TopicDetail({
             No conversations yet.
           </div>
         ) : (
-          <div className="rounded-lg border border-border p-2">
+          <div className="rounded-lg pb-0 border border-border p-2">
             <Tree<ThreadTreeNode>
               data={treeData}
               idAccessor="thread_id"
-              childrenAccessor={(d) => (d.children.length > 0 ? d.children : null)}
+              childrenAccessor={(d) =>
+                d.children.length > 0 ? d.children : null
+              }
               openByDefault
               disableDrag
               disableDrop

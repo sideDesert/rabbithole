@@ -18,7 +18,7 @@ interface ForceNode extends SimulationNodeDatum {
   id: string;
 }
 
-interface ForceParams {
+export interface ForceParams {
   chargeStrength: number;
   linkDistance: number;
   linkStrength: number;
@@ -28,7 +28,7 @@ interface ForceParams {
 /* ── Shared helpers ──────────────────────────────────────────────────── */
 
 /** For each edge, pick the source/target handles on the sides closest to each other. */
-function assignNearestHandles(
+export function assignNearestHandles(
   nodes: Node[],
   edges: Edge[],
   nodeWidth: number,
@@ -66,7 +66,7 @@ function assignNearestHandles(
 }
 
 /** Run a D3 force simulation to resolve overlaps, returning positioned nodes. */
-function runForceLayout(
+export function runForceLayout(
   nodes: Node[],
   edges: Edge[],
   positions: Map<string, { x: number; y: number }>,

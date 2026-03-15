@@ -23,28 +23,43 @@ def _thread_plan_info(topic_slug: str | None) -> tuple[float | None, str | None]
     return round(tree.overall_progress, 2), (first.name if first else None)
 
 
-@router.get("/threads/{thread_id}/map")
-def get_thread_map(thread_id: str):
+def _branch_points_by_child(thread_ids: list[str]) -> dict[str, dict]:
+    """Map child_thread_id → branch point doc for a set of threads."""
+    docs = mongo.branch_points().find({"thread_id": {"$in": thread_ids}})
+    return {bp["child_thread_id"]: bp for bp in docs}
+
+
+def _first_user_messages(thread_ids: list[str]) -> dict[str, str]:
+    """Return first user message (truncated) per thread."""
+    pipeline = [
+        {"$match": {"thread_id": {"$in": thread_ids}, "role": "user", "type": {"$in": ["text", "markdown"]}}},
+        {"$sort": {"created_at": 1}},
+        {"$group": {"_id": "$thread_id", "content": {"$first": "$content"}}},
+    ]
+    result: dict[str, str] = {}
+    for doc in mongo.messages().aggregate(pipeline):
+        content = str(doc.get("content", ""))
+        result[doc["_id"]] = content[:120] + ("..." if len(content) > 120 else "")
+    return result
+
+
+@router.get("/threads/{thread_id}/tree")
+def get_thread_tree(thread_id: str):
+    """Return the full thread tree as an adjacency list (nodes + edges)."""
     root_id, thread_map, by_parent = load_thread_tree(thread_id)
     if not root_id:
         return {"error": "Thread not found"}
 
-    # Load branch points for this tree to get source_concept/branch_topic
-    all_thread_ids = list(thread_map.keys())
-    branch_points = list(
-        mongo.branch_points().find({"thread_id": {"$in": all_thread_ids}})
-    )
-    bp_by_child: dict[str, dict] = {}
-    for bp in branch_points:
-        bp_by_child[bp["child_thread_id"]] = bp
+    all_ids = list(thread_map.keys())
+    bp_by_child = _branch_points_by_child(all_ids)
+    first_questions = _first_user_messages(all_ids)
 
     nodes = []
     edges = []
 
     def walk(tid: str):
         t = thread_map.get(tid, {})
-        topic_slug = t.get("topic_slug") or None
-        progress, current_concept = _thread_plan_info(topic_slug)
+        progress, current_concept = _thread_plan_info(t.get("topic_slug"))
         nodes.append({
             "thread_id": tid,
             "title": t.get("title", ""),
@@ -54,6 +69,7 @@ def get_thread_map(thread_id: str):
             "summary": t.get("summary"),
             "status": t.get("status", "active"),
             "progress": progress,
+            "first_question": first_questions.get(tid),
         })
         for cid in by_parent.get(tid, []):
             bp = bp_by_child.get(cid, {})

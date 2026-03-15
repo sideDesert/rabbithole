@@ -3,16 +3,20 @@
 import { useState, useMemo } from "react";
 import { Search } from "lucide-react";
 import { useStudyTopics } from "@/hooks/use-study-topics";
-import { type StudyTopic } from "@/lib/api";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { StudyPlanCard } from "./study-plan-card";
 import { TopicDetail } from "./topic-detail";
 
 export default function StudyPlansPage() {
   const { topics, isLoading } = useStudyTopics();
-  const [selectedTopic, setSelectedTopic] = useState<StudyTopic | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
+
+  const selectedTopic = selectedId
+    ? topics.find((t) => t.root_thread_id === selectedId) ?? null
+    : null;
 
   const filtered = useMemo(() => {
     if (!query.trim()) return topics;
@@ -23,7 +27,7 @@ export default function StudyPlansPage() {
   if (selectedTopic) {
     return (
       <div className="px-6 py-6 max-w-3xl mx-auto">
-        <TopicDetail topic={selectedTopic} onBack={() => setSelectedTopic(null)} />
+        <TopicDetail topic={selectedTopic} onBack={() => setSelectedId(null)} />
       </div>
     );
   }
@@ -73,15 +77,17 @@ export default function StudyPlansPage() {
 
       {/* Grid */}
       {!isLoading && filtered.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map((topic) => (
-            <StudyPlanCard
-              key={topic.root_thread_id}
-              topic={topic}
-              onClick={() => setSelectedTopic(topic)}
-            />
-          ))}
-        </div>
+        <TooltipProvider>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filtered.map((topic) => (
+              <StudyPlanCard
+                key={topic.root_thread_id}
+                topic={topic}
+                onClick={() => setSelectedId(topic.root_thread_id)}
+              />
+            ))}
+          </div>
+        </TooltipProvider>
       )}
     </div>
   );

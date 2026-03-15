@@ -386,17 +386,24 @@ def get_study_topics(limit: int | None = None):
     for t in all_threads:
         thread_map[str(t["_id"])] = t
 
-    topics = []
+    # Group threads by root_thread_id, keeping the most recently updated per group
+    groups: dict[str, list[dict[str, object]]] = {}
     for t in all_threads:
-        tid = str(t["_id"])
-        root_id = str(t.get("root_thread_id") or tid)
-        root = thread_map.get(root_id, t)
+        root_id = str(t.get("root_thread_id") or t["_id"])
+        groups.setdefault(root_id, []).append(t)
+
+    topics = []
+    for root_id, group_threads in groups.items():
+        # Sort group by updated_at descending to find the latest thread
+        group_threads.sort(key=lambda x: str(x.get("updated_at", "")), reverse=True)
+        latest = group_threads[0]
+        root = thread_map.get(root_id, latest)
         root_title = str(root.get("title", ""))
-        topic_slug = str(t.get("topic_slug", "") or root.get("topic_slug", ""))
+        topic_slug = str(latest.get("topic_slug", "") or root.get("topic_slug", ""))
 
         # Get progress from plan if available
         progress = 0.0
-        current_concept = str(t.get("current_concept", "") or "")
+        current_concept = str(latest.get("current_concept", "") or "")
         if topic_slug:
             plan_path = PLANS_DIR / topic_slug / "plan.md"
             if plan_path.exists():
@@ -407,7 +414,8 @@ def get_study_topics(limit: int | None = None):
                     if first:
                         current_concept = first.name
 
-        phase = str(t.get("phase", "interview"))
+        # Use the root thread's phase (authoritative), fall back to latest
+        phase = str(root.get("phase", latest.get("phase", "interview")))
 
         topics.append({
             "root_thread_id": root_id,
@@ -417,9 +425,9 @@ def get_study_topics(limit: int | None = None):
             "progress": progress,
             "phase": phase,
             "latest_thread": {
-                "id": tid,
-                "title": str(t.get("title", "")),
-                "updated_at": str(t.get("updated_at", "")),
+                "id": str(latest["_id"]),
+                "title": str(latest.get("title", "")),
+                "updated_at": str(latest.get("updated_at", "")),
             },
         })
 

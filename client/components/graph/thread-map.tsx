@@ -52,6 +52,7 @@ function ThreadMapInner({ threadId }: { threadId: string }) {
         current_concept: n.current_concept,
         status: n.status,
         progress: n.progress,
+        first_question: n.first_question,
       },
     }));
 

@@ -9,6 +9,7 @@ interface ThreadNodeData {
   current_concept: string | null;
   status: string;
   progress: number | null;
+  first_question: string | null;
 }
 
 const phaseBadgeColors: Record<string, string> = {
@@ -41,6 +42,12 @@ export function ThreadNode({ data, selected }: NodeProps) {
       </span>
 
       <p className="text-sm font-medium text-foreground truncate">{d.title}</p>
+
+      {d.first_question && (
+        <p className="text-xs text-muted-foreground/80 mt-1 italic line-clamp-2">
+          &ldquo;{d.first_question}&rdquo;
+        </p>
+      )}
 
       {d.current_concept && (
         <p className="text-xs text-muted-foreground mt-1 truncate">

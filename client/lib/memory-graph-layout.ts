@@ -1,51 +1,21 @@
-import {
-  forceSimulation,
-  forceLink,
-  forceManyBody,
-  forceCollide,
-  type SimulationNodeDatum,
-  type SimulationLinkDatum,
-} from "d3-force";
 import type { Node, Edge } from "@xyflow/react";
-import { HANDLE_ID } from "@/components/graph/node-handles";
+import { assignNearestHandles, runForceLayout } from "@/lib/graph-layout";
 
-interface ForceNode extends SimulationNodeDatum {
-  id: string;
-}
+/**
+ * Layout engine for the memory graph.
+ *
+ * Positions nodes in a hub-and-spoke pattern:
+ *   - Hub node (mg_hub) pinned at center (0,0)
+ *   - Concept nodes arranged in a circle around the hub
+ *   - Facts/beliefs/people/resources placed near their linked concept
+ *   - Unlinked nodes in an outer ring
+ *
+ * Then runs a D3 force simulation (via shared `runForceLayout`) to
+ * resolve overlaps, and assigns nearest-side handles for edges.
+ */
 
-function assignNearestHandles(
-  nodes: Node[],
-  edges: Edge[],
-  nodeWidth: number,
-  nodeHeight: number,
-): Edge[] {
-  const posMap = new Map<string, { cx: number; cy: number }>();
-  for (const n of nodes) {
-    posMap.set(n.id, {
-      cx: n.position.x + nodeWidth / 2,
-      cy: n.position.y + nodeHeight / 2,
-    });
-  }
-  return edges.map((edge) => {
-    const src = posMap.get(edge.source);
-    const tgt = posMap.get(edge.target);
-    if (!src || !tgt) return edge;
-    const dx = tgt.cx - src.cx;
-    const dy = tgt.cy - src.cy;
-    if (Math.abs(dx) > Math.abs(dy)) {
-      return {
-        ...edge,
-        sourceHandle: dx > 0 ? HANDLE_ID.sourceRight : HANDLE_ID.sourceLeft,
-        targetHandle: dx > 0 ? HANDLE_ID.targetLeft : HANDLE_ID.targetRight,
-      };
-    }
-    return {
-      ...edge,
-      sourceHandle: dy > 0 ? HANDLE_ID.sourceBottom : HANDLE_ID.sourceTop,
-      targetHandle: dy > 0 ? HANDLE_ID.targetTop : HANDLE_ID.targetBottom,
-    };
-  });
-}
+const NODE_WIDTH = 200;
+const NODE_HEIGHT = 70;
 
 export function layoutMemoryGraph(
   nodes: Node[],
@@ -53,14 +23,16 @@ export function layoutMemoryGraph(
 ): { nodes: Node[]; edges: Edge[] } {
   if (nodes.length === 0) return { nodes, edges };
 
-  const nodeWidth = 200;
-  const nodeHeight = 70;
-
+  const hub = nodes.find((n) => n.type === "mg_hub");
   const concepts = nodes.filter((n) => n.type === "mg_concept");
-  const others = nodes.filter((n) => n.type !== "mg_concept");
+  const others = nodes.filter((n) => n.type !== "mg_concept" && n.type !== "mg_hub");
 
   const positions = new Map<string, { x: number; y: number }>();
 
+  // Hub at center
+  if (hub) positions.set(hub.id, { x: 0, y: 0 });
+
+  // Concepts in a circle around the hub
   const conceptRadius = Math.max(200, concepts.length * 30);
   concepts.forEach((c, i) => {
     const angle = (i / Math.max(1, concepts.length)) * 2 * Math.PI - Math.PI / 2;
@@ -70,29 +42,34 @@ export function layoutMemoryGraph(
     });
   });
 
-  const conceptPositions = new Map(positions);
+  // Build a Map for O(1) node lookups (instead of nodes.find per edge)
+  const nodeById = new Map(nodes.map((n) => [n.id, n]));
+
+  // Figure out which non-concept nodes are linked to a concept
   const linkedConcept = new Map<string, string>();
   for (const e of edges) {
-    const srcNode = nodes.find((n) => n.id === e.source);
-    const tgtNode = nodes.find((n) => n.id === e.target);
-    if (srcNode?.type === "mg_concept" && tgtNode?.type !== "mg_concept") {
+    const src = nodeById.get(e.source);
+    const tgt = nodeById.get(e.target);
+    if (src?.type === "mg_concept" && tgt?.type !== "mg_concept") {
       linkedConcept.set(e.target, e.source);
     }
-    if (tgtNode?.type === "mg_concept" && srcNode?.type !== "mg_concept") {
+    if (tgt?.type === "mg_concept" && src?.type !== "mg_concept") {
       linkedConcept.set(e.source, e.target);
     }
   }
 
+  // Place non-concept nodes near their parent concept, or in an outer ring
   const outerRadius = conceptRadius + 250;
   let outerIndex = 0;
   for (const n of others) {
-    const parentId = linkedConcept.get(n.id);
-    const parentPos = parentId ? conceptPositions.get(parentId) : undefined;
+    const parentPos = positions.get(linkedConcept.get(n.id) ?? "");
     if (parentPos) {
-      const jitter = (Math.random() - 0.5) * 120;
+      // Deterministic spread based on index (avoids Math.random in useMemo)
+      const spread = (outerIndex * 137.5 * Math.PI) / 180; // golden angle
+      const dist = 90 + (outerIndex % 3) * 30;
       positions.set(n.id, {
-        x: parentPos.x + 100 + jitter,
-        y: parentPos.y + 80 + jitter,
+        x: parentPos.x + Math.cos(spread) * dist,
+        y: parentPos.y + Math.sin(spread) * dist,
       });
     } else {
       const angle = (outerIndex / Math.max(1, others.length)) * 2 * Math.PI;
@@ -100,46 +77,20 @@ export function layoutMemoryGraph(
         x: Math.cos(angle) * outerRadius,
         y: Math.sin(angle) * outerRadius,
       });
-      outerIndex++;
     }
+    outerIndex++;
   }
 
-  const simNodes: ForceNode[] = nodes.map((n) => {
-    const pos = positions.get(n.id) ?? { x: 0, y: 0 };
-    return { id: n.id, x: pos.x, y: pos.y };
+  // Run shared force simulation (hub pinned at center)
+  const layoutedNodes = runForceLayout(nodes, edges, positions, hub?.id, NODE_WIDTH, NODE_HEIGHT, {
+    chargeStrength: -400,
+    linkDistance: 180,
+    linkStrength: 0.15,
+    ticks: 80,
   });
 
-  const nodeMap = new Map(simNodes.map((n) => [n.id, n]));
-  const simLinks: SimulationLinkDatum<ForceNode>[] = edges
-    .filter((e) => nodeMap.has(e.source) && nodeMap.has(e.target))
-    .map((e) => ({ source: e.source, target: e.target }));
-
-  const collideRadius = Math.max(nodeWidth, nodeHeight) / 2 + 20;
-
-  const simulation = forceSimulation<ForceNode>(simNodes)
-    .force(
-      "link",
-      forceLink<ForceNode, SimulationLinkDatum<ForceNode>>(simLinks)
-        .id((d) => d.id)
-        .distance(180)
-        .strength(0.15),
-    )
-    .force("charge", forceManyBody<ForceNode>().strength(-400))
-    .force("collide", forceCollide<ForceNode>().radius(collideRadius).strength(1).iterations(4))
-    .stop();
-
-  for (let i = 0; i < 80; i++) simulation.tick();
-
-  const layoutedNodes = nodes.map((node) => {
-    const simNode = nodeMap.get(node.id);
-    return {
-      ...node,
-      position: {
-        x: (simNode?.x ?? 0) - nodeWidth / 2,
-        y: (simNode?.y ?? 0) - nodeHeight / 2,
-      },
-    };
-  });
-
-  return { nodes: layoutedNodes, edges: assignNearestHandles(layoutedNodes, edges, nodeWidth, nodeHeight) };
+  return {
+    nodes: layoutedNodes,
+    edges: assignNearestHandles(layoutedNodes, edges, NODE_WIDTH, NODE_HEIGHT),
+  };
 }

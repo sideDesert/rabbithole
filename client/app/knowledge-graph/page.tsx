@@ -403,7 +403,7 @@ function KnowledgeGraphInner() {
         minZoom={0.05}
         maxZoom={2}
       >
-        <Background gap={20} size={1} className="!text-muted" />
+        <Background gap={20} size={1} className="text-muted!" />
         <MiniMap
           position="top-right"
           pannable
