@@ -23,10 +23,12 @@ import { TextSelectionMenu } from "@/components/text-selection-menu";
 import { useChat } from "@/hooks/use-chat";
 import { useTextSelectionMenu } from "@/hooks/use-text-selection-menu";
 import { useBranchout, useBranches } from "@/hooks/use-branch";
+import { PhaseActionButton } from "@/components/phase-action-button";
 import type { Branch } from "@/lib/api";
-import { getProgress } from "@/lib/api";
+import { getProgress, startPhase, createNextPhaseThread } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 const prompts = [
   "How does gravity actually work?",
@@ -55,6 +57,7 @@ export default function Page() {
   const [index, setIndex] = useState(0);
   const [visible, setVisible] = useState(true);
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const { feynmanRequested, setFeynmanRequested, setThreadId, setTopicSlug } =
     usePlan();
@@ -82,6 +85,8 @@ export default function Page() {
     dismissFeynman,
     branchSuggestion,
     dismissBranchSuggestion,
+    phaseComplete,
+    dismissPhaseComplete,
   } = useChat({
     onThreadCreated: (id) => setThreadId(id),
     onPlanCreated: (slug) => setTopicSlug(slug),
@@ -226,6 +231,41 @@ export default function Page() {
               onDismiss={dismissBranchSuggestion}
             />
           )}
+          {threadId && messages.some((m) => m.type === "plan_card") && !isStreaming && (
+            <PhaseActionButton
+              label="Start Learning"
+              sublabel="Begin Phase 1 of your learning plan"
+              onClick={async () => {
+                const result = await startPhase(threadId);
+                queryClient.invalidateQueries({ queryKey: ["threads"] });
+                queryClient.invalidateQueries({ queryKey: ["thread-tree"] });
+                router.push(`/threads/${result.thread_id}`);
+              }}
+            />
+          )}
+          {phaseComplete && !phaseComplete.isFinalPhase && !feynmanOpen && threadId && (
+            <PhaseActionButton
+              label="Continue to Next Phase"
+              sublabel={`You've completed ${phaseComplete.phaseTitle}! Up next: ${phaseComplete.nextPhaseTitle}`}
+              onClick={async () => {
+                const result = await createNextPhaseThread(threadId);
+                if (result.error) return;
+                dismissPhaseComplete();
+                queryClient.invalidateQueries({ queryKey: ["threads"] });
+                queryClient.invalidateQueries({ queryKey: ["thread-tree"] });
+                router.push(`/threads/${result.thread_id}`);
+              }}
+            />
+          )}
+          {phaseComplete && phaseComplete.isFinalPhase && !feynmanOpen && (
+            <PhaseActionButton
+              label="View Results"
+              sublabel="Congratulations! You've completed all phases of your learning plan."
+              onClick={async () => {
+                router.push(`/threads`);
+              }}
+            />
+          )}
         </div>
       ) : (
         <div className="flex flex-col justify-center items-center gap-2">
@@ -306,6 +346,7 @@ export default function Page() {
           threadId={threadId}
           conceptName={feynmanConcept}
           onClose={dismissFeynman}
+          onSubmitComplete={() => {}}
         />
       )}
     </div>

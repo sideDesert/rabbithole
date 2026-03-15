@@ -2,15 +2,14 @@
 
 import { useCallback, useRef, useState, type RefCallback } from "react";
 import {
-  ChevronLeft,
-  GitBranchIcon,
-  Loader2,
-  SendHorizonal,
-  StopCircle,
-  Quote,
-  GitBranch,
-  X,
-} from "lucide-react";
+  AltArrowLeftBoldDuotone,
+  BranchingPathsDownBoldDuotone,
+  RefreshBoldDuotone,
+  SendSquareBoldDuotone,
+  StopCircleBoldDuotone,
+  ChatSquareBoldDuotone,
+  CloseCircleBoldDuotone,
+} from "solar-icon-set";
 import { Textarea } from "./ui/textarea";
 import { Button } from "./ui/button";
 import clsx from "clsx";
@@ -98,12 +97,12 @@ export function PromptInput({
           <div className="flex py-2 items-end justify-between">
             {config && config?.goBack && (
               <Button variant={"outline"}>
-                <ChevronLeft /> Go Back
+                <AltArrowLeftBoldDuotone /> Go Back
               </Button>
             )}
             {config && config?.branchout && (
               <Button variant={"outline"}>
-                <GitBranchIcon /> Branch Out
+                <BranchingPathsDownBoldDuotone /> Branch Out
               </Button>
             )}
           </div>
@@ -143,15 +142,15 @@ export function PromptInput({
               {(mode === MODE_TAGGED || mode === MODE_BRANCH) && (
                 <div className="text-md flex w-full justify-between p-2 border-2 text-foreground/60 rounded-xl relative z-0 mb-2">
                   <div className="flex justify-center items-center pl-2">
-                    {mode === MODE_TAGGED && <Quote size={18} />}
-                    {mode === MODE_BRANCH && <GitBranch size={18} />}
+                    {mode === MODE_TAGGED && <ChatSquareBoldDuotone size={18} />}
+                    {mode === MODE_BRANCH && <BranchingPathsDownBoldDuotone size={18} />}
                   </div>
                   <div className="grow pl-2 text-left inline-flex items-center">
                     {tagged.length > 80 ? `${tagged.slice(0, 80)}...` : tagged}
                   </div>
                   <div>
                     <Button onClick={onClose} variant={"ghost"}>
-                      <X />
+                      <CloseCircleBoldDuotone />
                     </Button>
                   </div>
                 </div>
@@ -163,14 +162,14 @@ export function PromptInput({
               >
                 {loading && (
                   <div className="flex gap-2 justify-center items-center">
-                    <Loader2 className="h-4 w-4 animate-spin" />{" "}
+                    <RefreshBoldDuotone className="h-4 w-4 animate-spin" />{" "}
                     <div>Creating Branch...</div>
                   </div>
                 )}
                 {!loading && !streaming && (
-                  <SendHorizonal className="h-4 w-4" />
+                  <SendSquareBoldDuotone className="h-4 w-4" />
                 )}
-                {!loading && streaming && <StopCircle />}
+                {!loading && streaming && <StopCircleBoldDuotone />}
               </Button>
               <Textarea
                 ref={textareaCallbackRef}

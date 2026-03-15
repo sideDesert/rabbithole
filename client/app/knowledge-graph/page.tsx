@@ -26,7 +26,7 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useTheme } from "next-themes";
-import { Network, MessageSquare, ArrowLeft } from "lucide-react";
+import { GraphBoldDuotone, ChatSquareBoldDuotone, ArrowLeftBoldDuotone } from "solar-icon-set";
 
 import { useKnowledgeGraph } from "@/hooks/use-knowledge-graph";
 import { layoutGraph } from "@/lib/graph-layout";
@@ -165,7 +165,7 @@ function EdgeLegend() {
             <span className="text-[10px] text-muted-foreground">Topic</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <MessageSquare className="size-3 text-muted-foreground" />
+            <ChatSquareBoldDuotone className="size-3 text-muted-foreground" />
             <span className="text-[10px] text-muted-foreground">Thread</span>
           </div>
         </div>
@@ -225,7 +225,7 @@ function DomainFilter({
           className="h-8 gap-1.5 text-xs bg-card/90 backdrop-blur-sm shadow-lg"
           onClick={() => onChange(undefined)}
         >
-          <ArrowLeft className="size-3" />
+          <ArrowLeftBoldDuotone className="size-3" />
           Overview
         </Button>
       )}
@@ -370,7 +370,7 @@ function KnowledgeGraphInner() {
   if (!data?.nodes?.length) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground">
-        <Network className="size-10 opacity-40" />
+        <GraphBoldDuotone className="size-10 opacity-40" />
         <p>Start a learning thread to build your knowledge map.</p>
       </div>
     );
@@ -410,7 +410,7 @@ function KnowledgeGraphInner() {
           zoomable
           style={{ width: 140, height: 100 }}
           className="bg-card/80! border-border! rounded-lg! shadow-lg!"
-          maskColor="rgba(0, 0, 0, 0.3)"
+          maskColor={resolvedTheme === "dark" ? "rgba(0, 0, 0, 0.3)" : "rgba(0, 0, 0, 0.08)"}
           nodeColor={(node) => {
             if (node.type === "memory_hub") return "hsl(260, 60%, 55%)";
             if (node.type === "topic_hub") return "hsl(200, 60%, 50%)";

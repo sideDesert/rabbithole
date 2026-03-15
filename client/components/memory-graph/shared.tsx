@@ -54,7 +54,7 @@ export function MemoryNodeShell({
         border: `2px solid ${borderColor ?? colors.border}`,
         background: bgColor ?? colors.bg,
         backdropFilter: "blur(8px)",
-        boxShadow: "0 2px 8px rgba(0, 0, 0, 0.3)",
+        boxShadow: "var(--graph-node-shadow)",
         minWidth,
         maxWidth,
         opacity,

@@ -25,6 +25,7 @@ import { useChat } from "@/hooks/use-chat";
 import { useTextSelectionMenu } from "@/hooks/use-text-selection-menu";
 import { useBranchout, useBranches } from "@/hooks/use-branch";
 import { useThread } from "@/hooks/use-thread";
+import { useStudyTopics } from "@/hooks/use-study-topics";
 import type { Branch } from "@/lib/api";
 import { useRouter, useSearchParams } from "next/navigation";
 import React, { use, useEffect, useRef, useState } from "react";
@@ -57,6 +58,14 @@ export default function Page({
     [number, number] | null
   >(null);
   const [mode, setMode] = useState<Mode>(MODE_DEFAULT);
+
+  // Find the latest thread for this topic so we can show a "Continue" button
+  const { topics } = useStudyTopics();
+  const matchingTopic = topics.find((t) => t.root_thread_id === thread?.id);
+  const continueThreadId =
+    thread?.depth === 0 && thread?.phase === "teaching" && matchingTopic && matchingTopic.latest_thread.id !== thread.id
+      ? matchingTopic.latest_thread.id
+      : null;
 
   const searchParams = useSearchParams();
   const pendingMsg = searchParams.get("msg");
@@ -225,23 +234,10 @@ export default function Page({
         {messages.map((msg, index) => {
           if (msg.type === "plan_card") {
             return (
-              <React.Fragment key={msg.id}>
-                <PlanCreatedCard
-                  topicSlug={msg.metadata?.topicSlug ?? ""}
-                />
-                {index === messages.length - 1 && thread?.phase === "planning" && (
-                  <PhaseActionButton
-                    label="Start Learning"
-                    sublabel="Begin Phase 1 of your learning plan"
-                    onClick={async () => {
-                      const result = await startPhase(threadId);
-                      queryClient.invalidateQueries({ queryKey: ["threads"] });
-                      queryClient.invalidateQueries({ queryKey: ["thread-tree"] });
-                      router.push(`/threads/${result.thread_id}`);
-                    }}
-                  />
-                )}
-              </React.Fragment>
+              <PlanCreatedCard
+                key={msg.id}
+                topicSlug={msg.metadata?.topicSlug ?? ""}
+              />
             );
           }
           if (msg.type === "phase_divider") {
@@ -273,6 +269,28 @@ export default function Page({
             />
           );
         })}
+        {thread?.phase === "planning" && !isStreaming && (
+          <PhaseActionButton
+            label="Start Learning"
+            sublabel="Begin Phase 1 of your learning plan"
+            onClick={async () => {
+              const result = await startPhase(threadId);
+              queryClient.invalidateQueries({ queryKey: ["threads"] });
+              queryClient.invalidateQueries({ queryKey: ["thread-tree"] });
+              const msg = `Let's start learning: ${result.phase_title}`;
+              router.push(`/threads/${result.thread_id}?msg=${encodeURIComponent(msg)}`);
+            }}
+          />
+        )}
+        {continueThreadId && !isStreaming && (
+          <PhaseActionButton
+            label="Continue"
+            sublabel="Pick up where you left off"
+            onClick={async () => {
+              router.push(`/threads/${continueThreadId}`);
+            }}
+          />
+        )}
         {branchSuggestion && (
           <BranchSuggestionCard
             topic={branchSuggestion.topic}
@@ -299,7 +317,8 @@ export default function Page({
               dismissPhaseComplete();
               queryClient.invalidateQueries({ queryKey: ["threads"] });
               queryClient.invalidateQueries({ queryKey: ["thread-tree"] });
-              router.push(`/threads/${result.thread_id}`);
+              const msg = `Let's continue: ${result.phase_title}`;
+              router.push(`/threads/${result.thread_id}?msg=${encodeURIComponent(msg)}`);
             }}
           />
         )}

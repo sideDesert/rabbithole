@@ -15,7 +15,7 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useTheme } from "next-themes";
-import { Brain, RefreshCw } from "lucide-react";
+import { AtomBoldDuotone, RefreshBoldDuotone } from "solar-icon-set";
 
 import { useMemoryGraph, useSyncMemoryGraph } from "@/hooks/use-memory-graph";
 import { layoutMemoryGraph } from "@/lib/memory-graph-layout";
@@ -53,15 +53,15 @@ const NODE_TYPE_MAP: Record<string, string> = {
 function StatsBar({ stats }: { stats: MemoryGraphStats }) {
   return (
     <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-4 bg-card/90 backdrop-blur-sm border border-border rounded-xl px-5 py-2.5 shadow-lg">
-      <Stat label="Concepts" value={stats.concept_count} color="text-teal-400" />
+      <Stat label="Concepts" value={stats.concept_count} color="text-teal-600 dark:text-teal-400" />
       <Sep />
-      <Stat label="People" value={stats.person_count} color="text-purple-400" />
+      <Stat label="People" value={stats.person_count} color="text-purple-600 dark:text-purple-400" />
       <Sep />
-      <Stat label="Facts" value={stats.fact_count} color="text-blue-400" />
+      <Stat label="Facts" value={stats.fact_count} color="text-blue-600 dark:text-blue-400" />
       <Sep />
-      <Stat label="Beliefs" value={stats.belief_count} color="text-amber-400" />
+      <Stat label="Beliefs" value={stats.belief_count} color="text-amber-600 dark:text-amber-400" />
       <Sep />
-      <Stat label="Resources" value={stats.resource_count} color="text-slate-400" />
+      <Stat label="Resources" value={stats.resource_count} color="text-slate-600 dark:text-slate-400" />
       <Sep />
       <Stat label="Edges" value={stats.relationship_count} />
     </div>
@@ -265,7 +265,7 @@ function MemoryGraphInner() {
   if (!data?.nodes?.length) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground">
-        <Brain className="size-10 opacity-40" />
+        <AtomBoldDuotone className="size-10 opacity-40" />
         <p>No memory data yet.</p>
         <Button
           variant="outline"
@@ -273,7 +273,7 @@ function MemoryGraphInner() {
           onClick={() => syncMutation.mutate()}
           disabled={syncMutation.isPending}
         >
-          <RefreshCw className={`size-3.5 mr-1.5 ${syncMutation.isPending ? "animate-spin" : ""}`} />
+          <RefreshBoldDuotone className={`size-3.5 mr-1.5 ${syncMutation.isPending ? "animate-spin" : ""}`} />
           Sync from EverMemOS
         </Button>
       </div>
@@ -298,7 +298,7 @@ function MemoryGraphInner() {
           onClick={() => syncMutation.mutate()}
           disabled={syncMutation.isPending}
         >
-          <RefreshCw className={`size-3.5 mr-1.5 ${syncMutation.isPending ? "animate-spin" : ""}`} />
+          <RefreshBoldDuotone className={`size-3.5 mr-1.5 ${syncMutation.isPending ? "animate-spin" : ""}`} />
           Sync
         </Button>
       </div>

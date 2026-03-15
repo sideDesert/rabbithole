@@ -5,7 +5,7 @@ import "./globals.css";
 import { AppSidebar, Tool } from "@/components/app-sidebar";
 import { Providers } from "@/components/providers";
 import { MainContent } from "@/components/main-content";
-import { Brain, LayoutDashboard, Network, Signature } from "lucide-react";
+import { AtomBoldDuotone, Widget2BoldDuotone, GraphBoldDuotone, Pen2BoldDuotone } from "solar-icon-set";
 
 const raleway = Raleway({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -20,10 +20,10 @@ const geistMono = Geist_Mono({
 });
 
 const tools: Tool[] = [
-  { name: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
-  { name: "Study Plans", icon: Signature, href: "/study-plans" },
-  { name: "Knowledge Graph", icon: Network, href: "/knowledge-graph" },
-  { name: "Memory Graph", icon: Brain, href: "/memory-graph" },
+  { name: "Dashboard", icon: Widget2BoldDuotone, href: "/dashboard" },
+  { name: "Study Plans", icon: Pen2BoldDuotone, href: "/study-plans" },
+  { name: "Knowledge Graph", icon: GraphBoldDuotone, href: "/knowledge-graph" },
+  { name: "Memory Graph", icon: AtomBoldDuotone, href: "/memory-graph" },
 ];
 
 export default function RootLayout({

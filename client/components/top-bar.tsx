@@ -5,13 +5,13 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { TabsList, TabsTrigger } from "./ui/tabs";
 import {
-  ChevronLeft,
-  ChevronsLeft,
-  ListTodo,
-  MessageCircle,
-  NetworkIcon,
-  Pen,
-} from "lucide-react";
+  AltArrowLeftBoldDuotone,
+  DoubleAltArrowLeftBoldDuotone,
+  ChecklistBoldDuotone,
+  ChatRoundBoldDuotone,
+  GraphBoldDuotone,
+  Pen2BoldDuotone,
+} from "solar-icon-set";
 import { Button } from "./ui/button";
 import { ButtonGroup } from "./ui/button-group";
 import { TopicProgress } from "@/components/topic-progress";
@@ -53,10 +53,10 @@ export function TopBar({
           {config?.back && (
             <ButtonGroup>
               <Button variant="outline" onClick={backToRootHandler}>
-                <ChevronsLeft /> Root
+                <DoubleAltArrowLeftBoldDuotone /> Root
               </Button>
               <Button variant="outline" onClick={backToParentHandler}>
-                <ChevronLeft /> Parent
+                <AltArrowLeftBoldDuotone /> Parent
               </Button>
             </ButtonGroup>
           )}
@@ -73,16 +73,16 @@ export function TopBar({
         {config?.tabs && (
           <TabsList>
             <TabsTrigger value="chat-mode">
-              <MessageCircle />
+              <ChatRoundBoldDuotone />
             </TabsTrigger>
             <TabsTrigger value="feynman-mode">
-              <Pen />
+              <Pen2BoldDuotone />
             </TabsTrigger>
             <TabsTrigger value="plan-mode">
-              <ListTodo />
+              <ChecklistBoldDuotone />
             </TabsTrigger>
             <TabsTrigger value="graph-mode">
-              <NetworkIcon />
+              <GraphBoldDuotone />
             </TabsTrigger>
           </TabsList>
         )}

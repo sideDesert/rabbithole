@@ -49,6 +49,9 @@
 }
 
 :root {
+    --graph-ring-track: #cbd5e1;
+    --graph-node-bg: oklch(0.97 0.001 286);
+    --graph-node-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     --background: oklch(1 0 0);
     --foreground: oklch(0.141 0.005 285.823);
     --card: oklch(1 0 0);
@@ -84,6 +87,9 @@
 }
 
 .dark {
+    --graph-ring-track: #334155;
+    --graph-node-bg: hsla(222, 20%, 14%, 0.95);
+    --graph-node-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     --sidebar: oklch(0.141 0.005 285.823);
     --background: oklch(0.21 0.006 285.885);
     --foreground: oklch(0.985 0 0);
@@ -144,8 +150,7 @@
         oklch(0.5 0.18 270);
     background-size: 200% 200%;
     animation: orb-shift 6s ease-in-out infinite;
-    opacity: 0.85;
-    filter: blur(1px);
+    opacity: 1;
 }
 
 @keyframes orb-shift {

@@ -3,13 +3,10 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  Rabbit,
-  Signature,
-  BrainCircuit,
-  LayoutDashboard,
-  Network,
-  SquarePen,
-} from "lucide-react";
+  AtomBoldDuotone,
+  PenNewSquareBoldDuotone,
+} from "solar-icon-set";
+import { Rabbit } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -61,7 +58,7 @@ export function AppSidebar({ tools }: { tools: Tool[] }) {
                 isActive={path.includes("feynman")}
                 onClick={() => handleAgentNav("feynman", "/feynman")}
               >
-                <SquarePen className="h-4 w-4" />
+                <PenNewSquareBoldDuotone className="h-4 w-4" />
                 <span>New Chat</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -72,7 +69,7 @@ export function AppSidebar({ tools }: { tools: Tool[] }) {
                 }
                 onClick={() => handleAgentNav("ebbinghaus", "/ebbinghaus")}
               >
-                <BrainCircuit className="h-4 w-4" />
+                <AtomBoldDuotone className="h-4 w-4" />
                 <span>Ebbinghaus</span>
               </SidebarMenuButton>
             </SidebarMenuItem>

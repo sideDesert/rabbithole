@@ -18,14 +18,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import {
-  MessageSquare,
-  GitBranch,
-  Clock,
-  Layers,
-  MoreVertical,
-  Trash2,
-} from "lucide-react";
+import { ChatSquareBoldDuotone, BranchingPathsDownBoldDuotone, ClockCircleBoldDuotone, Widget4BoldDuotone, MenuDotsSquareBoldDuotone, TrashBinMinimalisticBoldDuotone } from "solar-icon-set";
 
 const STATUS_VARIANT: Record<string, "default" | "secondary" | "outline"> = {
   active: "default",
@@ -99,14 +92,14 @@ export function ThreadCard({ thread }: { thread: Thread }) {
                   }}
                   className="p-1 rounded-md hover:bg-muted"
                 >
-                  <MoreVertical className="size-4 text-muted-foreground" />
+                  <MenuDotsSquareBoldDuotone size={16} className="text-muted-foreground" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem
                     onClick={handleDelete}
                     className="text-destructive focus:text-destructive"
                   >
-                    <Trash2 className="size-3.5 mr-2" />
+                    <TrashBinMinimalisticBoldDuotone size={14} className="mr-2" />
                     Delete
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -123,7 +116,7 @@ export function ThreadCard({ thread }: { thread: Thread }) {
               </CardDescription>
             )}
             <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">
-              <Layers className="size-3" />
+              <Widget4BoldDuotone size={12} />
               {thread.current_concept}
             </span>
           </CardContent>
@@ -132,17 +125,17 @@ export function ThreadCard({ thread }: { thread: Thread }) {
         <CardFooter className="text-xs text-muted-foreground">
           <div className="flex items-center gap-4 w-full">
             <span className="inline-flex items-center gap-1">
-              <MessageSquare className="size-3" />
+              <ChatSquareBoldDuotone className="size-3" />
               {thread.agent}
             </span>
             {thread.depth > 0 && (
               <span className="inline-flex items-center gap-1">
-                <GitBranch className="size-3" />
+                <BranchingPathsDownBoldDuotone className="size-3" />
                 depth {thread.depth}
               </span>
             )}
             <span className="inline-flex items-center gap-1 ml-auto">
-              <Clock className="size-3" />
+              <ClockCircleBoldDuotone className="size-3" />
               {formatRelative(thread.updated_at)}
             </span>
           </div>

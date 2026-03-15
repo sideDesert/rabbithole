@@ -1,4 +1,5 @@
 import { type NodeProps } from "@xyflow/react";
+import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
 import { NodeHandles } from "./node-handles";
 
@@ -20,6 +21,8 @@ function domainHue(domain: string): number {
 
 export function TopicHubNode({ data, selected }: NodeProps) {
   const d = data as unknown as TopicHubData;
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
   const hue = d.domain ? domainHue(d.domain) : 220;
   const score = d.mastery_score;
 
@@ -30,7 +33,7 @@ export function TopicHubNode({ data, selected }: NodeProps) {
         selected && "ring-2 ring-primary/50",
       )}
       style={{
-        background: `hsl(${hue}, 30%, 15%)`,
+        background: isDark ? `hsl(${hue}, 30%, 15%)` : `hsl(${hue}, 30%, 96%)`,
         border: `2px solid hsl(${hue}, 60%, 50%)`,
       }}
     >
@@ -39,7 +42,7 @@ export function TopicHubNode({ data, selected }: NodeProps) {
       <div className="text-center">
         <p
           className="text-base font-bold capitalize"
-          style={{ color: `hsl(${hue}, 70%, 75%)` }}
+          style={{ color: isDark ? `hsl(${hue}, 70%, 75%)` : `hsl(${hue}, 60%, 35%)` }}
         >
           {d.display_name}
         </p>
@@ -49,7 +52,7 @@ export function TopicHubNode({ data, selected }: NodeProps) {
           <span>{Math.round(score * 100)}% avg</span>
         </div>
         {/* Mini progress bar */}
-        <div className="mt-2 h-1 w-full rounded-full bg-white/10 overflow-hidden">
+        <div className="mt-2 h-1 w-full rounded-full bg-black/5 dark:bg-white/10 overflow-hidden">
           <div
             className="h-full rounded-full transition-all"
             style={{

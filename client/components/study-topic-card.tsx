@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
+import { ArrowRightBoldDuotone } from "solar-icon-set";
 import { topicGradient, phaseLabel, timeAgo } from "@/lib/topic-utils";
 
 export function StudyTopicCard({
@@ -123,7 +123,7 @@ export function StudyTopicCard({
               {timeAgo(topic.latest_thread.updated_at)}
             </span>
             <Button variant="ghost" size="sm">
-              Continue <ArrowRight className="ml-1 size-4" />
+              Continue <ArrowRightBoldDuotone className="ml-1 size-4" />
             </Button>
           </CardFooter>
         </Card>

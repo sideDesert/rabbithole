@@ -21,10 +21,27 @@ const toolCallLabels: Record<string, string> = {
   get_parked_topics: "Checking bookmarks...",
 };
 
+const toolCallDoneLabels: Record<string, string> = {
+  recall_memory: "Memory recalled",
+  store_memory: "Memory stored",
+  create_plan: "Plan created",
+  read_plan: "Plan read",
+  update_plan_progress: "Progress updated",
+  suggest_branches: "Branches suggested",
+  offer_branch: "Branch offered",
+  park_topic: "Topic parked",
+  get_parked_topics: "Bookmarks checked",
+};
+
 export function getTrailLabel(
-  type: "status" | "tool_call",
+  type: "status" | "tool_call" | "tool_call_done",
   key: string,
 ): string {
-  const map = type === "status" ? statusLabels : toolCallLabels;
-  return map[key] ?? key.toLowerCase();
+  const map =
+    type === "status"
+      ? statusLabels
+      : type === "tool_call_done"
+        ? toolCallDoneLabels
+        : toolCallLabels;
+  return map[key] ?? key.replace(/_/g, " ");
 }

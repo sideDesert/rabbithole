@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight, Pencil } from "lucide-react";
+import { AltArrowLeftBoldDuotone, AltArrowRightBoldDuotone, Pen2BoldDuotone } from "solar-icon-set";
 import { Button } from "./ui/button";
 import type { InterviewQuestion } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -112,7 +112,7 @@ export function InterviewWidget({
                 disabled={current === 0}
                 className="p-0.5 rounded hover:bg-muted disabled:opacity-30 transition-colors"
               >
-                <ChevronLeft className="size-3.5" />
+                <AltArrowLeftBoldDuotone className="size-3.5" />
               </button>
               <span className="tabular-nums">
                 {current + 1} of {questions.length}
@@ -122,7 +122,7 @@ export function InterviewWidget({
                 disabled={isLast}
                 className="p-0.5 rounded hover:bg-muted disabled:opacity-30 transition-colors"
               >
-                <ChevronRight className="size-3.5" />
+                <AltArrowRightBoldDuotone className="size-3.5" />
               </button>
             </div>
           </div>
@@ -180,7 +180,7 @@ export function InterviewWidget({
                 }}
               >
                 <span className="shrink-0 size-5.5 flex items-center justify-center rounded-md">
-                  <Pencil className="size-3" />
+                  <Pen2BoldDuotone className="size-3" />
                 </span>
                 {otherActive ? (
                   <input

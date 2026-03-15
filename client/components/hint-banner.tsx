@@ -1,6 +1,6 @@
 "use client";
 
-import { X } from "lucide-react";
+import { CloseCircleBoldDuotone } from "solar-icon-set";
 
 interface HintBannerProps {
   hints: { id: string; text: string }[];
@@ -23,7 +23,7 @@ export function HintBanner({ hints, onDismiss }: HintBannerProps) {
             onClick={() => onDismiss(hint.id)}
             className="shrink-0 rounded p-0.5 hover:bg-accent"
           >
-            <X className="h-3.5 w-3.5" />
+            <CloseCircleBoldDuotone className="h-3.5 w-3.5" />
           </button>
         </div>
       ))}

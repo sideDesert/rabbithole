@@ -6,16 +6,15 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Tree, type NodeRendererProps } from "react-arborist";
 import {
-  ArrowLeft,
-  ArrowRight,
-  Check,
-  ChevronDown,
-  ChevronRight,
-  Circle,
-  GitBranch,
-  MessageSquare,
-  FlaskConical,
-} from "lucide-react";
+  ArrowLeftBoldDuotone,
+  ArrowRightBoldDuotone,
+  AltArrowDownBoldDuotone,
+  AltArrowRightBoldDuotone,
+  ChatSquareBoldDuotone,
+  TestTubeBoldDuotone,
+  BranchingPathsDownBoldDuotone,
+} from "solar-icon-set";
+import { CheckCircleBoldDuotone, RecordCircleBoldDuotone } from "solar-icon-set";
 import { cn } from "@/lib/utils";
 import { phaseLabel } from "@/lib/topic-utils";
 import {
@@ -74,9 +73,9 @@ function PhaseGroup({
       >
         <div className="flex items-center gap-1.5">
           {isOpen ? (
-            <ChevronDown className="size-3.5 text-muted-foreground" />
+            <AltArrowDownBoldDuotone className="size-3.5 text-muted-foreground" />
           ) : (
-            <ChevronRight className="size-3.5 text-muted-foreground" />
+            <AltArrowRightBoldDuotone className="size-3.5 text-muted-foreground" />
           )}
           <span className="text-sm font-semibold text-foreground">
             {phase.title}
@@ -103,11 +102,12 @@ function PhaseGroup({
                 )}
               >
                 {concept.completed ? (
-                  <Check className="size-3.5 shrink-0 text-primary" />
+                  <CheckCircleBoldDuotone size={14} className="shrink-0 text-primary" />
                 ) : (
-                  <Circle
+                  <RecordCircleBoldDuotone
+                    size={14}
                     className={cn(
-                      "size-3.5 shrink-0",
+                      "shrink-0",
                       isCurrent ? "text-primary" : "text-muted-foreground/50",
                     )}
                   />
@@ -149,16 +149,16 @@ function ThreadNode({ node, style }: NodeRendererProps<ThreadTreeNode>) {
           }}
         >
           {node.isOpen ? (
-            <ChevronDown className="h-3.5 w-3.5" />
+            <AltArrowDownBoldDuotone className="h-3.5 w-3.5" />
           ) : (
-            <ChevronRight className="h-3.5 w-3.5" />
+            <AltArrowRightBoldDuotone className="h-3.5 w-3.5" />
           )}
         </button>
       )}
       {isRoot ? (
-        <MessageSquare className="h-3.5 w-3.5 shrink-0" />
+        <ChatSquareBoldDuotone className="h-3.5 w-3.5 shrink-0" />
       ) : (
-        <GitBranch className="h-3.5 w-3.5 shrink-0" />
+        <BranchingPathsDownBoldDuotone className="h-3.5 w-3.5 shrink-0" />
       )}
       <span className="truncate flex-1">{node.data.title}</span>
     </div>
@@ -196,7 +196,7 @@ export function TopicDetail({
       {/* Header */}
       <div>
         <Button variant="secondary" onClick={onBack} className="mb-4 -ml-2">
-          <ArrowLeft className="size-4 mr-1" /> All Study Plans
+          <ArrowLeftBoldDuotone className="size-4 mr-1" /> All Study Plans
         </Button>
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
@@ -214,7 +214,7 @@ export function TopicDetail({
             <ProgressRing progress={topic.progress} />
             <Link href={`/threads/${topic.latest_thread.id}`}>
               <Button>
-                Continue <ArrowRight className="ml-1 size-4" />
+                Continue <ArrowRightBoldDuotone className="ml-1 size-4" />
               </Button>
             </Link>
           </div>
@@ -279,7 +279,7 @@ export function TopicDetail({
       <section>
         <h2 className="text-lg font-semibold mb-3">Tests</h2>
         <div className="rounded-lg border border-dashed border-border p-6 flex flex-col items-center justify-center text-center">
-          <FlaskConical className="size-8 text-muted-foreground mb-2" />
+          <TestTubeBoldDuotone className="size-8 text-muted-foreground mb-2" />
           <p className="text-sm text-muted-foreground">
             Mastery tests coming soon. You&apos;ll be able to track Feynman test
             scores for each concept here.

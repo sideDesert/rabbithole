@@ -1,5 +1,5 @@
 import { type NodeProps } from "@xyflow/react";
-import { CheckCircle2, Circle } from "lucide-react";
+import { CheckCircleBoldDuotone, RecordCircleBoldDuotone } from "solar-icon-set";
 import { MemoryNodeShell } from "./shared";
 
 interface FactData {
@@ -14,9 +14,9 @@ export function FactNode({ data, selected }: NodeProps) {
     <MemoryNodeShell selected={selected} entityType="fact" maxWidth="240px">
       <div className="flex items-start gap-2">
         {d.verified ? (
-          <CheckCircle2 className="size-4 shrink-0 text-blue-400 mt-0.5" />
+          <span className="shrink-0 text-blue-600 dark:text-blue-400 mt-0.5"><CheckCircleBoldDuotone size={16} /></span>
         ) : (
-          <Circle className="size-4 shrink-0 text-blue-400/50 mt-0.5" />
+          <span className="shrink-0 text-blue-600/50 dark:text-blue-400/50 mt-0.5"><RecordCircleBoldDuotone size={16} /></span>
         )}
         <p className="text-xs text-foreground line-clamp-3">
           {d.statement || d.name}

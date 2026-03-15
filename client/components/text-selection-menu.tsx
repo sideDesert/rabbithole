@@ -1,6 +1,6 @@
 "use client";
 
-import { Quote, GitBranch } from "lucide-react";
+import { ChatSquareBoldDuotone, BranchingPathsDownBoldDuotone } from "solar-icon-set";
 
 interface TextSelectionMenuProps {
   visible: boolean;
@@ -46,7 +46,7 @@ export function TextSelectionMenu({
         onClick={handleQuote}
         className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm text-popover-foreground hover:bg-accent transition-colors cursor-pointer"
       >
-        <Quote className="h-3.5 w-3.5" />
+        <ChatSquareBoldDuotone className="h-3.5 w-3.5" />
         Quote
       </button>
       <div className="h-4 w-px bg-border" />
@@ -54,7 +54,7 @@ export function TextSelectionMenu({
         onClick={handleBranch}
         className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm text-popover-foreground hover:bg-accent transition-colors cursor-pointer"
       >
-        <GitBranch className="h-3.5 w-3.5" />
+        <BranchingPathsDownBoldDuotone className="h-3.5 w-3.5" />
         Branch Out
       </button>
     </div>

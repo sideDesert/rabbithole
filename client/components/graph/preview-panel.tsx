@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, type ReactNode } from "react";
-import { X } from "lucide-react";
+import { CloseCircleBoldDuotone } from "solar-icon-set";
 import { Button } from "@/components/ui/button";
 
 interface PreviewPanelProps {
@@ -41,7 +41,7 @@ export function PreviewPanel({ open, onClose, children }: PreviewPanelProps) {
       <div className="flex items-center justify-between p-3 border-b border-border">
         <span className="text-sm font-medium">Details</span>
         <Button variant="ghost" size="icon" className="size-6" onClick={onClose}>
-          <X className="size-3.5" />
+          <CloseCircleBoldDuotone size={14} />
         </Button>
       </div>
       <div className="p-4">{children}</div>

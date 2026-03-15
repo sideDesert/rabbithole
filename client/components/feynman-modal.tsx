@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { type Block } from "@blocknote/core";
 import { useCreateBlockNote } from "@blocknote/react";
 import { BlockNoteView } from "@blocknote/shadcn";
@@ -79,12 +79,23 @@ export function FeynmanModal({
     return () => clearInterval(interval);
   }, [editor, threadId, conceptName]);
 
+  const animateOut = useCallback((cb: () => void) => {
+    setVisible(false);
+    setTimeout(cb, 200);
+  }, []);
+
   const handleClose = useCallback(() => {
     if (hasContentRef.current) {
       if (!window.confirm("Discard your explanation?")) return;
     }
-    onClose();
-  }, [onClose]);
+    animateOut(onClose);
+  }, [onClose, animateOut]);
+
+  // Animate in
+  const [visible, setVisible] = useState(false);
+  useLayoutEffect(() => {
+    requestAnimationFrame(() => setVisible(true));
+  }, []);
 
   // Lock scroll while modal is open
   useEffect(() => {
@@ -154,11 +165,11 @@ export function FeynmanModal({
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 z-99 bg-background/70 backdrop-blur-sm"
+        className={`fixed inset-0 z-99 bg-background/70 backdrop-blur-sm transition-opacity duration-300 ease-out ${visible ? "opacity-100" : "opacity-0"}`}
         onClick={handleClose}
       />
       {/* Modal */}
-      <div className="fixed inset-4 z-100 max-w-4xl mx-auto flex flex-col rounded-xl border border-border bg-background shadow-2xl">
+      <div className={`fixed inset-4 z-100 max-w-4xl mx-auto flex flex-col rounded-xl border border-border bg-background shadow-2xl transition-all duration-300 ease-out ${visible ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-95 translate-y-4"}`}>
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border px-6 py-4">
           <div>
@@ -186,7 +197,7 @@ export function FeynmanModal({
               result={feynmanResult}
               onContinue={() => {
                 onSubmitComplete?.(feynmanResult);
-                onClose();
+                animateOut(onClose);
               }}
             />
           </div>

@@ -16,7 +16,7 @@ import {
 import "@xyflow/react/dist/style.css";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
-import { Network } from "lucide-react";
+import { GraphBoldDuotone } from "solar-icon-set";
 
 import { useThreadMap } from "@/hooks/use-thread-map";
 import { layoutGraph } from "@/lib/graph-layout";
@@ -100,7 +100,7 @@ function ThreadMapInner({ threadId }: { threadId: string }) {
   if (!data?.nodes?.length) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground">
-        <Network className="size-10 opacity-40" />
+        <GraphBoldDuotone size={40} style={{ opacity: 0.4 }} />
         <p>No thread data available.</p>
       </div>
     );

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Tree, type NodeRendererProps } from "react-arborist";
 import { useRouter, usePathname } from "next/navigation";
-import { ChevronRight, ChevronDown, MessageSquare, GitBranch, Trash2 } from "lucide-react";
+import { AltArrowRightBoldDuotone, AltArrowDownBoldDuotone, ChatSquareBoldDuotone, BranchingPathsDownBoldDuotone, TrashBinMinimalisticBoldDuotone } from "solar-icon-set";
 import { cn } from "@/lib/utils";
 import type { ThreadTreeNode } from "@/lib/api";
 import { deleteThread } from "@/lib/api";
@@ -52,17 +52,17 @@ function Node({ node, style, dragHandle }: NodeRendererProps<TreeData>) {
           }}
         >
           {node.isOpen ? (
-            <ChevronDown className="h-3.5 w-3.5" />
+            <AltArrowDownBoldDuotone className="h-3.5 w-3.5" />
           ) : (
-            <ChevronRight className="h-3.5 w-3.5" />
+            <AltArrowRightBoldDuotone className="h-3.5 w-3.5" />
           )}
         </button>
       )}
 
       {isRoot ? (
-        <MessageSquare className="h-3.5 w-3.5 shrink-0" />
+        <ChatSquareBoldDuotone className="h-3.5 w-3.5 shrink-0" />
       ) : (
-        <GitBranch className="h-3.5 w-3.5 shrink-0" />
+        <BranchingPathsDownBoldDuotone className="h-3.5 w-3.5 shrink-0" />
       )}
 
       <span className="truncate flex-1">{node.data.title}</span>
@@ -72,7 +72,7 @@ function Node({ node, style, dragHandle }: NodeRendererProps<TreeData>) {
         className="hidden group-hover/node:flex h-5 w-5 shrink-0 items-center justify-center rounded hover:bg-destructive/20 text-muted-foreground hover:text-destructive transition-colors"
         onClick={handleDelete}
       >
-        <Trash2 className="h-3 w-3" />
+        <TrashBinMinimalisticBoldDuotone className="h-3 w-3" />
       </button>
     </div>
   );

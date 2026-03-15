@@ -7,7 +7,7 @@ import useEmblaCarousel, {
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react"
+import { AltArrowLeftBoldDuotone, AltArrowRightBoldDuotone } from "solar-icon-set"
 
 type CarouselApi = UseEmblaCarouselType[1]
 type UseCarouselParameters = Parameters<typeof useEmblaCarousel>
@@ -191,7 +191,7 @@ function CarouselPrevious({
       onClick={scrollPrev}
       {...props}
     >
-      <ChevronLeftIcon className="size-4" />
+      <AltArrowLeftBoldDuotone className="size-4" />
       <span className="sr-only">Previous slide</span>
     </button>
   )
@@ -217,7 +217,7 @@ function CarouselNext({
       onClick={scrollNext}
       {...props}
     >
-      <ChevronRightIcon className="size-4" />
+      <AltArrowRightBoldDuotone className="size-4" />
       <span className="sr-only">Next slide</span>
     </button>
   )

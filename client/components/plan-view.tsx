@@ -8,7 +8,7 @@ import {
   type PlanConcept,
 } from "@/lib/api";
 import { usePlan } from "./plan-context";
-import { ListTodo, ChevronDown, ChevronRight, Check, FlaskConical } from "lucide-react";
+import { ChecklistBoldDuotone, AltArrowDownBoldDuotone, AltArrowRightBoldDuotone, CheckCircleBoldDuotone, TestTubeBoldDuotone } from "solar-icon-set";
 import { useState } from "react";
 import Link from "next/link";
 
@@ -50,7 +50,7 @@ function ConceptRow({
         data-checked={concept.completed}
       >
         {concept.completed && (
-          <Check className="size-3 text-primary-foreground" />
+          <CheckCircleBoldDuotone className="size-3 text-primary-foreground" />
         )}
       </button>
       <div className="flex-1 min-w-0">
@@ -72,7 +72,7 @@ function ConceptRow({
           className="shrink-0 mt-0.5 p-1 rounded hover:bg-muted transition-colors opacity-0 group-hover:opacity-100"
           title="Take a test"
         >
-          <FlaskConical className="size-3.5 text-muted-foreground" />
+          <TestTubeBoldDuotone className="size-3.5 text-muted-foreground" />
         </Link>
       )}
     </label>
@@ -100,9 +100,9 @@ function PhaseSection({
         className="w-full flex items-center gap-3 p-4 hover:bg-muted/30 transition-colors text-left cursor-pointer"
       >
         {open ? (
-          <ChevronDown className="size-4 shrink-0 text-muted-foreground" />
+          <AltArrowDownBoldDuotone className="size-4 shrink-0 text-muted-foreground" />
         ) : (
-          <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
+          <AltArrowRightBoldDuotone className="size-4 shrink-0 text-muted-foreground" />
         )}
         <div className="flex-1 min-w-0">
           <div className="flex items-baseline justify-between gap-2">
@@ -143,7 +143,7 @@ export function PlanView() {
   if (!threadId) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground">
-        <ListTodo className="size-10 opacity-40" />
+        <ChecklistBoldDuotone className="size-10 opacity-40" />
         <p>Start a conversation to create a learning plan.</p>
       </div>
     );
@@ -160,7 +160,7 @@ export function PlanView() {
   if (!data?.phases?.length) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground">
-        <ListTodo className="size-10 opacity-40" />
+        <ChecklistBoldDuotone className="size-10 opacity-40" />
         <p>No plan created yet for this thread.</p>
       </div>
     );

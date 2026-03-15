@@ -14,7 +14,7 @@ function MasteryRing({ score }: { score: number }) {
   const filled = circumference * score;
   return (
     <svg width="28" height="28" className="shrink-0">
-      <circle cx="14" cy="14" r={radius} fill="none" stroke="#334155" strokeWidth="3" />
+      <circle cx="14" cy="14" r={radius} fill="none" stroke="var(--graph-ring-track)" strokeWidth="3" />
       <circle
         cx="14" cy="14" r={radius} fill="none"
         stroke="#2dd4bf" strokeWidth="3"
@@ -38,7 +38,7 @@ export function ConceptMgNode({ data, selected }: NodeProps) {
         <MasteryRing score={d.mastery} />
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium text-foreground truncate">{d.name}</p>
-          <span className="text-[10px] text-teal-400">{Math.round(d.mastery * 100)}%</span>
+          <span className="text-[10px] text-teal-600 dark:text-teal-400">{Math.round(d.mastery * 100)}%</span>
           {d.domain && (
             <span className="text-[9px] text-muted-foreground/60 ml-1">{d.domain}</span>
           )}

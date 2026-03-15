@@ -1,5 +1,5 @@
 import { type NodeProps } from "@xyflow/react";
-import { MessageSquare } from "lucide-react";
+import { ChatSquareBoldDuotone } from "solar-icon-set";
 import { cn } from "@/lib/utils";
 import { NodeHandles } from "./node-handles";
 
@@ -23,19 +23,18 @@ export function KgThreadNode({ data, selected }: NodeProps) {
   return (
     <div
       className={cn(
-        "rounded-md px-3 py-2 min-w-[120px] max-w-[180px] cursor-pointer transition-all",
+        "rounded-md px-3 py-2 min-w-[120px] max-w-[180px] cursor-pointer transition-all bg-card",
         selected && "ring-2 ring-primary/50",
       )}
       style={{
         border: `1.5px solid ${color}`,
-        background: "hsla(222, 20%, 12%, 0.95)",
-        boxShadow: "0 1px 4px rgba(0, 0, 0, 0.3)",
+        boxShadow: "var(--graph-node-shadow)",
       }}
     >
       <NodeHandles />
 
       <div className="flex items-center gap-1.5">
-        <MessageSquare className="size-3.5 shrink-0" style={{ color }} />
+        <ChatSquareBoldDuotone size={14} className="shrink-0" color={color} />
         <p className="text-[11px] font-medium text-foreground truncate">{d.display_name}</p>
       </div>
       <p className="text-[9px] text-muted-foreground mt-0.5 capitalize">{d.thread_phase}</p>

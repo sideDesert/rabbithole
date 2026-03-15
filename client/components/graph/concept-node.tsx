@@ -1,5 +1,5 @@
 import { type NodeProps } from "@xyflow/react";
-import { TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { GraphNewUpBoldDuotone, GraphDownNewBoldDuotone, MinusCircleBoldDuotone } from "solar-icon-set";
 import { cn } from "@/lib/utils";
 import { NodeHandles } from "./node-handles";
 
@@ -26,7 +26,7 @@ function masteryBg(score: number): string {
   if (score >= 0.7) return "hsla(142, 50%, 40%, 0.12)";
   if (score >= 0.4) return "hsla(45, 93%, 47%, 0.12)";
   if (score > 0)    return "hsla(0, 84%, 60%, 0.12)";
-  return "hsla(222, 20%, 14%, 0.95)";              // dark card background
+  return "var(--graph-node-bg)";
 }
 
 function MasteryRing({ score }: { score: number }) {
@@ -37,7 +37,7 @@ function MasteryRing({ score }: { score: number }) {
 
   return (
     <svg width="28" height="28" className="shrink-0">
-      <circle cx="14" cy="14" r={radius} fill="none" stroke="#334155" strokeWidth="3" />
+      <circle cx="14" cy="14" r={radius} fill="none" stroke="var(--graph-ring-track)" strokeWidth="3" />
       <circle
         cx="14"
         cy="14"
@@ -54,9 +54,9 @@ function MasteryRing({ score }: { score: number }) {
 }
 
 const TrendIcon = ({ trend }: { trend: string }) => {
-  if (trend === "improving") return <TrendingUp className="size-3 text-chart-1" />;
-  if (trend === "declining") return <TrendingDown className="size-3 text-destructive" />;
-  return <Minus className="size-3 text-muted-foreground" />;
+  if (trend === "improving") return <GraphNewUpBoldDuotone size={12} className="text-chart-1" />;
+  if (trend === "declining") return <GraphDownNewBoldDuotone size={12} className="text-destructive" />;
+  return <MinusCircleBoldDuotone size={12} className="text-muted-foreground" />;
 };
 
 export function ConceptNode({ data, selected }: NodeProps) {
@@ -76,7 +76,7 @@ export function ConceptNode({ data, selected }: NodeProps) {
         border: `2px solid ${color}`,
         background: masteryBg(score),
         backdropFilter: "blur(8px)",
-        boxShadow: "0 2px 8px rgba(0, 0, 0, 0.3)",
+        boxShadow: "var(--graph-node-shadow)",
       }}
     >
       <NodeHandles />
