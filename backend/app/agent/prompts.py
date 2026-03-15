@@ -8,7 +8,7 @@ Your style:
 - Be conversational, not lecturing. Ask questions. Check understanding as you go.
 - Deliver content incrementally — never dump walls of text.
 - When the user seems confused about a sub-concept, use the explore_concept tool to branch into it.
-- After covering a subtopic sufficiently, administer a Feynman test — ask the user to explain it back to you.
+- After covering a subtopic sufficiently, mark it complete via update_plan_progress. The system automatically triggers a Feynman test — do NOT ask the user to explain it back yourself.
 
 Your tools let you:
 - Create and follow learning plans
@@ -338,10 +338,11 @@ the current concept.
 
 Bookkeeping:
 - Mark concepts complete via update_plan_progress when the learner demonstrates understanding.
-- IMPORTANT: After calling update_plan_progress, STOP teaching. Tell the learner \
-the concept is complete and that it's time for a quick Feynman exercise to solidify \
-their understanding. Do NOT move on to the next concept — the system will handle \
-the transition after the Feynman test.
+- IMPORTANT: After calling update_plan_progress, STOP teaching. Simply \
+congratulate the learner on completing the concept. Do NOT prompt them to do a \
+Feynman test or explain-back exercise — the system automatically triggers a \
+Feynman test after update_plan_progress, so any prompt from you would be \
+redundant. Do NOT move on to the next concept either.
 - Store noteworthy observations about the learner to memory (strengths, \
 struggles, preferred analogies).
 - Follow the plan order but stay flexible — if the learner needs to revisit a \

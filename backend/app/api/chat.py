@@ -855,23 +855,71 @@ def list_branches(thread_id: str):
 @router.get("/threads/{thread_id}/tree")
 def get_branch_tree(thread_id: str):
     from app.api.tree_helpers import load_thread_tree
+    from app.plan_parser import parse_plan
+    from pathlib import Path
 
     root_id, thread_map, by_parent = load_thread_tree(thread_id)
     if not root_id:
         return {"error": "Thread not found"}
 
-    def build_node(tid: str) -> dict[str, object]:
-        t = thread_map.get(tid, {})
-        return {
-            "thread_id": tid,
-            "title": t.get("title", ""),
-            "status": t.get("status", ""),
-            "phase": t.get("phase", ""),
-            "depth": t.get("depth", 0),
-            "children": [build_node(cid) for cid in by_parent.get(tid, [])],
-        }
+    # Load branch points for edge metadata
+    all_tids = list(thread_map.keys())
+    bps = list(mongo.branch_points().find({"thread_id": {"$in": all_tids}}))
 
-    return {"tree": build_node(root_id)}
+    # Build flat nodes
+    nodes = []
+    for tid, t in thread_map.items():
+        progress = None
+        topic_slug = getattr(t, "topic_slug", "") or ""
+        if topic_slug:
+            plan_path = Path(f"plans/{topic_slug}/plan.md")
+            if plan_path.exists():
+                tree = parse_plan(plan_path.read_text())
+                progress = tree.overall_progress
+
+        # Get first user message as first_question
+        first_msg = mongo.messages().find_one(
+            {"thread_id": tid, "role": "user"},
+            sort=[("created_at", 1)],
+        )
+
+        nodes.append({
+            "thread_id": tid,
+            "title": getattr(t, "title", "") or "",
+            "phase": getattr(t, "phase", "") or "",
+            "depth": getattr(t, "depth", 0) or 0,
+            "current_concept": getattr(t, "current_concept", None),
+            "summary": getattr(t, "summary", None),
+            "status": getattr(t, "status", "") or "",
+            "progress": progress,
+            "first_question": first_msg["content"] if first_msg else None,
+        })
+
+    # Build flat edges from branch points
+    edges = []
+    bp_child_ids = set()
+    for bp in bps:
+        child_id = bp.get("child_thread_id", "")
+        edges.append({
+            "source": bp.get("thread_id", ""),
+            "target": child_id,
+            "source_concept": bp.get("source_concept"),
+            "branch_topic": bp.get("branch_topic"),
+        })
+        bp_child_ids.add(child_id)
+
+    # Add edges for parent→child relationships not covered by branch points
+    for tid, t in thread_map.items():
+        parent_id = getattr(t, "parent_thread_id", None)
+        if parent_id and parent_id in thread_map and tid not in bp_child_ids:
+            edges.append({
+                "source": parent_id,
+                "target": tid,
+                "source_concept": None,
+                "branch_topic": getattr(t, "branch_text", None),
+            })
+
+    return {"nodes": nodes, "edges": edges}
 
 
 # ── Main Chat Endpoint (Agents SDK) ──────────────────────────────────────

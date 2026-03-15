@@ -78,7 +78,10 @@ async def get_hint(req: HintRequest) -> HintResponse:
         "- One sentence only\n"
         "- Point toward a direction, not the answer\n"
         "- If they have a draft, hint about something they haven't covered yet\n"
-        "- Be encouraging but not patronizing\n\n"
+        "- Be encouraging but not patronizing"
+    )
+
+    user_prompt = (
         f"Concept: {req.concept_name}\n\n"
         f"Recent conversation context:\n{conv_context}"
         f"{draft_context}"
@@ -86,7 +89,10 @@ async def get_hint(req: HintRequest) -> HintResponse:
 
     response = await _oai.chat.completions.create(
         model=MODEL,
-        messages=[{"role": "system", "content": system_prompt}],
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ],
         max_tokens=100,
     )
     hint_text = response.choices[0].message.content or "Think about the key relationships."
@@ -141,6 +147,10 @@ async def _score_feynman_submission(submission_id: str, req: SubmitRequest) -> N
             "- improvements: Specific actionable suggestions (list of strings)\n"
             "- feedback: A 2-3 sentence overall assessment\n"
             "- overall_score: Weighted average of the 4 dimensions (0.0-1.0)\n\n"
+            "Respond ONLY with a valid JSON object containing these fields. No other text."
+        )
+
+        user_prompt = (
             f"Concept: {req.concept_name}\n\n"
             f"Teaching conversation:\n{conv_context}"
             f"{hints_context}\n\n"
@@ -149,12 +159,19 @@ async def _score_feynman_submission(submission_id: str, req: SubmitRequest) -> N
 
         response = await _oai.chat.completions.create(
             model=MODEL,
-            messages=[{"role": "system", "content": system_prompt}],
-            response_format={"type": "json_object"},
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
             max_tokens=1000,
         )
 
-        scores = json.loads(response.choices[0].message.content or "{}")
+        raw = response.choices[0].message.content or "{}"
+        # Strip markdown code fences if present
+        if raw.strip().startswith("```"):
+            lines = raw.strip().splitlines()
+            raw = "\n".join(lines[1:-1] if lines[-1].strip() == "```" else lines[1:])
+        scores = json.loads(raw)
 
         mongo.test_results().update_one(
             {"_id": ObjectId(submission_id)},
