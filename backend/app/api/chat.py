@@ -673,6 +673,131 @@ async def create_branch(
     }
 
 
+@router.post("/threads/{thread_id}/start-phase")
+async def start_phase(thread_id: str):
+    """Create a child thread for the first phase of the plan."""
+    parent = mongo.threads().find_one({"_id": thread_id})
+    if not parent:
+        return {"error": "Thread not found"}
+
+    topic_slug = str(parent.get("topic_slug", ""))
+    if not topic_slug:
+        return {"error": "No plan associated with this thread"}
+
+    plan_path = PLANS_DIR / topic_slug / "plan.md"
+    if not plan_path.exists():
+        return {"error": "Plan not found"}
+
+    tree = parse_plan(plan_path.read_text())
+    if not tree.phases:
+        return {"error": "Plan has no phases"}
+
+    first_phase = tree.phases[0]
+
+    child = Thread(
+        user_id=str(parent["user_id"]),
+        title=f"Phase 1: {first_phase.title}",
+        topic_slug=topic_slug,
+        phase="teaching",
+        depth=1,
+        parent_thread_id=thread_id,
+        root_thread_id=str(parent.get("root_thread_id", thread_id)),
+        evermemos_group_id=str(uuid.uuid4()),
+    )
+    _ = mongo.threads().insert_one(child.to_doc())
+
+    # Transition root thread to teaching
+    apply_transition(
+        db_threads=mongo.threads(),
+        thread_id=thread_id,
+        new_phase="teaching",
+    )
+
+    return {
+        "thread_id": child.id,
+        "title": child.title,
+        "phase": "teaching",
+        "phase_number": 1,
+        "phase_title": first_phase.title,
+    }
+
+
+@router.post("/threads/{thread_id}/next-phase")
+async def create_next_phase_thread(thread_id: str):
+    """Create a sibling thread for the next phase of the plan."""
+    current = mongo.threads().find_one({"_id": thread_id})
+    if not current:
+        return {"error": "Thread not found"}
+
+    root_id = str(current.get("root_thread_id", current.get("parent_thread_id", "")))
+    root = mongo.threads().find_one({"_id": root_id})
+    if not root:
+        return {"error": "Root thread not found"}
+
+    topic_slug = str(current.get("topic_slug", "") or root.get("topic_slug", ""))
+    if not topic_slug:
+        return {"error": "No plan associated"}
+
+    plan_path = PLANS_DIR / topic_slug / "plan.md"
+    if not plan_path.exists():
+        return {"error": "Plan not found"}
+
+    tree = parse_plan(plan_path.read_text())
+
+    # Find the current phase by looking at which phases are complete
+    next_phase = None
+    current_phase_order = 0
+    for phase in tree.phases:
+        if phase.progress < 1.0:
+            next_phase = phase
+            current_phase_order = phase.order - 1
+            break
+
+    if not next_phase:
+        return {"error": "All phases completed", "plan_complete": True}
+
+    # Build context message about previous phases
+    completed_phases = [p for p in tree.phases if p.progress >= 1.0]
+    context_lines = []
+    for p in completed_phases:
+        concepts = ", ".join(c.name for c in p.concepts)
+        context_lines.append(f"- Phase {p.order} ({p.title}): completed — concepts covered: {concepts}")
+
+    phase_context = (
+        f"The user has just completed {len(completed_phases)} phase(s) of their learning plan "
+        f"and is now starting Phase {next_phase.order}: {next_phase.title}.\n\n"
+        f"Completed phases:\n" + "\n".join(context_lines)
+    )
+
+    child = Thread(
+        user_id=str(root["user_id"]),
+        title=f"Phase {next_phase.order}: {next_phase.title}",
+        topic_slug=topic_slug,
+        phase="teaching",
+        depth=1,
+        parent_thread_id=root_id,
+        root_thread_id=root_id,
+        evermemos_group_id=str(uuid.uuid4()),
+        parent_summary=phase_context,
+    )
+    _ = mongo.threads().insert_one(child.to_doc())
+
+    # Mark old thread as explored
+    _ = mongo.threads().update_one(
+        {"_id": thread_id},
+        {"$set": {"status": "explored", "closed_at": utcnow()}},
+    )
+
+    return {
+        "thread_id": child.id,
+        "title": child.title,
+        "phase": "teaching",
+        "phase_number": next_phase.order,
+        "phase_title": next_phase.title,
+        "phase_context": phase_context,
+    }
+
+
 @router.get("/threads/{thread_id}/branches")
 def list_branches(thread_id: str):
     bps = list(mongo.branch_points().find({"thread_id": thread_id}))
