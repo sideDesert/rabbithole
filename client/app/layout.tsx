@@ -5,7 +5,7 @@ import "./globals.css";
 import { AppSidebar, Tool } from "@/components/app-sidebar";
 import { Providers } from "@/components/providers";
 import { MainContent } from "@/components/main-content";
-import { LayoutDashboard, Network, Signature } from "lucide-react";
+import { Brain, LayoutDashboard, Network, Signature } from "lucide-react";
 
 const raleway = Raleway({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -23,6 +23,7 @@ const tools: Tool[] = [
   { name: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
   { name: "Study Plans", icon: Signature, href: "/study-plans" },
   { name: "Knowledge Graph", icon: Network, href: "/knowledge-graph" },
+  { name: "Memory Graph", icon: Brain, href: "/memory-graph" },
 ];
 
 export default function RootLayout({
@@ -32,6 +33,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={raleway.variable} suppressHydrationWarning>
+      <head>
+        <script
+          async
+          crossOrigin="anonymous"
+          src="https://tweakcn.com/live-preview.min.js"
+        />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background`}
       >
