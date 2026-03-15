@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 from datetime import datetime, timezone
 
 from bson import ObjectId
@@ -11,6 +12,9 @@ from pydantic import BaseModel
 
 from app.config import LLM_API_KEY, LLM_BASE_URL, DEFAULT_MODEL
 from app.db import mongo
+from app.memory import evermemos
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/feynman", tags=["feynman"])
 
@@ -184,6 +188,26 @@ async def _score_feynman_submission(submission_id: str, req: SubmitRequest) -> N
                 {"_id": ObjectId(submission_id)},
                 {"$set": {"mastery_update": mastery_result}},
             )
+
+            # Store Feynman results in EverMemOS
+            try:
+                weak_str = ", ".join(scores.get("weak_areas", [])) or "none"
+                await evermemos.store_memory(
+                    message_id=submission_id,
+                    content=(
+                        f"Feynman explanation test on '{req.concept_name}': "
+                        f"scored {scores.get('overall_score', 0.0):.2f}/1.0. "
+                        f"Weak areas: {weak_str}. "
+                        f"New mastery: {mastery_result['new_score']:.2f} ({mastery_result['tier']}). "
+                        f"Next review: {mastery_result['next_review']}"
+                    ),
+                    sender=str(thread["user_id"]),
+                    group_id=f"feynman_{thread['user_id']}",
+                    role="assistant",
+                    sender_name="Feynman",
+                )
+            except Exception as e:
+                logger.warning("Failed to store Feynman result in EverMemOS: %s", e)
     except Exception:
         mongo.test_results().update_one(
             {"_id": ObjectId(submission_id)},
