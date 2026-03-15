@@ -525,7 +525,7 @@ export interface KnowledgeConcept {
   confidence: number;
   description: string;
   weak_subconcepts: string[];
-  node_type?: "concept" | "topic_hub";
+  node_type?: "concept" | "topic_hub" | "memory_hub";
   display_name?: string;
   concept_count?: number;
 }

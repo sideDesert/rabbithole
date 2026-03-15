@@ -162,6 +162,38 @@ def get_knowledge_graph(user_id: str = "user_001", domain: str | None = None):
 
     domains = sorted(domain_concepts.keys())
 
+    # Central "Rabbithole Memory" node — connects to all topic hubs
+    if not domain and len(domain_concepts) > 0:
+        overall_avg = (
+            sum(d.get("mastery_score", 0) for d in concept_docs) / len(concept_docs)
+            if concept_docs else 0
+        )
+        nodes.append({
+            "name": "rabbithole-memory",
+            "mastery_score": round(overall_avg, 2),
+            "strength_trend": "stable",
+            "threads": [],
+            "last_reviewed": None,
+            "domain": "",
+            "source": "plan",
+            "confidence": 1.0,
+            "description": f"{len(concept_docs)} concepts across {len([d for d in domains if d])} topics",
+            "weak_subconcepts": [],
+            "node_type": "memory_hub",
+            "display_name": "Rabbithole Memory",
+            "concept_count": len(concept_docs),
+        })
+        # Connect memory hub to each topic hub
+        for d in domain_concepts:
+            if not d:
+                continue
+            edges.append({
+                "source": "rabbithole-memory",
+                "target": f"hub:{d}",
+                "type": "part_of",
+                "weight": 0.8,
+            })
+
     # Stats
     total = len(concept_docs)
     mastered = sum(1 for d in concept_docs if d.get("mastery_score", 0) >= 0.7)

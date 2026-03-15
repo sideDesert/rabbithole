@@ -23,12 +23,17 @@ import { useKnowledgeGraph } from "@/hooks/use-knowledge-graph";
 import { layoutGraph } from "@/lib/graph-layout";
 import { ConceptNode } from "@/components/graph/concept-node";
 import { TopicHubNode } from "@/components/graph/topic-hub-node";
+import { MemoryHubNode } from "@/components/graph/memory-hub-node";
 import { TrailEdge } from "@/components/graph/trail-edge";
 import { PreviewPanel } from "@/components/graph/preview-panel";
 import { Button } from "@/components/ui/button";
 import type { KnowledgeConcept, GraphStats } from "@/lib/api";
 
-const nodeTypes: NodeTypes = { concept: ConceptNode, topic_hub: TopicHubNode };
+const nodeTypes: NodeTypes = {
+  concept: ConceptNode,
+  topic_hub: TopicHubNode,
+  memory_hub: MemoryHubNode,
+};
 const edgeTypes: EdgeTypes = { trail: TrailEdge };
 
 /* ── Stats Bar ─────────────────────────────────────────────────────────── */
@@ -160,21 +165,29 @@ function KnowledgeGraphInner() {
   const layouted = useMemo(() => {
     if (!data?.nodes?.length) return { nodes: [] as Node[], edges: [] as Edge[] };
 
-    const rfNodes: Node[] = data.nodes.map((c) => ({
-      id: c.name,
-      type: c.node_type === "topic_hub" ? "topic_hub" : "concept",
-      position: { x: 0, y: 0 },
-      data: {
-        name: c.name,
-        display_name: c.display_name ?? c.name,
-        mastery_score: c.mastery_score,
-        strength_trend: c.strength_trend,
-        domain: c.domain,
-        source: c.source,
-        confidence: c.confidence,
-        concept_count: c.concept_count ?? 0,
-      },
-    }));
+    const rfNodes: Node[] = data.nodes.map((c) => {
+      let nodeType = "concept";
+      if (c.node_type === "topic_hub") nodeType = "topic_hub";
+      if (c.node_type === "memory_hub") nodeType = "memory_hub";
+
+      return {
+        id: c.name,
+        type: nodeType,
+        position: { x: 0, y: 0 },
+        data: {
+          name: c.name,
+          node_type: c.node_type ?? "concept",
+          display_name: c.display_name ?? c.name,
+          mastery_score: c.mastery_score,
+          strength_trend: c.strength_trend,
+          domain: c.domain,
+          source: c.source,
+          confidence: c.confidence,
+          concept_count: c.concept_count ?? 0,
+          description: c.description ?? "",
+        },
+      };
+    });
 
     const rfEdges: Edge[] = data.edges.map((e) => ({
       id: `e-${e.source}-${e.target}-${e.type}`,
