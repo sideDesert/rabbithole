@@ -4,6 +4,8 @@ from app.db.mongo import (
     branch_points,
     concept_mastery,
     learning_sessions,
+    memory_entities,
+    memory_relationships,
     messages,
     review_schedule,
     test_results,
@@ -47,5 +49,23 @@ def ensure_indexes():
     # learning_sessions
     _ = learning_sessions().create_index([("root_thread_id", ASCENDING)])
     _ = learning_sessions().create_index([("ended_at", ASCENDING)])
+
+    # memory_entities
+    _ = memory_entities().create_index(
+        [("user_id", ASCENDING), ("type", ASCENDING), ("slug", ASCENDING)],
+        unique=True,
+    )
+    _ = memory_entities().create_index(
+        [("user_id", ASCENDING), ("domain", ASCENDING)]
+    )
+
+    # memory_relationships
+    _ = memory_relationships().create_index(
+        [("user_id", ASCENDING), ("from_slug", ASCENDING), ("to_slug", ASCENDING), ("type", ASCENDING)],
+        unique=True,
+    )
+    _ = memory_relationships().create_index(
+        [("user_id", ASCENDING), ("type", ASCENDING)]
+    )
 
     print("\033[34m[SYSTEM]\033[0m: MongoDB indexes ensured.")

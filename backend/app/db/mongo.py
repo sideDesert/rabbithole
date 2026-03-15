@@ -60,3 +60,11 @@ def feynman_hints() -> Collection[dict[str, Any]]:
 
 def concept_relationships() -> Collection[dict[str, Any]]:
     return get_db()["concept_relationships"]
+
+
+def memory_entities() -> Collection[dict[str, Any]]:
+    return get_db()["memory_entities"]
+
+
+def memory_relationships() -> Collection[dict[str, Any]]:
+    return get_db()["memory_relationships"]
