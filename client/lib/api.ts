@@ -24,6 +24,7 @@ export type SSEEvent =
   | { type: "plan_created"; topic_slug: string }
   | { type: "interview_questions"; questions: InterviewQuestion[] }
   | { type: "feynman_prompt"; concept_name: string }
+  | { type: "branch_suggestion"; topic: string; reason: string }
   | { type: "message_id"; role: "user" | "assistant"; message_id: string }
   | { type: "title_update"; title: string }
   | { type: "end"; duration_ms?: number }

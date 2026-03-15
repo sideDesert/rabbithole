@@ -17,6 +17,7 @@ import {
   MODE_TAGGED,
   PromptInput,
 } from "@/components/prompt-input";
+import { BranchSuggestionCard } from "@/components/branch-suggestion-card";
 import { FeynmanModal } from "@/components/feynman-modal";
 import { TextSelectionMenu } from "@/components/text-selection-menu";
 import { useChat } from "@/hooks/use-chat";
@@ -81,6 +82,8 @@ export default function Page({
     feynmanConcept,
     openFeynman,
     dismissFeynman,
+    branchSuggestion,
+    dismissBranchSuggestion,
   } = useChat({
     threadId,
     onPlanCreated: (slug) => setTopicSlug(slug),
@@ -178,6 +181,7 @@ export default function Page({
 
   const { branch, isPending: isBranching } = useBranchout({
     onSuccess: (res, vars) => {
+      dismissBranchSuggestion();
       router.push(
         `/threads/${res.thread_id}?msg=${encodeURIComponent(vars.title ?? tagged)}`,
       );
@@ -251,6 +255,22 @@ export default function Page({
             />
           );
         })}
+        {branchSuggestion && (
+          <BranchSuggestionCard
+            topic={branchSuggestion.topic}
+            reason={branchSuggestion.reason}
+            loading={isBranching}
+            onBranch={() => {
+              branch({
+                messageId: branchSuggestion.messageId,
+                threadId,
+                branchText: branchSuggestion.topic,
+                title: branchSuggestion.topic,
+              });
+            }}
+            onDismiss={dismissBranchSuggestion}
+          />
+        )}
       </div>
       {interviewQuestions ? (
         <InterviewWidget

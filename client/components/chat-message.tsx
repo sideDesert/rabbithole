@@ -73,6 +73,7 @@ const TOOL_ICONS: Record<string, LucideIcon> = {
   read_plan: FileText,
   update_plan_progress: ListChecks,
   suggest_branches: GitBranch,
+  offer_branch: GitBranch,
 };
 
 function pickRandom() {
