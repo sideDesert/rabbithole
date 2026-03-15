@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Tree, type NodeRendererProps } from "react-arborist";
 import {
@@ -201,11 +202,11 @@ export function TopicDetail({
           </div>
           <div className="flex items-center gap-3 shrink-0">
             <ProgressRing progress={topic.progress} />
-            <Button asChild>
-              <a href={`/threads/${topic.latest_thread.id}`}>
+            <Link href={`/threads/${topic.latest_thread.id}`}>
+              <Button>
                 Continue <ArrowRight className="ml-1 size-4" />
-              </a>
-            </Button>
+              </Button>
+            </Link>
           </div>
         </div>
       </div>
