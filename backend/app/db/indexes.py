@@ -6,6 +6,7 @@ from app.db.mongo import (
     learning_sessions,
     messages,
     review_schedule,
+    test_results,
     threads,
 )
 
@@ -33,6 +34,14 @@ def ensure_indexes():
     # review_schedule
     _ = review_schedule().create_index(
         [("status", ASCENDING), ("scheduled_for", ASCENDING)]
+    )
+    _ = review_schedule().create_index(
+        [("user_id", ASCENDING), ("status", ASCENDING), ("scheduled_for", ASCENDING)]
+    )
+
+    # test_results
+    _ = test_results().create_index(
+        [("user_id", ASCENDING), ("created_at", ASCENDING)]
     )
 
     # learning_sessions

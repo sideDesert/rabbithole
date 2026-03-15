@@ -22,6 +22,7 @@ class ConceptMastery(MongoBase):
 class ReviewSchedule(MongoBase):
     user_id: str
     concept_id: str
+    topic_slug: str = ""
     scheduled_for: datetime
     status: Literal["pending", "triggered", "completed", "skipped"] = "pending"
     triggered_at: datetime | None = None
@@ -30,29 +31,34 @@ class ReviewSchedule(MongoBase):
 
 
 class TestScores(BaseModel):
-    clarity: float
-    accuracy: float
-    depth: float
-    transferability: float
+    clarity: float = 0.0
+    accuracy: float = 0.0
+    depth: float = 0.0
+    transferability: float = 0.0
 
 
 class TestResult(MongoBase):
     user_id: str
     concept_id: str
-    thread_id: str
-    test_type: Literal["feynman", "conceptual", "application"]
-    question: str
-    user_response: str
-    scores: TestScores
-    overall_score: float
-    feedback: str
+    thread_id: str = ""
+    test_type: Literal["feynman", "conceptual", "application", "ebbinghaus"]
+    question: str = ""
+    user_response: str = ""
+    scores: TestScores = Field(default_factory=TestScores)
+    overall_score: float = 0.0
+    feedback: str = ""
+    status: Literal["in_progress", "scoring", "scored", "failed"] | None = None
     # Feynman-specific fields
-    status: Literal["scoring", "scored", "failed"] | None = None
     strong_topics: list[str] = Field(default_factory=list)
     weak_areas: list[str] = Field(default_factory=list)
     missed_topics: list[str] = Field(default_factory=list)
     improvements: list[str] = Field(default_factory=list)
     hint_ids: list[str] = Field(default_factory=list)
+    # Ebbinghaus-specific fields
+    topic_slug: str = ""
+    questions: list[dict] = Field(default_factory=list)
+    answers: list[dict] = Field(default_factory=list)
+    per_question_results: list[dict] = Field(default_factory=list)
 
 
 class LearningSession(MongoBase):

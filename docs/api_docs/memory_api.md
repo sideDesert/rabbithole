@@ -6,7 +6,31 @@
 
 The Memory API provides RESTful endpoints for storing, retrieving, searching, and managing conversational memories.
 
-**Base URL:** `http://localhost:1995/api/v1/memories`
+**Cloud Base URL:** `https://api.evermind.ai/api/v0`
+**Open-Source Base URL:** `https://api.evermind.ai/api/v0`
+
+### Authentication (Cloud)
+
+All Cloud API requests require Bearer token authentication:
+
+```
+Authorization: Bearer <EVERMEMOS_API_KEY>
+```
+
+### Python SDK
+
+```bash
+pip install evermemos
+```
+
+```python
+from evermemos import EverMemOS
+
+client = EverMemOS(api_key="<api_key>")
+memory = client.v0.memories
+meta = client.v0.memories.conversation_meta
+status = client.v0.status
+```
 
 ## API Endpoints
 
@@ -19,6 +43,7 @@ The Memory API provides RESTful endpoints for storing, retrieving, searching, an
 | POST | `/memories/conversation-meta` | Save conversation metadata |
 | PATCH | `/memories/conversation-meta` | Partial update metadata |
 | DELETE | `/memories` | Soft delete memories |
+| GET | `/status/request` | Track async extraction status (Cloud) |
 
 ---
 
@@ -55,6 +80,7 @@ Store a single message into memory.
 | `sender_name` | string | No | Sender display name (defaults to `sender`) |
 | `role` | string | No | `user` (human) or `assistant` (AI) |
 | `refer_list` | array | No | Referenced message IDs |
+| `flush` | boolean | No | Force boundary trigger. When `true`, immediately triggers memory extraction instead of waiting for natural boundary detection. Set on the final message of a conversation batch. |
 
 ### Group ID Behavior
 
@@ -75,7 +101,7 @@ Providing a `group_id` enables better episodic memory extraction by giving the s
 ### Example
 
 ```bash
-curl -X POST "http://localhost:1995/api/v1/memories" \
+curl -X POST "https://api.evermind.ai/api/v0/memories" \
   -H "Content-Type: application/json" \
   -d '{
     "message_id": "msg_001",
@@ -151,7 +177,7 @@ Retrieve memories by type with optional filters.
 ### Example
 
 ```bash
-curl "http://localhost:1995/api/v1/memories?user_id=user_123&memory_type=episodic_memory&limit=20"
+curl "https://api.evermind.ai/api/v0/memories?user_id=user_123&memory_type=episodic_memory&limit=20"
 ```
 
 ### Response
@@ -218,11 +244,15 @@ Search memories using keyword, vector, or hybrid retrieval methods.
 | `end_time` | string | No | - | Filter end time (ISO 8601) |
 | `radius` | float | No | - | Cosine similarity threshold (0.0-1.0, for vector/hybrid only) |
 | `include_metadata` | boolean | No | true | Include metadata in response |
-| `current_time` | string | No | - | Current time for filtering foresight events |
+| `current_time` | string | No | - | ISO 8601 UTC timestamp. Used to filter foresight memories within their validity period (`start_time` ≤ `current_time` ≤ `end_time`). |
 
 *At least one of `user_id` or `group_id` must be provided (cannot both be `__all__`).
 
-**Note:** `profile` memory type is not supported in the search interface.
+**Note on `memory_types` search support:**
+- `episodic_memory` — full search support (all retrieve methods)
+- `profile` — vector search only (Milvus cosine similarity), not supported via keyword/rrf/hybrid
+- `foresight` — use `GET /memories?memory_type=foresight` with time filtering instead of search. The `current_time` parameter on search filters foresight results by validity window.
+- `event_log` — use `GET /memories?memory_type=event_log` for fetch; not yet fully supported for search.
 
 ### Retrieve Methods
 
@@ -237,7 +267,7 @@ Search memories using keyword, vector, or hybrid retrieval methods.
 ### Example
 
 ```bash
-curl -X GET "http://localhost:1995/api/v1/memories/search" \
+curl -X GET "https://api.evermind.ai/api/v0/memories/search" \
   -H "Content-Type: application/json" \
   -d '{
     "query": "coffee preference",
@@ -316,7 +346,7 @@ Retrieve conversation metadata by group_id with fallback to default config.
 ### Example
 
 ```bash
-curl "http://localhost:1995/api/v1/memories/conversation-meta?group_id=group_123"
+curl "https://api.evermind.ai/api/v0/memories/conversation-meta?group_id=group_123"
 ```
 
 ### Response
@@ -466,7 +496,7 @@ At least one filter must be provided (not all `__all__`).
 
 ```bash
 # Delete all memories for a user in a group
-curl -X DELETE "http://localhost:1995/api/v1/memories" \
+curl -X DELETE "https://api.evermind.ai/api/v0/memories" \
   -H "Content-Type: application/json" \
   -d '{"user_id": "user_123", "group_id": "group_456"}'
 ```
@@ -495,7 +525,7 @@ For batch processing GroupChatFormat JSON files:
 uv run python src/bootstrap.py src/run_memorize.py \
   --input data/group_chat.json \
   --scene group_chat \
-  --api-url http://localhost:1995/api/v1/memories
+  --api-url https://api.evermind.ai/api/v0/memories
 
 # Validate format only
 uv run python src/bootstrap.py src/run_memorize.py \
@@ -541,8 +571,136 @@ All error responses follow this format:
 
 ---
 
+## GET `/status/request` - Track Extraction Status (Cloud)
+
+Track the async processing status of a memory submission.
+
+### Request Parameters (Query String)
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `request_id` | string | Yes | The `request_id` returned by `POST /memories` |
+
+### Example
+
+```bash
+curl "https://api.evermind.ai/api/v0/status/request?request_id=abc123" \
+  -H "Authorization: Bearer <api_key>"
+```
+
+### Response
+
+```json
+{
+  "success": true,
+  "found": true,
+  "data": {
+    "request_id": "abc123",
+    "status": "completed",
+    "url": "/api/v0/memories",
+    "method": "POST",
+    "http_code": 200,
+    "time_ms": 1523,
+    "start_time": "2025-01-15T10:00:00Z",
+    "end_time": "2025-01-15T10:00:01.523Z",
+    "ttl_seconds": 86400
+  },
+  "message": "Request found"
+}
+```
+
+### Python SDK
+
+```python
+response = client.v0.status.request.get(request_id="abc123")
+```
+
+---
+
+## Foresight Memory Reference
+
+Foresight memories are time-bounded predictions extracted automatically from conversations. They are critical for proactive scheduling (e.g., spaced repetition reviews).
+
+### Extraction Rules
+
+- **Only extracted in `assistant` scene mode** — group_chat scenes do NOT generate foresight memories
+- ~4-10 foresight records generated per MemCell
+- Each foresight has a validity window defined by `start_time` and `end_time`
+- Default 1-hour window for ambiguous time references
+
+### Foresight Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `foresight` | string | The prediction/reminder text |
+| `evidence` | string | Evidence from the conversation that supports this foresight |
+| `start_time` | string | Start of validity window (ISO 8601) |
+| `end_time` | string | End of validity window (ISO 8601) |
+| `duration_days` | number | Duration of the foresight window in days |
+| `parent_type` | string | Type of parent memory (e.g., "memcell") |
+| `parent_id` | string | ID of the parent memory |
+| `user_id` | string | User this foresight belongs to |
+| `group_id` | string | Group this foresight belongs to |
+
+### Fetching Active Foresights
+
+To get foresight memories valid at a specific time:
+
+```bash
+# Fetch all foresights for a user
+curl "https://api.evermind.ai/api/v0/memories?user_id=user_001&memory_type=foresight" \
+  -H "Authorization: Bearer <api_key>"
+
+# Search with current_time filtering (filters to foresights valid at that moment)
+curl -X GET "https://api.evermind.ai/api/v0/memories/search" \
+  -H "Authorization: Bearer <api_key>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_id": "user_001",
+    "query": "review needed",
+    "memory_types": ["foresight"],
+    "current_time": "2025-03-14T10:00:00Z",
+    "retrieve_method": "rrf"
+  }'
+```
+
+### Python SDK
+
+```python
+# Fetch foresights
+response = memory.get(extra_query={
+    "user_id": "user_001",
+    "memory_type": "foresight"
+})
+
+# Search with current_time
+response = memory.search(extra_query={
+    "user_id": "user_001",
+    "query": "upcoming review",
+    "memory_types": ["foresight"],
+    "current_time": "2025-03-14T10:00:00Z"
+})
+```
+
+---
+
+## Scene Modes & Memory Extraction
+
+The `scene` field on conversation metadata controls which memory types are extracted:
+
+| Scene | Episodic | Foresight | EventLog | Profile |
+|-------|----------|-----------|----------|---------|
+| `assistant` (1:1 AI) | Yes | Yes | Yes | Yes |
+| `group_chat` (multi-user) | Yes | No | No | Yes |
+
+**Important:** Scene mode is immutable once the space contains data. Set it correctly when creating conversation metadata.
+
+---
+
 ## See Also
 
 - [Group Chat Guide](../advanced/GROUP_CHAT_GUIDE.md) - Multi-participant conversations
 - [Metadata Control Guide](../advanced/METADATA_CONTROL.md) - Conversation metadata management
 - [GroupChatFormat Specification](../../data_format/group_chat/group_chat_format.md) - Data format reference
+- [Retrieval Strategies](../advanced/RETRIEVAL_STRATEGIES.md) - Choosing the right retrieval method
+- [Memory Types Guide](../dev_docs/memory_types_guide.md) - Deep dive on MemCell → memory extraction flow

@@ -328,6 +328,137 @@ export async function submitFeynmanExplanation(
   return res.json();
 }
 
+// ── Ebbinghaus (Testing Agent) ───────────────────────────────────────────
+
+export interface EbbinghausQuestion {
+  id: string;
+  type:
+    | "mcq_single"
+    | "mcq_multi"
+    | "freeform"
+    | "cloze"
+    | "teach_back"
+    | "scenario";
+  question: string;
+  options: string[] | null;
+  explanation_hint: string | null;
+}
+
+export interface GenerateTestResponse {
+  test_id: string;
+  concept_name: string;
+  questions: EbbinghausQuestion[];
+  error?: string;
+  message?: string;
+}
+
+export interface QuestionFeedback {
+  question_id: string;
+  correct: boolean;
+  score: number;
+  feedback: string;
+}
+
+export interface TestSubmitResponse {
+  test_id: string;
+  overall_score: number;
+  scores: {
+    clarity: number;
+    accuracy: number;
+    depth: number;
+    transferability: number;
+  };
+  per_question: QuestionFeedback[];
+  feedback: string;
+  weak_areas: string[];
+  mastery_update: {
+    previous_score: number;
+    new_score: number;
+    tier: string;
+    next_review: string;
+  };
+}
+
+export interface PendingTest {
+  id: string;
+  concept_name: string;
+  topic_slug: string;
+  scheduled_for: string;
+  status: string;
+  mastery_score: number;
+  mastery_tier: string;
+}
+
+export interface TestableTopicConcept {
+  name: string;
+  mastery_score: number | null;
+  mastery_tier: string | null;
+}
+
+export interface TestableTopic {
+  topic_slug: string;
+  topic_name: string;
+  concepts: TestableTopicConcept[];
+}
+
+export async function getPendingTests(): Promise<{ tests: PendingTest[] }> {
+  const res = await fetch(`${API_BASE}/ebbinghaus/pending`);
+  if (!res.ok) throw new Error("Failed to fetch pending tests");
+  return res.json();
+}
+
+export async function getTestableTopics(): Promise<{
+  topics: TestableTopic[];
+}> {
+  const res = await fetch(`${API_BASE}/ebbinghaus/topics`);
+  if (!res.ok) throw new Error("Failed to fetch testable topics");
+  return res.json();
+}
+
+export async function generateTest(
+  conceptName: string,
+  topicSlug: string,
+): Promise<GenerateTestResponse> {
+  const res = await fetch(`${API_BASE}/ebbinghaus/generate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      concept_name: conceptName,
+      topic_slug: topicSlug,
+    }),
+  });
+  if (!res.ok) throw new Error("Failed to generate test");
+  return res.json();
+}
+
+export async function submitTest(
+  testId: string,
+  answers: { question_id: string; answer: string }[],
+): Promise<TestSubmitResponse> {
+  const res = await fetch(`${API_BASE}/ebbinghaus/submit`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ test_id: testId, answers }),
+  });
+  if (!res.ok) throw new Error("Failed to submit test");
+  return res.json();
+}
+
+export async function getTestHistory(): Promise<{
+  results: {
+    id: string;
+    concept_name: string;
+    topic_slug: string;
+    overall_score: number;
+    feedback: string;
+    created_at: string;
+  }[];
+}> {
+  const res = await fetch(`${API_BASE}/ebbinghaus/history`);
+  if (!res.ok) throw new Error("Failed to fetch test history");
+  return res.json();
+}
+
 // ── Graph Views ──────────────────────────────────────────────────────────
 
 export interface ThreadMapNode {

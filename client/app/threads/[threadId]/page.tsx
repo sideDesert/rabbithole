@@ -65,7 +65,8 @@ export default function Page({
   // Sync route param into PlanContext so PlanView can fetch progress
   useEffect(() => {
     setThreadId(threadId);
-  }, [threadId, setThreadId]);
+    if (thread?.topic_slug) setTopicSlug(thread.topic_slug);
+  }, [threadId, setThreadId, thread?.topic_slug, setTopicSlug]);
 
   const {
     send,

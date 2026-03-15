@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useThreads } from "@/hooks/use-threads";
-import { useQueries } from "@tanstack/react-query";
-import { getProgress, type Thread } from "@/lib/api";
+import { useQueries, useQuery } from "@tanstack/react-query";
+import { getProgress, getPendingTests, type Thread, type PendingTest } from "@/lib/api";
 import {
   Card,
   CardContent,
@@ -106,6 +106,96 @@ function ThreadCard({
   );
 }
 
+const TIER_VARIANTS: Record<string, "destructive" | "secondary" | "default" | "outline"> = {
+  weak: "destructive",
+  medium: "secondary",
+  strong: "default",
+  mastered: "outline",
+};
+
+function TestCard({ test }: { test: PendingTest }) {
+  return (
+    <Link
+      href={`/ebbinghaus/test?concept=${encodeURIComponent(test.concept_name)}&topic=${encodeURIComponent(test.topic_slug)}`}
+      className="block h-full"
+    >
+      <Card
+        size="sm"
+        className="hover:ring-foreground/20 transition-shadow cursor-pointer h-full flex flex-col"
+      >
+        <CardHeader>
+          <CardTitle className="line-clamp-2 text-base">
+            {test.concept_name}
+          </CardTitle>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <Badge variant={TIER_VARIANTS[test.mastery_tier] || "secondary"}>
+              {test.mastery_tier}
+            </Badge>
+            <Badge variant="outline">
+              {Math.round(test.mastery_score * 100)}%
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent className="flex-1">
+          <p className="text-xs text-muted-foreground">
+            Due: {new Date(test.scheduled_for).toLocaleDateString()}
+          </p>
+        </CardContent>
+        <CardFooter>
+          <Button variant="ghost" size="sm" className="ml-auto">
+            Start Test <ChevronRightIcon className="ml-1 size-4" />
+          </Button>
+        </CardFooter>
+      </Card>
+    </Link>
+  );
+}
+
+function TestsSection() {
+  const { data, isLoading } = useQuery({
+    queryKey: ["ebbinghaus-pending"],
+    queryFn: getPendingTests,
+    refetchInterval: 60_000,
+  });
+
+  const tests = data?.tests ?? [];
+
+  return (
+    <div>
+      <Heading>Tests</Heading>
+      {isLoading && (
+        <p className="text-muted-foreground text-sm mt-4">Loading...</p>
+      )}
+      {!isLoading && tests.length === 0 && (
+        <p className="text-muted-foreground text-sm mt-4">
+          No upcoming tests.{" "}
+          <Link href="/ebbinghaus" className="underline">
+            Test yourself
+          </Link>
+        </p>
+      )}
+      {!isLoading && tests.length > 0 && (
+        <div className="mt-4 px-14">
+          <Carousel opts={{ align: "start" }}>
+            <CarouselContent className="-ml-4 p-2">
+              {tests.slice(0, 5).map((test) => (
+                <CarouselItem
+                  key={test.id}
+                  className="pl-4 basis-1/2 sm:basis-1/3 lg:basis-1/4"
+                >
+                  <TestCard test={test} />
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            <CarouselPrevious />
+            <CarouselNext />
+          </Carousel>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Page() {
   const { threads, isLoading } = useThreads();
 
@@ -168,9 +258,7 @@ export default function Page() {
             </div>
           )}
         </div>
-        <div>
-          <Heading>Tests</Heading>
-        </div>
+        <TestsSection />
         <div>
           <Heading>Suggestions</Heading>
         </div>

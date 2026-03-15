@@ -42,7 +42,7 @@ interface PromptInputInterface {
     goBack?: boolean;
     branchout?: boolean;
   };
-  ref: React.Ref<HTMLElement | null>;
+  ref?: React.Ref<HTMLElement | null>;
 }
 export function PromptInput({
   className,
@@ -122,7 +122,7 @@ export function PromptInput({
                 </Button>
               ))}
               <Input
-                ref={ref}
+                ref={ref as React.Ref<HTMLInputElement>}
                 value={value}
                 onChange={(e) => setValue(e.target.value)}
                 onKeyDown={(e) => {
