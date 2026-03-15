@@ -126,7 +126,7 @@ def get_knowledge_graph(user_id: str = "user_001", domain: str | None = None):
             "source": from_c,
             "target": to_c,
             "type": doc.get("type", "prerequisite_of"),
-            "weight": doc.get("weight", 1.0),
+            "weight": 0.3 if doc.get("type") == "prerequisite_of" else doc.get("weight", 1.0),
         })
 
     # Create topic hub nodes — one per domain
@@ -150,14 +150,46 @@ def get_knowledge_graph(user_id: str = "user_001", domain: str | None = None):
             "display_name": d.replace("-", " ").title(),
             "concept_count": len(concepts),
         })
-        # Connect first concept in this domain to the hub
-        first_concept = concepts[0]["name"] if concepts else None
-        if first_concept:
+        # Connect ALL concepts to their topic hub
+        for concept in concepts:
             edges.append({
                 "source": hub_name,
-                "target": first_concept,
+                "target": concept["name"],
                 "type": "part_of",
-                "weight": 1.0,
+                "weight": 0.6,
+            })
+
+    # Add thread nodes
+    thread_docs = list(mongo.threads().find({"user_id": user_id} if user_id != "user_001" else {}))
+    for tdoc in thread_docs:
+        tid = str(tdoc["_id"])
+        t_slug = tdoc.get("topic_slug", "")
+        t_hub = f"hub:{t_slug}" if t_slug else None
+        nodes.append({
+            "name": f"thread:{tid}",
+            "mastery_score": 0,
+            "strength_trend": "stable",
+            "threads": [tid],
+            "last_reviewed": None,
+            "domain": t_slug,
+            "source": "plan",
+            "confidence": 1.0,
+            "description": tdoc.get("summary", "") or "",
+            "weak_subconcepts": [],
+            "node_type": "thread",
+            "display_name": tdoc.get("title", "Untitled")[:40],
+            "concept_count": 0,
+            "thread_phase": tdoc.get("phase", ""),
+            "thread_status": tdoc.get("status", ""),
+            "thread_depth": tdoc.get("depth", 0),
+        })
+        # Connect thread to its topic hub
+        if t_hub and t_slug in domain_concepts:
+            edges.append({
+                "source": t_hub,
+                "target": f"thread:{tid}",
+                "type": "explored_from",
+                "weight": 0.5,
             })
 
     domains = sorted(domain_concepts.keys())

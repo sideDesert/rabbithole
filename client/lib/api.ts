@@ -525,9 +525,12 @@ export interface KnowledgeConcept {
   confidence: number;
   description: string;
   weak_subconcepts: string[];
-  node_type?: "concept" | "topic_hub" | "memory_hub";
+  node_type?: "concept" | "topic_hub" | "memory_hub" | "thread";
   display_name?: string;
   concept_count?: number;
+  thread_phase?: string;
+  thread_status?: string;
+  thread_depth?: number;
 }
 
 export interface KnowledgeEdge {

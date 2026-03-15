@@ -61,16 +61,18 @@ export function layoutGraph(
 
   // Strong repulsion to prevent overlapping
   const chargeStrength = (d: ForceNode) => {
-    if (d.id === "rabbithole-memory") return -2000;
-    if (d.nodeType === "topic_hub") return -800;
-    return -400;
+    if (d.id === "rabbithole-memory") return -3000;
+    if (d.nodeType === "topic_hub") return -1500;
+    if (d.nodeType === "thread") return -300;
+    return -600;
   };
 
   // Large collision radius to create gaps between nodes
   const collisionRadius = (d: ForceNode) => {
-    if (d.id === "rabbithole-memory") return 120;
-    if (d.nodeType === "topic_hub") return 100;
-    return 70; // half of nodeWidth ≈ 125, plus padding
+    if (d.id === "rabbithole-memory") return 180;
+    if (d.nodeType === "topic_hub") return 140;
+    if (d.nodeType === "thread") return 60;
+    return 90;
   };
 
   const simulation = forceSimulation<ForceNode>(simNodes)
@@ -82,9 +84,10 @@ export function layoutGraph(
           const src = link.source as ForceNode;
           const tgt = link.target as ForceNode;
           // Longer distance for hub-to-hub, shorter for concept chains
-          if (src.id === "rabbithole-memory" || tgt.id === "rabbithole-memory") return 300;
-          if (src.nodeType === "topic_hub" || tgt.nodeType === "topic_hub") return 200;
-          return 120;
+          if (src.id === "rabbithole-memory" || tgt.id === "rabbithole-memory") return 450;
+          if (src.nodeType === "topic_hub" || tgt.nodeType === "topic_hub") return 280;
+          if (src.nodeType === "thread" || tgt.nodeType === "thread") return 200;
+          return 150;
         })
         .strength(0.4),
     )
@@ -96,7 +99,7 @@ export function layoutGraph(
     .stop();
 
   // Run simulation — more iterations for better convergence
-  for (let i = 0; i < 500; i++) {
+  for (let i = 0; i < 600; i++) {
     simulation.tick();
   }
 

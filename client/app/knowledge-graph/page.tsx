@@ -17,7 +17,7 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useTheme } from "next-themes";
-import { Network } from "lucide-react";
+import { Network, MessageSquare } from "lucide-react";
 
 import { useKnowledgeGraph } from "@/hooks/use-knowledge-graph";
 import { layoutGraph } from "@/lib/graph-layout";
@@ -25,6 +25,7 @@ import { ConceptNode } from "@/components/graph/concept-node";
 import { TopicHubNode } from "@/components/graph/topic-hub-node";
 import { MemoryHubNode } from "@/components/graph/memory-hub-node";
 import { TrailEdge } from "@/components/graph/trail-edge";
+import { KgThreadNode } from "@/components/graph/kg-thread-node";
 import { PreviewPanel } from "@/components/graph/preview-panel";
 import { Button } from "@/components/ui/button";
 import type { KnowledgeConcept, GraphStats } from "@/lib/api";
@@ -33,6 +34,7 @@ const nodeTypes: NodeTypes = {
   concept: ConceptNode,
   topic_hub: TopicHubNode,
   memory_hub: MemoryHubNode,
+  thread: KgThreadNode,
 };
 const edgeTypes: EdgeTypes = { trail: TrailEdge };
 
@@ -94,6 +96,21 @@ function EdgeLegend() {
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded-full" style={{ background: "hsl(142, 71%, 45%)" }} />
           <span className="text-[10px] text-muted-foreground">Mastered</span>
+        </div>
+      </div>
+      <div className="border-t border-border pt-2 space-y-2">
+        <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Nodes</p>
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 rounded-sm border" style={{ borderColor: "#64748b" }} />
+          <span className="text-[10px] text-muted-foreground">Concept</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 rounded-sm" style={{ background: "hsl(200, 60%, 25%)" }} />
+          <span className="text-[10px] text-muted-foreground">Topic</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <MessageSquare className="size-3 text-muted-foreground" />
+          <span className="text-[10px] text-muted-foreground">Thread</span>
         </div>
       </div>
       <p className="text-[9px] text-muted-foreground/60 italic">Opacity = relationship strength</p>
@@ -169,6 +186,7 @@ function KnowledgeGraphInner() {
       let nodeType = "concept";
       if (c.node_type === "topic_hub") nodeType = "topic_hub";
       if (c.node_type === "memory_hub") nodeType = "memory_hub";
+      if (c.node_type === "thread") nodeType = "thread";
 
       return {
         id: c.name,
@@ -185,6 +203,9 @@ function KnowledgeGraphInner() {
           confidence: c.confidence,
           concept_count: c.concept_count ?? 0,
           description: c.description ?? "",
+          thread_phase: c.thread_phase ?? "",
+          thread_status: c.thread_status ?? "",
+          thread_depth: c.thread_depth ?? 0,
         },
       };
     });
@@ -315,7 +336,27 @@ function KnowledgeGraphInner() {
       <PreviewPanel open={!!selectedConcept} onClose={closePanel}>
         {selectedConcept && (
           <div className="space-y-3">
-            {selectedConcept.node_type === "topic_hub" ? (
+            {selectedConcept.node_type === "thread" ? (
+              <div>
+                <h3 className="font-semibold text-sm">{selectedConcept.display_name ?? selectedConcept.name}</h3>
+                <p className="text-xs text-muted-foreground mt-1 capitalize">
+                  Phase: {selectedConcept.thread_phase} | Status: {selectedConcept.thread_status}
+                </p>
+                {selectedConcept.description && (
+                  <p className="text-xs text-muted-foreground mt-2">{selectedConcept.description}</p>
+                )}
+                {selectedConcept.threads.length > 0 && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="w-full mt-3 text-xs"
+                    onClick={() => router.push(`/threads/${selectedConcept.threads[0]}`)}
+                  >
+                    Open thread
+                  </Button>
+                )}
+              </div>
+            ) : selectedConcept.node_type === "topic_hub" ? (
               /* Topic hub preview */
               <div>
                 <h3 className="font-semibold text-sm capitalize">
