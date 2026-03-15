@@ -525,6 +525,9 @@ export interface KnowledgeConcept {
   confidence: number;
   description: string;
   weak_subconcepts: string[];
+  node_type?: "concept" | "topic_hub";
+  display_name?: string;
+  concept_count?: number;
 }
 
 export interface KnowledgeEdge {
@@ -534,10 +537,20 @@ export interface KnowledgeEdge {
   weight: number;
 }
 
+export interface GraphStats {
+  total_concepts: number;
+  mastered: number;
+  in_progress: number;
+  undiscovered: number;
+  domain_count: number;
+  edge_count: number;
+}
+
 export interface KnowledgeGraphData {
   nodes: KnowledgeConcept[];
   edges: KnowledgeEdge[];
   domains: string[];
+  stats: GraphStats;
 }
 
 export async function fetchKnowledgeGraph(domain?: string): Promise<KnowledgeGraphData> {

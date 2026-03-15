@@ -11,19 +11,28 @@ interface ConceptNodeData {
   confidence: number;
 }
 
-// Deterministic color from domain string — maps to hsl hue
-function domainHue(domain: string): number {
-  let hash = 0;
-  for (let i = 0; i < domain.length; i++) {
-    hash = domain.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  return Math.abs(hash) % 360;
+// Mastery score → color gradient (red → amber → green → bright green)
+function masteryColor(score: number): string {
+  if (score >= 0.9) return "hsl(142, 71%, 45%)"; // mastered — bright green
+  if (score >= 0.7) return "hsl(142, 50%, 40%)"; // strong — green
+  if (score >= 0.4) return "hsl(45, 93%, 47%)";  // medium — amber
+  if (score > 0)    return "hsl(0, 84%, 60%)";   // weak — red
+  return "hsl(var(--muted-foreground))";          // undiscovered — gray
+}
+
+function masteryBg(score: number): string {
+  if (score >= 0.9) return "hsla(142, 71%, 45%, 0.08)";
+  if (score >= 0.7) return "hsla(142, 50%, 40%, 0.06)";
+  if (score >= 0.4) return "hsla(45, 93%, 47%, 0.06)";
+  if (score > 0)    return "hsla(0, 84%, 60%, 0.06)";
+  return "transparent";
 }
 
 function MasteryRing({ score }: { score: number }) {
   const radius = 10;
   const circumference = 2 * Math.PI * radius;
   const filled = circumference * score;
+  const color = masteryColor(score);
 
   return (
     <svg width="28" height="28" className="shrink-0">
@@ -33,7 +42,7 @@ function MasteryRing({ score }: { score: number }) {
         cy="14"
         r={radius}
         fill="none"
-        stroke="hsl(var(--primary))"
+        stroke={color}
         strokeWidth="3"
         strokeDasharray={`${filled} ${circumference - filled}`}
         strokeDashoffset={circumference / 4}
@@ -53,29 +62,18 @@ export function ConceptNode({ data, selected }: NodeProps) {
   const d = data as unknown as ConceptNodeData;
   const score = d.mastery_score;
   const confidence = d.confidence ?? 1.0;
-
-  const isMastered = score >= 0.7;
-  const isMedium = score >= 0.4 && score < 0.7;
-  const isWeak = score > 0 && score < 0.4;
-  const isUndiscovered = score === 0;
-
-  const hue = d.domain ? domainHue(d.domain) : 0;
-  const domainBorder = d.domain ? `hsl(${hue}, 60%, 50%)` : undefined;
+  const color = masteryColor(score);
 
   return (
     <div
       className={cn(
-        "bg-card rounded-lg px-4 py-3 min-w-[180px] max-w-[240px] cursor-pointer transition-all",
-        isMastered && "border-2 border-primary shadow-sm",
-        isMedium && "border border-muted-foreground",
-        isWeak && "border border-dashed border-muted-foreground",
-        isUndiscovered && "border border-dashed border-border",
+        "rounded-lg px-4 py-3 min-w-[180px] max-w-[240px] cursor-pointer transition-all",
         selected && "ring-2 ring-primary/50",
       )}
       style={{
         opacity: confidence < 0.5 ? 0.5 : confidence < 0.8 ? 0.75 : 1,
-        borderLeftColor: domainBorder,
-        borderLeftWidth: domainBorder ? 3 : undefined,
+        border: `1.5px solid ${color}`,
+        background: masteryBg(score),
       }}
     >
       <Handle type="target" position={Position.Left} className="!bg-border !w-2 !h-2" />
@@ -85,7 +83,7 @@ export function ConceptNode({ data, selected }: NodeProps) {
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium text-foreground truncate">{d.name}</p>
           <div className="flex items-center gap-1 mt-0.5">
-            <span className="text-[10px] text-muted-foreground">
+            <span className="text-[10px]" style={{ color }}>
               {Math.round(score * 100)}%
             </span>
             <TrendIcon trend={d.strength_trend} />
