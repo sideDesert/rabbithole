@@ -4,13 +4,15 @@ import {
   forceManyBody,
   forceCenter,
   forceCollide,
+  forceX,
+  forceY,
   type SimulationNodeDatum,
   type SimulationLinkDatum,
 } from "d3-force";
 import type { Node, Edge } from "@xyflow/react";
 
 interface LayoutOptions {
-  direction?: "TB" | "LR"; // kept for API compat, ignored by force layout
+  direction?: "TB" | "LR";
   nodeWidth?: number;
   nodeHeight?: number;
 }
@@ -29,15 +31,25 @@ export function layoutGraph(
 
   if (nodes.length === 0) return { nodes, edges };
 
+  const centerX = 600;
+  const centerY = 400;
+
   // Build simulation nodes
   const simNodes: ForceNode[] = nodes.map((n) => ({
     id: n.id,
     nodeType: (n.data as Record<string, unknown>)?.node_type as string | undefined,
-    x: Math.random() * 800,
-    y: Math.random() * 600,
+    x: centerX + (Math.random() - 0.5) * 1000,
+    y: centerY + (Math.random() - 0.5) * 800,
   }));
 
   const nodeMap = new Map(simNodes.map((n) => [n.id, n]));
+
+  // Pin the memory hub to center
+  const memHub = simNodes.find((n) => n.id === "rabbithole-memory");
+  if (memHub) {
+    memHub.fx = centerX;
+    memHub.fy = centerY;
+  }
 
   // Build simulation links — only include edges where both endpoints exist
   const simLinks: SimulationLinkDatum<ForceNode>[] = edges
@@ -47,18 +59,18 @@ export function layoutGraph(
       target: e.target,
     }));
 
-  // Hub nodes get stronger charge (push others away more)
+  // Strong repulsion to prevent overlapping
   const chargeStrength = (d: ForceNode) => {
-    if (d.id === "rabbithole-memory") return -600;
-    if (d.nodeType === "topic_hub") return -400;
-    return -200;
+    if (d.id === "rabbithole-memory") return -2000;
+    if (d.nodeType === "topic_hub") return -800;
+    return -400;
   };
 
-  // Collision radius based on node type
+  // Large collision radius to create gaps between nodes
   const collisionRadius = (d: ForceNode) => {
-    if (d.id === "rabbithole-memory") return 100;
-    if (d.nodeType === "topic_hub") return 80;
-    return 50;
+    if (d.id === "rabbithole-memory") return 120;
+    if (d.nodeType === "topic_hub") return 100;
+    return 70; // half of nodeWidth ≈ 125, plus padding
   };
 
   const simulation = forceSimulation<ForceNode>(simNodes)
@@ -66,17 +78,25 @@ export function layoutGraph(
       "link",
       forceLink<ForceNode, SimulationLinkDatum<ForceNode>>(simLinks)
         .id((d) => d.id)
-        .distance(120)
-        .strength(0.5),
+        .distance((link) => {
+          const src = link.source as ForceNode;
+          const tgt = link.target as ForceNode;
+          // Longer distance for hub-to-hub, shorter for concept chains
+          if (src.id === "rabbithole-memory" || tgt.id === "rabbithole-memory") return 300;
+          if (src.nodeType === "topic_hub" || tgt.nodeType === "topic_hub") return 200;
+          return 120;
+        })
+        .strength(0.4),
     )
-    .force("charge", forceManyBody<ForceNode>().strength(chargeStrength))
-    .force("center", forceCenter(400, 300))
-    .force("collide", forceCollide<ForceNode>().radius(collisionRadius).strength(0.8))
+    .force("charge", forceManyBody<ForceNode>().strength(chargeStrength).distanceMax(800))
+    .force("center", forceCenter(centerX, centerY).strength(0.05))
+    .force("collide", forceCollide<ForceNode>().radius(collisionRadius).strength(1).iterations(3))
+    .force("x", forceX(centerX).strength(0.02))
+    .force("y", forceY(centerY).strength(0.02))
     .stop();
 
-  // Run simulation synchronously
-  const iterations = 300;
-  for (let i = 0; i < iterations; i++) {
+  // Run simulation — more iterations for better convergence
+  for (let i = 0; i < 500; i++) {
     simulation.tick();
   }
 

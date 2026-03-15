@@ -76,10 +76,10 @@ function EdgeLegend() {
     <div className="absolute top-4 right-4 z-10 bg-card/90 backdrop-blur-sm border border-border rounded-xl px-4 py-3 shadow-lg space-y-3">
       <div className="space-y-2">
         <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Edges</p>
-        <LegendItem color="hsl(var(--primary))" label="Prerequisite" />
-        <LegendItem color="hsl(var(--muted-foreground))" label="Part of" />
-        <LegendItem color="hsl(45, 93%, 47%)" label="Explored from" dashed />
-        <LegendItem color="hsl(0, 84%, 60%)" label="Confused with" dashed />
+        <LegendItem color="#818cf8" label="Prerequisite" />
+        <LegendItem color="#94a3b8" label="Part of" />
+        <LegendItem color="#fbbf24" label="Explored from" dashed />
+        <LegendItem color="#f87171" label="Confused with" dashed />
       </div>
       <div className="border-t border-border pt-2 space-y-2">
         <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Mastery</p>
@@ -284,12 +284,28 @@ function KnowledgeGraphInner() {
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         colorMode={resolvedTheme === "dark" ? "dark" : "light"}
-        fitView={!focusParam}
+        fitView
+        fitViewOptions={{ padding: 0.2 }}
         nodesConnectable={false}
         elementsSelectable
-        minZoom={0.1}
+        minZoom={0.05}
         maxZoom={2}
       >
+        <svg>
+          <defs>
+            <marker
+              id="arrowhead"
+              viewBox="0 0 10 10"
+              refX="10"
+              refY="5"
+              markerWidth="6"
+              markerHeight="6"
+              orient="auto-start-reverse"
+            >
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#818cf8" fillOpacity="0.6" />
+            </marker>
+          </defs>
+        </svg>
         <Background gap={20} size={1} className="!text-muted" />
         <Controls showInteractive={false} />
       </ReactFlow>

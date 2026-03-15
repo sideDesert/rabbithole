@@ -17,15 +17,15 @@ function masteryColor(score: number): string {
   if (score >= 0.7) return "hsl(142, 50%, 40%)"; // strong — green
   if (score >= 0.4) return "hsl(45, 93%, 47%)";  // medium — amber
   if (score > 0)    return "hsl(0, 84%, 60%)";   // weak — red
-  return "hsl(var(--muted-foreground))";          // undiscovered — gray
+  return "#64748b";                                // undiscovered — slate-500
 }
 
 function masteryBg(score: number): string {
-  if (score >= 0.9) return "hsla(142, 71%, 45%, 0.08)";
-  if (score >= 0.7) return "hsla(142, 50%, 40%, 0.06)";
-  if (score >= 0.4) return "hsla(45, 93%, 47%, 0.06)";
-  if (score > 0)    return "hsla(0, 84%, 60%, 0.06)";
-  return "transparent";
+  if (score >= 0.9) return "hsla(142, 71%, 45%, 0.15)";
+  if (score >= 0.7) return "hsla(142, 50%, 40%, 0.12)";
+  if (score >= 0.4) return "hsla(45, 93%, 47%, 0.12)";
+  if (score > 0)    return "hsla(0, 84%, 60%, 0.12)";
+  return "hsla(222, 20%, 14%, 0.95)";              // dark card background
 }
 
 function MasteryRing({ score }: { score: number }) {
@@ -36,7 +36,7 @@ function MasteryRing({ score }: { score: number }) {
 
   return (
     <svg width="28" height="28" className="shrink-0">
-      <circle cx="14" cy="14" r={radius} fill="none" stroke="hsl(var(--muted))" strokeWidth="3" />
+      <circle cx="14" cy="14" r={radius} fill="none" stroke="#334155" strokeWidth="3" />
       <circle
         cx="14"
         cy="14"
@@ -72,8 +72,10 @@ export function ConceptNode({ data, selected }: NodeProps) {
       )}
       style={{
         opacity: confidence < 0.5 ? 0.5 : confidence < 0.8 ? 0.75 : 1,
-        border: `1.5px solid ${color}`,
+        border: `2px solid ${color}`,
         background: masteryBg(score),
+        backdropFilter: "blur(8px)",
+        boxShadow: "0 2px 8px rgba(0, 0, 0, 0.3)",
       }}
     >
       <Handle type="target" position={Position.Left} className="!bg-border !w-2 !h-2" />
