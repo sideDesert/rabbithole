@@ -167,6 +167,23 @@ async def _score_feynman_submission(submission_id: str, req: SubmitRequest) -> N
                 "status": "scored",
             }},
         )
+
+        # Update concept mastery with the scored result
+        from app.services.mastery import update_concept_mastery
+        thread = mongo.threads().find_one({"_id": req.thread_id})
+        if thread:
+            mastery_result = update_concept_mastery(
+                user_id=str(thread["user_id"]),
+                concept_name=req.concept_name,
+                topic_slug=str(thread.get("topic_slug", "")),
+                overall_score=scores.get("overall_score", 0.0),
+                weak_areas=scores.get("weak_areas", []),
+            )
+            # Store mastery update alongside the test result
+            mongo.test_results().update_one(
+                {"_id": ObjectId(submission_id)},
+                {"$set": {"mastery_update": mastery_result}},
+            )
     except Exception:
         mongo.test_results().update_one(
             {"_id": ObjectId(submission_id)},
@@ -181,7 +198,7 @@ async def submit_explanation(req: SubmitRequest) -> SubmitResponse:
     """Submit a Feynman explanation for async scoring."""
 
     # Look up thread to get user_id
-    thread = mongo.threads().find_one({"_id": ObjectId(req.thread_id)})
+    thread = mongo.threads().find_one({"_id": req.thread_id})
     if not thread:
         raise HTTPException(status_code=404, detail="Thread not found")
 
@@ -228,3 +245,24 @@ async def submit_explanation(req: SubmitRequest) -> SubmitResponse:
     asyncio.create_task(_score_feynman_submission(submission_id, req))
 
     return SubmitResponse(submission_id=submission_id, status="scoring")
+
+
+@router.get("/result/{submission_id}")
+async def get_feynman_result(submission_id: str):
+    """Poll for Feynman test scoring result."""
+    doc = mongo.test_results().find_one({"_id": ObjectId(submission_id)})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Submission not found")
+
+    return {
+        "submission_id": submission_id,
+        "status": doc.get("status", "scoring"),
+        "scores": doc.get("scores"),
+        "overall_score": doc.get("overall_score", 0.0),
+        "feedback": doc.get("feedback", ""),
+        "strong_topics": doc.get("strong_topics", []),
+        "weak_areas": doc.get("weak_areas", []),
+        "missed_topics": doc.get("missed_topics", []),
+        "improvements": doc.get("improvements", []),
+        "mastery_update": doc.get("mastery_update"),
+    }
