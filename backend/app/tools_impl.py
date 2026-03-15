@@ -346,19 +346,36 @@ async def update_plan_progress(
         return json.dumps({"updated": False, "concept": concept_name, "reason": "Not found or already completed"})
 
     tree = parse_plan(content)
+    from app.plan_parser import phase_for_concept
+    phase_info = phase_for_concept(tree, concept_name)
     phase_progress = 0.0
-    stripped_name = concept_name.strip("*")
-    for phase in tree.phases:
-        for concept in phase.concepts:
-            if concept.name == stripped_name or concept.name == concept_name:
-                phase_progress = phase.progress
-                break
+    phase_title = ""
+    is_last_in_phase = False
+    is_last_phase = False
+    next_phase_title = ""
+
+    if phase_info:
+        phase, _, is_last_in_phase = phase_info
+        phase_progress = phase.progress
+        phase_title = phase.title
+        # Check if this is the last phase in the plan
+        is_last_phase = phase.order == len(tree.phases)
+        # Find next phase title
+        if not is_last_phase:
+            for p in tree.phases:
+                if p.order == phase.order + 1:
+                    next_phase_title = p.title
+                    break
 
     return json.dumps({
         "updated": True,
         "concept": concept_name,
         "phase_progress": round(phase_progress, 2),
         "overall_progress": round(tree.overall_progress, 2),
+        "phase_title": phase_title,
+        "is_last_in_phase": is_last_in_phase,
+        "is_last_phase": is_last_phase,
+        "next_phase_title": next_phase_title,
     })
 
 
