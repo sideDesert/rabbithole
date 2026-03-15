@@ -200,7 +200,8 @@ export function useAnnotations(
     const el = messageRef.current;
     if (!el || !annotations?.length || isStreaming) return;
 
-    applyAnnotations(el, annotations);
+    const contentEl = el.querySelector(".chat-message-content") as HTMLElement ?? el;
+    applyAnnotations(contentEl, annotations);
 
     // Create persistent tooltips after a frame so layout is settled
     requestAnimationFrame(() => {
@@ -268,7 +269,7 @@ export function useAnnotations(
       window.removeEventListener("scroll", reposition);
       window.removeEventListener("resize", reposition);
       clearTooltips();
-      clearAnnotations(el);
+      clearAnnotations(contentEl);
     };
   }, [annotations, isStreaming, router]);
 }

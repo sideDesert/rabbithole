@@ -68,8 +68,11 @@ export function useTextSelectionMenu() {
 
     let textPosition: [number, number] | null = null;
     try {
+      const contentContainer =
+        anchorContainer.querySelector(".chat-message-content") ??
+        anchorContainer;
       const preRange = document.createRange();
-      preRange.selectNodeContents(anchorContainer);
+      preRange.selectNodeContents(contentContainer);
       preRange.setEnd(range.startContainer, range.startOffset);
       const start = preRange.toString().length;
       textPosition = [start, start + text.length];

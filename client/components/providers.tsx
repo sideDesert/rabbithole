@@ -50,7 +50,16 @@ export function Providers({ children }: { children: React.ReactNode }) {
           </AgentProvider>
         </SidebarProvider>
       </ThemeProvider>
-      <Toaster richColors position="bottom-right" />
+      <Toaster
+        position="bottom-right"
+        toastOptions={{
+          style: {
+            background: "var(--card)",
+            color: "var(--card-foreground)",
+            border: "1px solid var(--border)",
+          },
+        }}
+      />
     </QueryClientProvider>
   );
 }

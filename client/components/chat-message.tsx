@@ -285,7 +285,9 @@ export function ChatMessage({
             ))}
           </div>
         )}
-        <Streamdown>{content as string}</Streamdown>
+        <div className="chat-message-content">
+          <Streamdown>{content as string}</Streamdown>
+        </div>
       </article>
     );
   }
