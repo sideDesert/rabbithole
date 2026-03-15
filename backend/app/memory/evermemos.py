@@ -1,5 +1,6 @@
 """Async HTTP client for EverMemOS Cloud (https://api.evermind.ai)."""
 
+import logging
 from datetime import datetime, timezone
 from typing import Any
 
@@ -7,7 +8,13 @@ import httpx
 
 from app.config import EVERMEMOS_API, EVERMEMOS_BASE_URL
 
+logger = logging.getLogger(__name__)
+
 _client: httpx.AsyncClient | None = None
+
+# Track which group_ids have had conversation-meta set in this process lifetime.
+# Avoids redundant API calls for the same group.
+_meta_initialized: set[str] = set()
 
 
 def _get_client() -> httpx.AsyncClient:
@@ -109,14 +116,18 @@ async def set_conversation_meta(
     group_id: str,
     user_id: str,
     user_name: str = "Learner",
-    scene: str = "assistant",
+    name: str = "Learning Session",
 ) -> dict[str, Any]:
-    """Set conversation metadata for a thread's EverMemOS group."""
+    """Set conversation metadata for a thread's EverMemOS group.
+
+    Scene is inherited from the global config (``assistant``), so we only set
+    per-group fields: name, user_details, and timezone.
+    """
     resp = await _get_client().post(
         "/api/v0/memories/conversation-meta",
         json={
             "group_id": group_id,
-            "scene": scene,
+            "name": name,
             "created_at": _now_iso(),
             "default_timezone": "UTC",
             "user_details": {
@@ -126,4 +137,26 @@ async def set_conversation_meta(
         },
     )
     resp.raise_for_status()
+    _meta_initialized.add(group_id)
     return resp.json()
+
+
+async def ensure_conversation_meta(
+    *,
+    group_id: str,
+    user_id: str,
+    user_name: str = "Learner",
+    name: str = "Learning Session",
+) -> None:
+    """Set conversation-meta if it hasn't been set for this group yet.
+
+    Safe to call repeatedly — skips the API call after the first success.
+    """
+    if group_id in _meta_initialized:
+        return
+    try:
+        await set_conversation_meta(
+            group_id=group_id, user_id=user_id, user_name=user_name, name=name,
+        )
+    except Exception as e:
+        logger.warning("[evermemos] ensure_conversation_meta failed for %s: %s", group_id, e)

@@ -191,6 +191,11 @@ async def _score_feynman_submission(submission_id: str, req: SubmitRequest) -> N
 
             # Store Feynman results in EverMemOS
             try:
+                user_id = str(thread["user_id"])
+                feynman_group = f"feynman_{user_id}"
+                await evermemos.ensure_conversation_meta(
+                    group_id=feynman_group, user_id=user_id,
+                )
                 weak_str = ", ".join(scores.get("weak_areas", [])) or "none"
                 await evermemos.store_memory(
                     message_id=submission_id,
@@ -201,8 +206,8 @@ async def _score_feynman_submission(submission_id: str, req: SubmitRequest) -> N
                         f"New mastery: {mastery_result['new_score']:.2f} ({mastery_result['tier']}). "
                         f"Next review: {mastery_result['next_review']}"
                     ),
-                    sender=str(thread["user_id"]),
-                    group_id=f"feynman_{thread['user_id']}",
+                    sender=user_id,
+                    group_id=feynman_group,
                     role="assistant",
                     sender_name="Feynman",
                 )
