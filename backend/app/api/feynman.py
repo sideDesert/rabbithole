@@ -9,8 +9,13 @@ from fastapi import APIRouter, HTTPException
 from openai import AsyncOpenAI
 from pydantic import BaseModel
 
+import logging
+
 from app.config import LLM_API_KEY, LLM_BASE_URL, DEFAULT_MODEL
 from app.db import mongo
+from app.db.mongo import feynman_notes
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/feynman", tags=["feynman"])
 
@@ -184,7 +189,8 @@ async def _score_feynman_submission(submission_id: str, req: SubmitRequest) -> N
                 {"_id": ObjectId(submission_id)},
                 {"$set": {"mastery_update": mastery_result}},
             )
-    except Exception:
+    except Exception as e:
+        logger.error("[feynman] scoring failed for submission %s: %s", submission_id, e, exc_info=True)
         mongo.test_results().update_one(
             {"_id": ObjectId(submission_id)},
             {"$set": {"status": "failed"}},
@@ -223,6 +229,23 @@ async def submit_explanation(req: SubmitRequest) -> SubmitResponse:
     }
     result = mongo.test_results().insert_one(doc)
     submission_id = str(result.inserted_id)
+
+    # Store versioned Feynman note
+    topic_slug = str(thread.get("topic_slug", ""))
+    existing_count = feynman_notes().count_documents({
+        "user_id": thread["user_id"],
+        "topic_slug": topic_slug,
+        "concept_name": req.concept_name,
+    })
+    feynman_notes().insert_one({
+        "user_id": thread["user_id"],
+        "topic_slug": topic_slug,
+        "concept_name": req.concept_name,
+        "version": existing_count + 1,
+        "markdown": req.markdown,
+        "submission_id": submission_id,
+        "created_at": datetime.now(timezone.utc),
+    })
 
     # Also save as a message in the conversation (save_message is synchronous)
     from app.api.chat import save_message
@@ -266,3 +289,76 @@ async def get_feynman_result(submission_id: str):
         "improvements": doc.get("improvements", []),
         "mastery_update": doc.get("mastery_update"),
     }
+
+
+@router.get("/notes")
+async def get_notes(topic_slug: str, concept_name: str | None = None):
+    """Get versioned Feynman notes for a topic, optionally filtered by concept."""
+    query: dict[str, object] = {"topic_slug": topic_slug}
+    if concept_name:
+        query["concept_name"] = concept_name
+
+    docs = list(feynman_notes().find(query, sort=[("concept_name", 1), ("version", -1)]))
+
+    notes = []
+    for doc in docs:
+        # Look up the associated evaluation score
+        evaluation = None
+        if doc.get("submission_id"):
+            result_doc = mongo.test_results().find_one({"_id": ObjectId(doc["submission_id"])})
+            if result_doc and result_doc.get("status") == "scored":
+                evaluation = {
+                    "overall_score": result_doc.get("overall_score", 0.0),
+                    "scores": result_doc.get("scores"),
+                    "feedback": result_doc.get("feedback", ""),
+                }
+
+        notes.append({
+            "id": str(doc["_id"]),
+            "concept_name": doc["concept_name"],
+            "version": doc["version"],
+            "markdown": doc["markdown"],
+            "submission_id": doc.get("submission_id"),
+            "created_at": doc["created_at"].isoformat(),
+            "evaluation": evaluation,
+        })
+
+    return {"notes": notes}
+
+
+@router.get("/evaluations")
+async def get_evaluations(topic_slug: str | None = None):
+    """Get all scored evaluations, optionally filtered by topic."""
+    query: dict[str, object] = {"status": "scored", "test_type": "feynman"}
+    if topic_slug:
+        # Find all thread_ids for this topic
+        thread_ids = [
+            t["_id"] for t in mongo.threads().find(
+                {"topic_slug": topic_slug},
+                {"_id": 1},
+            )
+        ]
+        query["thread_id"] = {"$in": thread_ids}
+
+    docs = list(mongo.test_results().find(query, sort=[("created_at", -1)]))
+
+    evaluations = []
+    for doc in docs:
+        # Look up topic_slug from thread
+        thread = mongo.threads().find_one({"_id": doc.get("thread_id")})
+        evaluations.append({
+            "id": str(doc["_id"]),
+            "concept_name": doc.get("concept_id", ""),
+            "topic_slug": str(thread.get("topic_slug", "")) if thread else "",
+            "overall_score": doc.get("overall_score", 0.0),
+            "scores": doc.get("scores"),
+            "feedback": doc.get("feedback", ""),
+            "strong_topics": doc.get("strong_topics", []),
+            "weak_areas": doc.get("weak_areas", []),
+            "missed_topics": doc.get("missed_topics", []),
+            "improvements": doc.get("improvements", []),
+            "mastery_update": doc.get("mastery_update"),
+            "created_at": doc["created_at"].isoformat() if doc.get("created_at") else "",
+        })
+
+    return {"evaluations": evaluations}

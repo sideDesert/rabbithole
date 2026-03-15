@@ -3,6 +3,7 @@ from pymongo import ASCENDING
 from app.db.mongo import (
     branch_points,
     concept_mastery,
+    feynman_notes,
     learning_sessions,
     memory_entities,
     memory_relationships,
@@ -66,6 +67,11 @@ def ensure_indexes():
     )
     _ = memory_relationships().create_index(
         [("user_id", ASCENDING), ("type", ASCENDING)]
+    )
+
+    # feynman_notes
+    _ = feynman_notes().create_index(
+        [("user_id", ASCENDING), ("topic_slug", ASCENDING), ("concept_name", ASCENDING), ("version", ASCENDING)]
     )
 
     print("\033[34m[SYSTEM]\033[0m: MongoDB indexes ensured.")

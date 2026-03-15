@@ -13,6 +13,7 @@ from openai import AsyncOpenAI
 
 from app.config import LLM_API_KEY, LLM_BASE_URL, DEFAULT_MODEL
 from app.db import mongo
+from app.models.base import new_object_id
 
 logger = logging.getLogger(__name__)
 
@@ -158,6 +159,7 @@ async def _do_extraction(
         else:
             # New concept discovered in conversation
             mongo.concept_mastery().insert_one({
+                "_id": new_object_id(),
                 "user_id": user_id,
                 "concept_name": name,
                 "mastery_score": delta,

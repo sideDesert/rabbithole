@@ -188,18 +188,32 @@ def get_knowledge_graph(user_id: str = "user_001", domain: str | None = None) ->
 
     Includes topic hub nodes that group concepts by domain, plus stats.
     """
+    import logging
+    _log = logging.getLogger(__name__)
+
     query: dict[str, str] = {"user_id": user_id}
     if domain:
         query["domain"] = domain
 
-    concept_models = [
-        ConceptMastery.model_validate(doc)
-        for doc in mongo.concept_mastery().find(query)
-    ]
-    rel_models = [
-        ConceptRelationship.model_validate(doc)
-        for doc in mongo.concept_relationships().find({"user_id": user_id})
-    ]
+    def _coerce_id(doc: dict) -> dict:
+        """Ensure _id is a string (MongoDB may store it as ObjectId)."""
+        if not isinstance(doc.get("_id"), str):
+            doc["_id"] = str(doc["_id"])
+        return doc
+
+    concept_models: list[ConceptMastery] = []
+    for doc in mongo.concept_mastery().find(query):
+        try:
+            concept_models.append(ConceptMastery.model_validate(_coerce_id(doc)))
+        except Exception as e:
+            _log.warning("Skipping invalid concept_mastery doc %s: %s", doc.get("_id"), e)
+
+    rel_models: list[ConceptRelationship] = []
+    for doc in mongo.concept_relationships().find({"user_id": user_id}):
+        try:
+            rel_models.append(ConceptRelationship.model_validate(_coerce_id(doc)))
+        except Exception as e:
+            _log.warning("Skipping invalid concept_relationship doc %s: %s", doc.get("_id"), e)
 
     concept_names = {cm.concept_name for cm in concept_models}
 
@@ -282,14 +296,25 @@ def get_knowledge_graph(user_id: str = "user_001", domain: str | None = None) ->
                     weight=0.6,
                 ))
 
+    # Build phase→concepts mapping from plan (used to connect threads to concepts)
+    phase_concepts: dict[str, list[str]] = {}  # phase_title → [concept_name, ...]
+    if domain:
+        plan_path = PLANS_DIR / domain / "plan.md"
+        if plan_path.exists():
+            plan_tree = parse_plan(plan_path.read_text())
+            for phase in plan_tree.phases:
+                phase_concepts[phase.title] = [c.name for c in phase.concepts]
+
     # Add thread nodes (filter by domain when drilling in)
     thread_query: dict[str, str] = {} if user_id == "user_001" else {"user_id": user_id}
     if domain:
         thread_query["topic_slug"] = domain
-    thread_models = [
-        Thread.model_validate(doc)
-        for doc in mongo.threads().find(thread_query)
-    ]
+    thread_models: list[Thread] = []
+    for doc in mongo.threads().find(thread_query):
+        try:
+            thread_models.append(Thread.model_validate(_coerce_id(doc)))
+        except Exception as e:
+            _log.warning("Skipping invalid thread doc %s: %s", doc.get("_id"), e)
     for t in thread_models:
         tid = t.id
         t_hub = f"hub:{t.topic_slug}" if t.topic_slug else None
@@ -319,6 +344,25 @@ def get_knowledge_graph(user_id: str = "user_001", domain: str | None = None) ->
                 type="explored_from",
                 weight=0.5,
             ))
+        # Connect thread to concepts it covers
+        if domain:
+            thread_concept_names: set[str] = set()
+            # From current_concept
+            if t.current_concept and t.current_concept in concept_names:
+                thread_concept_names.add(t.current_concept)
+            # From plan phase mapping (thread title is "Phase N: Title")
+            for phase_title, concepts_in_phase in phase_concepts.items():
+                if phase_title in (t.title or ""):
+                    for cn in concepts_in_phase:
+                        if cn in concept_names:
+                            thread_concept_names.add(cn)
+            for cn in thread_concept_names:
+                edges.append(KGEdge(
+                    source=f"thread:{tid}",
+                    target=cn,
+                    type="explored_from",
+                    weight=0.7,
+                ))
 
     domains = sorted(domain_concepts.keys())
 

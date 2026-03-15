@@ -9,8 +9,9 @@ logging.basicConfig(
     datefmt="%H:%M:%S",
 )
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from app.config import MONGO_USER, MONGO_PASSWORD, LLM_API_KEY, PLANS_DIR
 from app.db.mongo import get_client
@@ -73,6 +74,16 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    import logging
+    logging.getLogger(__name__).exception("Unhandled error on %s %s", request.method, request.url.path)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error"},
+        headers={"Access-Control-Allow-Origin": "http://localhost:3000"},
+    )
 
 app.include_router(chat_router)
 app.include_router(ebbinghaus_router)

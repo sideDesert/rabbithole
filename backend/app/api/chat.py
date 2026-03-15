@@ -15,7 +15,7 @@ import uuid
 from typing import Literal
 
 from agents import ItemHelpers, Runner
-from fastapi import APIRouter, BackgroundTasks
+from fastapi import APIRouter, BackgroundTasks, HTTPException
 from fastapi.responses import StreamingResponse
 from openai import AsyncOpenAI
 from openai.types.responses import EasyInputMessageParam, ResponseTextDeltaEvent
@@ -396,7 +396,10 @@ def get_study_topics(limit: int | None = None):
     for root_id, group_threads in groups.items():
         # Sort group by updated_at descending to find the latest thread
         group_threads.sort(key=lambda x: str(x.get("updated_at", "")), reverse=True)
-        latest = group_threads[0]
+        # Prefer child threads (depth > 0) over root for "latest" — root gets
+        # touched during phase transitions and isn't where the user left off
+        child_threads = [t for t in group_threads if t.get("depth", 0) > 0]
+        latest = child_threads[0] if child_threads else group_threads[0]
         root = thread_map.get(root_id, latest)
         root_title = str(root.get("title", ""))
         topic_slug = str(latest.get("topic_slug", "") or root.get("topic_slug", ""))
@@ -678,19 +681,19 @@ async def start_phase(thread_id: str):
     """Create a child thread for the first phase of the plan."""
     parent = mongo.threads().find_one({"_id": thread_id})
     if not parent:
-        return {"error": "Thread not found"}
+        raise HTTPException(status_code=404, detail="Thread not found")
 
     topic_slug = str(parent.get("topic_slug", ""))
     if not topic_slug:
-        return {"error": "No plan associated with this thread"}
+        raise HTTPException(status_code=400, detail="No plan associated with this thread")
 
     plan_path = PLANS_DIR / topic_slug / "plan.md"
     if not plan_path.exists():
-        return {"error": "Plan not found"}
+        raise HTTPException(status_code=404, detail="Plan not found")
 
     tree = parse_plan(plan_path.read_text())
     if not tree.phases:
-        return {"error": "Plan has no phases"}
+        raise HTTPException(status_code=400, detail="Plan has no phases")
 
     first_phase = tree.phases[0]
 
@@ -1056,21 +1059,27 @@ async def chat(thread_id: str, req: ChatRequest):
                                 pass
 
                         # Auto-trigger Feynman after concept completion
+                        logger.info(
+                            "[chat] checking auto-feynman: result_tool_name=%r, 'updated' in output=%s, output[:200]=%r",
+                            result_tool_name, "updated" in output, output[:200],
+                        )
                         if result_tool_name == "update_plan_progress" and "updated" in output:
                             try:
                                 parsed_result: dict[str, object] = json.loads(output)
+                                logger.info("[chat] parsed update_plan_progress result: %s", parsed_result)
                                 if parsed_result.get("updated"):
                                     concept = str(parsed_result.get("concept", ""))
                                     if concept:
                                         # Override any agent-initiated feynman trigger
                                         agent_ctx.feynman_concept = concept
+                                        logger.info("[chat] auto-feynman SET: concept=%r", concept)
                                         # Store phase completion info for later SSE emission
                                         agent_ctx.phase_completed = parsed_result.get("is_last_in_phase", False)
                                         agent_ctx.phase_is_final = parsed_result.get("is_last_phase", False)
                                         agent_ctx.next_phase_title = str(parsed_result.get("next_phase_title", ""))
                                         agent_ctx.completed_phase_title = str(parsed_result.get("phase_title", ""))
-                            except (json.JSONDecodeError, KeyError):
-                                pass
+                            except (json.JSONDecodeError, KeyError) as exc:
+                                logger.error("[chat] auto-feynman parse FAILED: %s — output=%r", exc, output[:300])
 
                     elif item.type == "message_output_item":
                         text = ItemHelpers.text_message_output(item)
@@ -1177,6 +1186,7 @@ async def chat(thread_id: str, req: ChatRequest):
 
         # Feynman mode trigger — no message persistence; modal is ephemeral
         # until user submits via /api/feynman/submit, which saves the TestResult.
+        logger.info("[chat] feynman_concept at emit time: %r", agent_ctx.feynman_concept)
         if agent_ctx.feynman_concept:
             yield sse({
                 "type": "feynman_prompt",
