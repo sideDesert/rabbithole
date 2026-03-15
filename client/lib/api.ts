@@ -494,6 +494,7 @@ export interface ThreadMapNode {
   summary: string | null;
   status: string;
   progress: number | null;
+  first_question: string | null;
 }
 
 export interface ThreadMapEdge {
@@ -562,5 +563,73 @@ export async function fetchKnowledgeGraph(domain?: string): Promise<KnowledgeGra
   const qs = params.toString();
   const res = await fetch(`${API_BASE}/knowledge-graph${qs ? `?${qs}` : ""}`);
   if (!res.ok) throw new Error(`Failed to fetch knowledge graph: ${res.status}`);
+  return res.json();
+}
+
+// ── Memory Graph ─────────────────────────────────────────────────────────
+
+export interface MemoryEntity {
+  slug: string;
+  type: "concept" | "person" | "fact" | "belief" | "resource";
+  name: string;
+  domain: string;
+  mastery: number;
+  confidence: number;
+  role: string;
+  statement: string;
+  about_concept_slug: string;
+  verified: boolean | null;
+  correct: boolean | null;
+  superseded_by: string;
+  title: string;
+  url: string;
+  resource_type: string;
+  first_seen: string | null;
+  last_seen: string | null;
+  source_memcell_ids: string[];
+}
+
+export interface MemoryEdge {
+  source: string;
+  target: string;
+  type: "part_of" | "led_to" | "confused_with" | "contradicts" | "derived_from" | "learned_from";
+  weight: number;
+  from_type: string;
+  to_type: string;
+}
+
+export interface MemoryGraphStats {
+  concept_count: number;
+  person_count: number;
+  fact_count: number;
+  belief_count: number;
+  resource_count: number;
+  relationship_count: number;
+}
+
+export interface MemoryGraphData {
+  nodes: MemoryEntity[];
+  edges: MemoryEdge[];
+  stats: MemoryGraphStats;
+  entity_types: string[];
+  domains: string[];
+}
+
+export async function fetchMemoryGraph(
+  entityType?: string,
+  domain?: string,
+): Promise<MemoryGraphData> {
+  const params = new URLSearchParams();
+  if (entityType) params.set("entity_type", entityType);
+  if (domain) params.set("domain", domain);
+  const qs = params.toString();
+  const res = await fetch(`${API_BASE}/memory-graph${qs ? `?${qs}` : ""}`);
+  if (!res.ok) throw new Error(`Failed to fetch memory graph: ${res.status}`);
+  return res.json();
+}
+
+export async function syncMemoryGraph(): Promise<{ status: string }> {
+  const res = await fetch(`${API_BASE}/memory-graph/sync`, { method: "POST" });
+  if (!res.ok) throw new Error(`Failed to sync memory graph: ${res.status}`);
   return res.json();
 }
