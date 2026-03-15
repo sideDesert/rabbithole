@@ -14,6 +14,7 @@ import { getTrailLabel } from "@/lib/trail-labels";
 export interface ToolCallEntry {
   name: string;
   label: string;
+  doneLabel: string;
   status: "running" | "done";
   result?: string;
 }
@@ -57,6 +58,8 @@ interface UseChatReturn {
   dismissFeynman: () => void;
   branchSuggestion: BranchSuggestion | null;
   dismissBranchSuggestion: () => void;
+  phaseComplete: { phaseTitle: string; isFinalPhase: boolean; nextPhaseTitle: string } | null;
+  dismissPhaseComplete: () => void;
 }
 
 export function useChat({
@@ -88,6 +91,12 @@ export function useChat({
     topic: string;
     reason: string;
   } | null>(null);
+  const [phaseComplete, setPhaseComplete] = useState<{
+    phaseTitle: string;
+    isFinalPhase: boolean;
+    nextPhaseTitle: string;
+  } | null>(null);
+  const pendingPhaseCompleteRef = useRef<typeof phaseComplete>(null);
 
   // Load existing messages when threadId is provided
   useQuery({
@@ -231,6 +240,7 @@ export function useChat({
                         {
                           name: event.name,
                           label: getTrailLabel("tool_call", event.name),
+                          doneLabel: getTrailLabel("tool_call_done", event.name),
                           status: "running" as const,
                         },
                       ],
@@ -309,6 +319,13 @@ export function useChat({
               reason: event.reason,
             };
             break;
+          case "phase_complete":
+            pendingPhaseCompleteRef.current = {
+              phaseTitle: event.phase_title,
+              isFinalPhase: event.is_final_phase,
+              nextPhaseTitle: event.next_phase_title,
+            };
+            break;
           case "plan_created": {
             const slug = event.topic_slug;
             setMessages((prev) => [
@@ -368,6 +385,10 @@ export function useChat({
                 messageId: currentAiMsgId,
               });
               pendingBranchSuggestionRef.current = null;
+            }
+            if (pendingPhaseCompleteRef.current) {
+              setPhaseComplete(pendingPhaseCompleteRef.current);
+              pendingPhaseCompleteRef.current = null;
             }
             break;
           case "error":
@@ -435,6 +456,10 @@ export function useChat({
     setBranchSuggestion(null);
   }, []);
 
+  const dismissPhaseComplete = useCallback(() => {
+    setPhaseComplete(null);
+  }, []);
+
   return {
     messages,
     isMessagesLoading: messagesLoading,
@@ -452,5 +477,7 @@ export function useChat({
     dismissFeynman,
     branchSuggestion,
     dismissBranchSuggestion,
+    phaseComplete,
+    dismissPhaseComplete,
   };
 }

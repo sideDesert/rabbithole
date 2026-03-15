@@ -25,6 +25,7 @@ export type SSEEvent =
   | { type: "interview_questions"; questions: InterviewQuestion[] }
   | { type: "feynman_prompt"; concept_name: string }
   | { type: "branch_suggestion"; topic: string; reason: string }
+  | { type: "phase_complete"; phase_title: string; is_final_phase: boolean; next_phase_title: string }
   | { type: "message_id"; role: "user" | "assistant"; message_id: string }
   | { type: "title_update"; title: string }
   | { type: "end"; duration_ms?: number }
@@ -350,6 +351,59 @@ export async function submitFeynmanExplanation(
     }),
   });
   if (!res.ok) throw new Error("Failed to submit explanation");
+  return res.json();
+}
+
+export interface FeynmanResult {
+  submission_id: string;
+  status: "scoring" | "scored" | "failed";
+  scores: { clarity: number; accuracy: number; depth: number; transferability: number } | null;
+  overall_score: number;
+  feedback: string;
+  strong_topics: string[];
+  weak_areas: string[];
+  missed_topics: string[];
+  improvements: string[];
+  mastery_update: {
+    previous_score: number;
+    new_score: number;
+    tier: string;
+    next_review: string;
+  } | null;
+}
+
+export async function getFeynmanResult(submissionId: string): Promise<FeynmanResult> {
+  const res = await fetch(`${API_BASE}/feynman/result/${submissionId}`);
+  if (!res.ok) throw new Error("Failed to get Feynman result");
+  return res.json();
+}
+
+export async function startPhase(
+  threadId: string,
+): Promise<{ thread_id: string; title: string; phase: string; phase_number: number; phase_title: string }> {
+  const res = await fetch(`${API_BASE}/threads/${threadId}/start-phase`, {
+    method: "POST",
+  });
+  if (!res.ok) throw new Error("Failed to start phase");
+  return res.json();
+}
+
+export async function createNextPhaseThread(
+  threadId: string,
+): Promise<{
+  thread_id: string;
+  title: string;
+  phase: string;
+  phase_number: number;
+  phase_title: string;
+  phase_context: string;
+  error?: string;
+  plan_complete?: boolean;
+}> {
+  const res = await fetch(`${API_BASE}/threads/${threadId}/next-phase`, {
+    method: "POST",
+  });
+  if (!res.ok) throw new Error("Failed to create next phase thread");
   return res.json();
 }
 
