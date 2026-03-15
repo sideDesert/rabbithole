@@ -9,13 +9,15 @@ import { useTheme } from "next-themes";
 
 import { Button } from "@/components/ui/button";
 import { HintBanner } from "@/components/hint-banner";
-import { requestFeynmanHint, submitFeynmanExplanation } from "@/lib/api";
-import { X } from "lucide-react";
+import { requestFeynmanHint, submitFeynmanExplanation, getFeynmanResult, type FeynmanResult } from "@/lib/api";
+import { FeynmanResults } from "@/components/feynman-results";
+import { CloseCircleBoldDuotone } from "solar-icon-set";
 
 interface FeynmanModalProps {
   threadId: string;
   conceptName: string;
   onClose: () => void;
+  onSubmitComplete?: (result: FeynmanResult) => void;
 }
 
 const DRAFT_KEY = (threadId: string, concept: string) =>
@@ -25,10 +27,12 @@ export function FeynmanModal({
   threadId,
   conceptName,
   onClose,
+  onSubmitComplete,
 }: FeynmanModalProps) {
   const [hints, setHints] = useState<{ id: string; text: string }[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isHintLoading, setIsHintLoading] = useState(false);
+  const [feynmanResult, setFeynmanResult] = useState<FeynmanResult | null>(null);
   const hasContentRef = useRef(false);
   const { resolvedTheme } = useTheme();
 
@@ -115,11 +119,32 @@ export function FeynmanModal({
   const handleSubmit = useCallback(async () => {
     setIsSubmitting(true);
     try {
-      const markdown = editor.blocksToMarkdownLossy(editor.document);
+      const markdown = await editor.blocksToMarkdownLossy(editor.document);
       const hintIds = hints.map((h) => h.id);
-      await submitFeynmanExplanation(threadId, conceptName, markdown, hintIds);
+      const { submission_id } = await submitFeynmanExplanation(threadId, conceptName, markdown, hintIds);
       localStorage.removeItem(DRAFT_KEY(threadId, conceptName));
-      onClose();
+
+      // Poll for scoring result
+      const poll = async () => {
+        for (let i = 0; i < 30; i++) {
+          await new Promise((r) => setTimeout(r, 2000));
+          const result = await getFeynmanResult(submission_id);
+          if (result.status === "scored") {
+            setFeynmanResult(result);
+            setIsSubmitting(false);
+            return;
+          }
+          if (result.status === "failed") {
+            setIsSubmitting(false);
+            onClose();
+            return;
+          }
+        }
+        // Timeout — close modal
+        setIsSubmitting(false);
+        onClose();
+      };
+      poll();
     } catch {
       setIsSubmitting(false);
     }
@@ -148,37 +173,51 @@ export function FeynmanModal({
             onClick={handleClose}
             className="rounded-lg p-2 hover:bg-accent"
           >
-            <X className="h-5 w-5" />
+            <CloseCircleBoldDuotone className="h-5 w-5" />
           </button>
         </div>
 
         {/* Hints */}
         <HintBanner hints={hints} onDismiss={handleDismissHint} />
 
-        {/* Editor */}
-        <div className="flex-1 min-h-0 px-6 py-4">
-          <BlockNoteView
-            className="bg-transparent"
-            editor={editor}
-            theme={resolvedTheme === "dark" ? "dark" : "light"}
-            data-feynman-editor
-          />
-        </div>
+        {feynmanResult ? (
+          <div className="flex-1 min-h-0 px-6 py-4 overflow-auto">
+            <FeynmanResults
+              result={feynmanResult}
+              onContinue={() => {
+                onSubmitComplete?.(feynmanResult);
+                onClose();
+              }}
+            />
+          </div>
+        ) : (
+          <>
+            {/* Editor */}
+            <div className="flex-1 min-h-0 px-6 py-4">
+              <BlockNoteView
+                className="bg-transparent"
+                editor={editor}
+                theme={resolvedTheme === "dark" ? "dark" : "light"}
+                data-feynman-editor
+              />
+            </div>
 
-        {/* Footer */}
-        <div className="flex items-center justify-between border-t border-border px-6 py-4">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleHint}
-            disabled={isHintLoading}
-          >
-            {isHintLoading ? "Getting hint..." : "Hint"}
-          </Button>
-          <Button onClick={handleSubmit} disabled={isSubmitting}>
-            {isSubmitting ? "Submitting..." : "Submit Explanation"}
-          </Button>
-        </div>
+            {/* Footer */}
+            <div className="flex items-center justify-between border-t border-border px-6 py-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleHint}
+                disabled={isHintLoading}
+              >
+                {isHintLoading ? "Getting hint..." : "Hint"}
+              </Button>
+              <Button onClick={handleSubmit} disabled={isSubmitting}>
+                {isSubmitting ? "Scoring..." : "Submit Explanation"}
+              </Button>
+            </div>
+          </>
+        )}
       </div>
     </>
   );
