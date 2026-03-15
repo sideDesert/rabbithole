@@ -24,8 +24,8 @@ import { TextSelectionMenu } from "@/components/text-selection-menu";
 import { useChat } from "@/hooks/use-chat";
 import { useTextSelectionMenu } from "@/hooks/use-text-selection-menu";
 import { useBranchout, useBranches } from "@/hooks/use-branch";
+import { useFeynmanPolling } from "@/hooks/use-feynman-polling";
 import { useThread } from "@/hooks/use-thread";
-import { useStudyTopics } from "@/hooks/use-study-topics";
 import type { Branch } from "@/lib/api";
 import { useRouter, useSearchParams } from "next/navigation";
 import React, { use, useEffect, useRef, useState } from "react";
@@ -58,14 +58,6 @@ export default function Page({
     [number, number] | null
   >(null);
   const [mode, setMode] = useState<Mode>(MODE_DEFAULT);
-
-  // Find the latest thread for this topic so we can show a "Continue" button
-  const { topics } = useStudyTopics();
-  const matchingTopic = topics.find((t) => t.root_thread_id === thread?.id);
-  const continueThreadId =
-    thread?.depth === 0 && thread?.phase === "teaching" && matchingTopic && matchingTopic.latest_thread.id !== thread.id
-      ? matchingTopic.latest_thread.id
-      : null;
 
   const searchParams = useSearchParams();
   const pendingMsg = searchParams.get("msg");
@@ -102,6 +94,8 @@ export default function Page({
     threadId,
     onPlanCreated: (slug) => setTopicSlug(slug),
   });
+
+  const { startPolling } = useFeynmanPolling();
 
   // Open Feynman modal when Pen tab is clicked
   useEffect(() => {
@@ -237,6 +231,13 @@ export default function Page({
               <PlanCreatedCard
                 key={msg.id}
                 topicSlug={msg.metadata?.topicSlug ?? ""}
+                onStart={thread?.phase === "planning" ? async () => {
+                  const result = await startPhase(threadId);
+                  queryClient.invalidateQueries({ queryKey: ["threads"] });
+                  queryClient.invalidateQueries({ queryKey: ["thread-tree"] });
+                  const m = `Let's start learning: ${result.phase_title ?? result.title}`;
+                  router.push(`/threads/${result.thread_id}?msg=${encodeURIComponent(m)}`);
+                } : undefined}
               />
             );
           }
@@ -269,27 +270,8 @@ export default function Page({
             />
           );
         })}
-        {thread?.phase === "planning" && !isStreaming && (
-          <PhaseActionButton
-            label="Start Learning"
-            sublabel="Begin Phase 1 of your learning plan"
-            onClick={async () => {
-              const result = await startPhase(threadId);
-              queryClient.invalidateQueries({ queryKey: ["threads"] });
-              queryClient.invalidateQueries({ queryKey: ["thread-tree"] });
-              const msg = `Let's start learning: ${result.phase_title}`;
-              router.push(`/threads/${result.thread_id}?msg=${encodeURIComponent(msg)}`);
-            }}
-          />
-        )}
-        {continueThreadId && !isStreaming && (
-          <PhaseActionButton
-            label="Continue"
-            sublabel="Pick up where you left off"
-            onClick={async () => {
-              router.push(`/threads/${continueThreadId}`);
-            }}
-          />
+        {thread?.depth === 0 && thread?.phase === "teaching" && !isStreaming && thread.topic_slug && !messages.some((m) => m.type === "plan_card") && (
+          <PlanCreatedCard topicSlug={thread.topic_slug} />
         )}
         {branchSuggestion && (
           <BranchSuggestionCard
@@ -396,10 +378,15 @@ export default function Page({
         <FeynmanModal
           threadId={threadId}
           conceptName={feynmanConcept}
-          onClose={dismissFeynman}
-          onSubmitComplete={() => {
-            // phaseComplete state is already set from SSE — it will render
-            // the "Continue to Next Phase" button after modal closes
+          dismissable={false}
+          onClose={() => {
+            dismissFeynman();
+            if (!phaseComplete) {
+              send("Move to next concept");
+            }
+          }}
+          onSubmitComplete={(submissionId) => {
+            startPolling(submissionId, feynmanConcept);
           }}
         />
       )}

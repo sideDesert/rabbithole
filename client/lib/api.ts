@@ -302,6 +302,20 @@ export async function streamChat(
       }
     }
   }
+
+  // Process any remaining data left in buffer after stream closes
+  if (buffer.trim()) {
+    for (const line of buffer.split("\n")) {
+      if (line.startsWith("data: ")) {
+        try {
+          const event = JSON.parse(line.slice(6)) as SSEEvent;
+          onEvent(event);
+        } catch {
+          // skip malformed events
+        }
+      }
+    }
+  }
 }
 
 // ── Feynman Mode ────────────────────────────────────────────────────
@@ -375,6 +389,61 @@ export interface FeynmanResult {
 export async function getFeynmanResult(submissionId: string): Promise<FeynmanResult> {
   const res = await fetch(`${API_BASE}/feynman/result/${submissionId}`);
   if (!res.ok) throw new Error("Failed to get Feynman result");
+  return res.json();
+}
+
+export interface FeynmanNote {
+  id: string;
+  concept_name: string;
+  version: number;
+  markdown: string;
+  submission_id: string | null;
+  created_at: string;
+  evaluation: {
+    overall_score: number;
+    scores: { clarity: number; accuracy: number; depth: number; transferability: number } | null;
+    feedback: string;
+  } | null;
+}
+
+export async function getFeynmanNotes(
+  topicSlug: string,
+  conceptName?: string,
+): Promise<{ notes: FeynmanNote[] }> {
+  const params = new URLSearchParams({ topic_slug: topicSlug });
+  if (conceptName) params.set("concept_name", conceptName);
+  const res = await fetch(`${API_BASE}/feynman/notes?${params}`);
+  if (!res.ok) throw new Error("Failed to get notes");
+  return res.json();
+}
+
+export interface Evaluation {
+  id: string;
+  concept_name: string;
+  topic_slug: string;
+  overall_score: number;
+  scores: { clarity: number; accuracy: number; depth: number; transferability: number } | null;
+  feedback: string;
+  strong_topics: string[];
+  weak_areas: string[];
+  missed_topics: string[];
+  improvements: string[];
+  mastery_update: {
+    previous_score: number;
+    new_score: number;
+    tier: string;
+    next_review: string;
+  } | null;
+  created_at: string;
+}
+
+export async function getEvaluations(
+  topicSlug?: string,
+): Promise<{ evaluations: Evaluation[] }> {
+  const params = new URLSearchParams();
+  if (topicSlug) params.set("topic_slug", topicSlug);
+  const res = await fetch(`${API_BASE}/feynman/evaluations?${params}`);
+  if (!res.ok) throw new Error("Failed to get evaluations");
   return res.json();
 }
 

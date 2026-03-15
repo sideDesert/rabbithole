@@ -5,6 +5,8 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { PlanProvider } from "@/components/plan-context";
 import { AgentProvider } from "@/components/agent-context";
+import { FeynmanPollingProvider } from "@/hooks/use-feynman-polling";
+import { Toaster } from "sonner";
 
 function makeQueryClient() {
   return new QueryClient({
@@ -41,11 +43,14 @@ export function Providers({ children }: { children: React.ReactNode }) {
         <SidebarProvider>
           <AgentProvider>
             <PlanProvider>
-              {children}
+              <FeynmanPollingProvider>
+                {children}
+              </FeynmanPollingProvider>
             </PlanProvider>
           </AgentProvider>
         </SidebarProvider>
       </ThemeProvider>
+      <Toaster richColors position="bottom-right" />
     </QueryClientProvider>
   );
 }

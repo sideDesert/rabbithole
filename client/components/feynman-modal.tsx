@@ -1,23 +1,33 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { type Block } from "@blocknote/core";
 import { useCreateBlockNote } from "@blocknote/react";
 import { BlockNoteView } from "@blocknote/shadcn";
 import "@blocknote/shadcn/style.css";
 import { useTheme } from "next-themes";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { HintBanner } from "@/components/hint-banner";
-import { requestFeynmanHint, submitFeynmanExplanation, getFeynmanResult, type FeynmanResult } from "@/lib/api";
-import { FeynmanResults } from "@/components/feynman-results";
+import {
+  requestFeynmanHint,
+  submitFeynmanExplanation,
+} from "@/lib/api";
 import { CloseCircleBoldDuotone } from "solar-icon-set";
 
 interface FeynmanModalProps {
   threadId: string;
   conceptName: string;
   onClose: () => void;
-  onSubmitComplete?: (result: FeynmanResult) => void;
+  onSubmitComplete?: (submissionId: string) => void;
+  dismissable?: boolean;
 }
 
 const DRAFT_KEY = (threadId: string, concept: string) =>
@@ -28,11 +38,11 @@ export function FeynmanModal({
   conceptName,
   onClose,
   onSubmitComplete,
+  dismissable = true,
 }: FeynmanModalProps) {
   const [hints, setHints] = useState<{ id: string; text: string }[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isHintLoading, setIsHintLoading] = useState(false);
-  const [feynmanResult, setFeynmanResult] = useState<FeynmanResult | null>(null);
   const hasContentRef = useRef(false);
   const { resolvedTheme } = useTheme();
 
@@ -85,11 +95,12 @@ export function FeynmanModal({
   }, []);
 
   const handleClose = useCallback(() => {
+    if (!dismissable) return;
     if (hasContentRef.current) {
       if (!window.confirm("Discard your explanation?")) return;
     }
     animateOut(onClose);
-  }, [onClose, animateOut]);
+  }, [dismissable, onClose, animateOut]);
 
   // Animate in
   const [visible, setVisible] = useState(false);
@@ -132,44 +143,33 @@ export function FeynmanModal({
     try {
       const markdown = await editor.blocksToMarkdownLossy(editor.document);
       const hintIds = hints.map((h) => h.id);
-      const { submission_id } = await submitFeynmanExplanation(threadId, conceptName, markdown, hintIds);
+      const { submission_id } = await submitFeynmanExplanation(
+        threadId,
+        conceptName,
+        markdown,
+        hintIds,
+      );
       localStorage.removeItem(DRAFT_KEY(threadId, conceptName));
-
-      // Poll for scoring result
-      const poll = async () => {
-        for (let i = 0; i < 30; i++) {
-          await new Promise((r) => setTimeout(r, 2000));
-          const result = await getFeynmanResult(submission_id);
-          if (result.status === "scored") {
-            setFeynmanResult(result);
-            setIsSubmitting(false);
-            return;
-          }
-          if (result.status === "failed") {
-            setIsSubmitting(false);
-            onClose();
-            return;
-          }
-        }
-        // Timeout — close modal
-        setIsSubmitting(false);
-        onClose();
-      };
-      poll();
+      toast.info(`Evaluation started for ${conceptName}`);
+      onSubmitComplete?.(submission_id);
+      animateOut(onClose);
     } catch {
+      toast.error("Failed to submit explanation");
       setIsSubmitting(false);
     }
-  }, [editor, threadId, conceptName, hints, onClose]);
+  }, [editor, threadId, conceptName, hints, onClose, animateOut, onSubmitComplete]);
 
   return (
     <>
       {/* Backdrop */}
       <div
         className={`fixed inset-0 z-99 bg-background/70 backdrop-blur-sm transition-opacity duration-300 ease-out ${visible ? "opacity-100" : "opacity-0"}`}
-        onClick={handleClose}
+        onClick={dismissable ? handleClose : undefined}
       />
       {/* Modal */}
-      <div className={`fixed inset-4 z-100 max-w-4xl mx-auto flex flex-col rounded-xl border border-border bg-background shadow-2xl transition-all duration-300 ease-out ${visible ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-95 translate-y-4"}`}>
+      <div
+        className={`fixed inset-4 z-100 max-w-4xl mx-auto flex flex-col rounded-xl border border-border bg-background shadow-2xl transition-all duration-300 ease-out ${visible ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-95 translate-y-4"}`}
+      >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border px-6 py-4">
           <div>
@@ -179,56 +179,47 @@ export function FeynmanModal({
             <h1 className="mt-1 text-xl font-semibold">
               Explain: {conceptName}
             </h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Explain this concept in your own words as if teaching it to someone new. The clearer your explanation, the better you understand it.
+            </p>
           </div>
-          <button
-            onClick={handleClose}
-            className="rounded-lg p-2 hover:bg-accent"
-          >
-            <CloseCircleBoldDuotone className="h-5 w-5" />
-          </button>
+          {dismissable && (
+            <button
+              onClick={handleClose}
+              className="rounded-lg p-2 hover:bg-accent"
+            >
+              <CloseCircleBoldDuotone className="h-5 w-5" />
+            </button>
+          )}
         </div>
 
         {/* Hints */}
         <HintBanner hints={hints} onDismiss={handleDismissHint} />
 
-        {feynmanResult ? (
-          <div className="flex-1 min-h-0 px-6 py-4 overflow-auto">
-            <FeynmanResults
-              result={feynmanResult}
-              onContinue={() => {
-                onSubmitComplete?.(feynmanResult);
-                animateOut(onClose);
-              }}
-            />
-          </div>
-        ) : (
-          <>
-            {/* Editor */}
-            <div className="flex-1 min-h-0 px-6 py-4">
-              <BlockNoteView
-                className="bg-transparent"
-                editor={editor}
-                theme={resolvedTheme === "dark" ? "dark" : "light"}
-                data-feynman-editor
-              />
-            </div>
+        {/* Editor */}
+        <div className="flex-1 min-h-0 px-6 py-4 overflow-auto">
+          <BlockNoteView
+            className="bg-transparent"
+            editor={editor}
+            theme={resolvedTheme === "dark" ? "dark" : "light"}
+            data-feynman-editor
+          />
+        </div>
 
-            {/* Footer */}
-            <div className="flex items-center justify-between border-t border-border px-6 py-4">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleHint}
-                disabled={isHintLoading}
-              >
-                {isHintLoading ? "Getting hint..." : "Hint"}
-              </Button>
-              <Button onClick={handleSubmit} disabled={isSubmitting}>
-                {isSubmitting ? "Scoring..." : "Submit Explanation"}
-              </Button>
-            </div>
-          </>
-        )}
+        {/* Footer */}
+        <div className="flex items-center justify-between border-t border-border px-6 py-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleHint}
+            disabled={isHintLoading}
+          >
+            {isHintLoading ? "Getting hint..." : "Hint"}
+          </Button>
+          <Button onClick={handleSubmit} disabled={isSubmitting}>
+            {isSubmitting ? "Submitting..." : "Submit Explanation"}
+          </Button>
+        </div>
       </div>
     </>
   );

@@ -251,9 +251,9 @@ export default function Page() {
   const { topics, isLoading: topicsLoading } = useStudyTopics(5);
 
   return (
-    <div className="w-full max-w-3xl mx-auto px-6 py-8 space-y-10">
+    <div className="w-full max-w-5xl mx-auto px-6 py-6 space-y-10">
       <div>
-        <h1 className="text-3xl font-semibold">Dashboard</h1>
+        <h1 className="text-xl font-semibold tracking-tight">Dashboard</h1>
         <p className="text-muted-foreground mt-1">Overview</p>
       </div>
       <div className="w-full space-y-8">

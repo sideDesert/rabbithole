@@ -73,7 +73,6 @@ export function useChat({
   const [phase, setPhase] = useState("interview");
   const [isStreaming, setIsStreaming] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  // Only used when no initialThreadId — stores the ID after creating a new thread
   const [createdThreadId, setCreatedThreadId] = useState<string | null>(null);
   const threadId = initialThreadId ?? createdThreadId;
 
@@ -81,22 +80,15 @@ export function useChat({
     InterviewQuestion[] | null
   >(null);
   const msgCounter = useRef(0);
-  const pendingInterviewRef = useRef<InterviewQuestion[] | null>(null);
   const [feynmanOpen, setFeynmanOpen] = useState(false);
   const [feynmanConcept, setFeynmanConcept] = useState<string | null>(null);
-  const pendingFeynmanRef = useRef<string | null>(null);
   const [branchSuggestion, setBranchSuggestion] =
     useState<BranchSuggestion | null>(null);
-  const pendingBranchSuggestionRef = useRef<{
-    topic: string;
-    reason: string;
-  } | null>(null);
   const [phaseComplete, setPhaseComplete] = useState<{
     phaseTitle: string;
     isFinalPhase: boolean;
     nextPhaseTitle: string;
   } | null>(null);
-  const pendingPhaseCompleteRef = useRef<typeof phaseComplete>(null);
 
   // Load existing messages when threadId is provided
   useQuery({
@@ -179,9 +171,7 @@ export function useChat({
       ]);
       setIsLoading(true);
       setInterviewQuestions(null);
-      pendingInterviewRef.current = null;
       setBranchSuggestion(null);
-      pendingBranchSuggestionRef.current = null;
 
       let currentThreadId = initialThreadId ?? createdThreadId;
       if (!currentThreadId) {
@@ -293,6 +283,9 @@ export function useChat({
             break;
           case "phase_change":
             setPhase(event.to);
+            queryClient.invalidateQueries({ queryKey: ["thread", threadId] });
+            queryClient.invalidateQueries({ queryKey: ["threads"] });
+            queryClient.invalidateQueries({ queryKey: ["thread-tree"] });
             setMessages((prev) => [
               ...prev,
               {
@@ -305,26 +298,25 @@ export function useChat({
             break;
           case "interview_questions":
             clearStatus();
-            pendingInterviewRef.current = event.questions;
             setInterviewQuestions(event.questions);
             break;
           case "feynman_prompt":
-            // Store in a ref and apply after "end" event, same pattern as pendingInterviewRef.
-            // This prevents opening the modal while streaming is still in progress.
-            pendingFeynmanRef.current = event.concept_name;
+            setFeynmanOpen(true);
+            setFeynmanConcept(event.concept_name);
             break;
           case "branch_suggestion":
-            pendingBranchSuggestionRef.current = {
+            setBranchSuggestion({
               topic: event.topic,
               reason: event.reason,
-            };
+              messageId: currentAiMsgId,
+            });
             break;
           case "phase_complete":
-            pendingPhaseCompleteRef.current = {
+            setPhaseComplete({
               phaseTitle: event.phase_title,
               isFinalPhase: event.is_final_phase,
               nextPhaseTitle: event.next_phase_title,
-            };
+            });
             break;
           case "plan_created": {
             const slug = event.topic_slug;
@@ -372,24 +364,6 @@ export function useChat({
                 ),
             );
             setIsStreaming(false);
-            // Apply pending Feynman prompt after streaming ends
-            if (pendingFeynmanRef.current) {
-              setFeynmanOpen(true);
-              setFeynmanConcept(pendingFeynmanRef.current);
-              pendingFeynmanRef.current = null;
-            }
-            // Apply pending branch suggestion after streaming ends
-            if (pendingBranchSuggestionRef.current) {
-              setBranchSuggestion({
-                ...pendingBranchSuggestionRef.current,
-                messageId: currentAiMsgId,
-              });
-              pendingBranchSuggestionRef.current = null;
-            }
-            if (pendingPhaseCompleteRef.current) {
-              setPhaseComplete(pendingPhaseCompleteRef.current);
-              pendingPhaseCompleteRef.current = null;
-            }
             break;
           case "error":
             clearStatus();
@@ -407,13 +381,6 @@ export function useChat({
 
       setIsLoading(false);
       setIsStreaming(false);
-
-      // Ref-based fallback: if the SSE event set interview questions during
-      // streaming but React's batching swallowed the state update, apply it now.
-      if (pendingInterviewRef.current) {
-        setInterviewQuestions(pendingInterviewRef.current);
-        pendingInterviewRef.current = null;
-      }
     },
     [
       initialThreadId,

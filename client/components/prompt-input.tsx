@@ -3,9 +3,9 @@
 import { useCallback, useRef, useState, type RefCallback } from "react";
 import {
   AltArrowLeftBoldDuotone,
+  SquareAltArrowUpBold,
   BranchingPathsDownBoldDuotone,
   RefreshBoldDuotone,
-  SendSquareBoldDuotone,
   StopCircleBoldDuotone,
   ChatSquareBoldDuotone,
   CloseCircleBoldDuotone,
@@ -61,7 +61,8 @@ export function PromptInput({
   const textareaCallbackRef: RefCallback<HTMLTextAreaElement> = (el) => {
     textareaRef.current = el;
     if (typeof ref === "function") ref(el);
-    else if (ref) (ref as React.MutableRefObject<HTMLElement | null>).current = el;
+    else if (ref)
+      (ref as React.MutableRefObject<HTMLElement | null>).current = el;
   };
 
   const autoResize = useCallback(() => {
@@ -142,8 +143,12 @@ export function PromptInput({
               {(mode === MODE_TAGGED || mode === MODE_BRANCH) && (
                 <div className="text-md flex w-full justify-between p-2 border-2 text-foreground/60 rounded-xl relative z-0 mb-2">
                   <div className="flex justify-center items-center pl-2">
-                    {mode === MODE_TAGGED && <ChatSquareBoldDuotone size={18} />}
-                    {mode === MODE_BRANCH && <BranchingPathsDownBoldDuotone size={18} />}
+                    {mode === MODE_TAGGED && (
+                      <ChatSquareBoldDuotone size={18} />
+                    )}
+                    {mode === MODE_BRANCH && (
+                      <BranchingPathsDownBoldDuotone size={18} />
+                    )}
                   </div>
                   <div className="grow pl-2 text-left inline-flex items-center">
                     {tagged.length > 80 ? `${tagged.slice(0, 80)}...` : tagged}
@@ -156,6 +161,7 @@ export function PromptInput({
                 </div>
               )}{" "}
               <Button
+                variant={"secondary"}
                 disabled={!value.trim() || loading}
                 onClick={handleSubmit}
                 className="absolute right-1.5 bottom-8 shrink-0 cursor-pointer z-20"
@@ -166,9 +172,7 @@ export function PromptInput({
                     <div>Creating Branch...</div>
                   </div>
                 )}
-                {!loading && !streaming && (
-                  <SendSquareBoldDuotone className="h-4 w-4" />
-                )}
+                {!loading && !streaming && <span>Send</span>}
                 {!loading && streaming && <StopCircleBoldDuotone />}
               </Button>
               <Textarea

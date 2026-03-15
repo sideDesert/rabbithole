@@ -53,6 +53,8 @@ export function MainContent({ children }: { children: ReactNode }) {
       <main className="grow grid grid-rows-[auto_1fr]">
         <TopBar
           config={config}
+          threadStatus={thread?.status}
+          threadDepth={thread?.depth}
           backToRootHandler={() => {
             if (rootOrigin) {
               const scrollParam = rootOrigin.rootMessageId

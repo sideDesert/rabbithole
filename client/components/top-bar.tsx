@@ -14,8 +14,10 @@ import {
 } from "solar-icon-set";
 import { Button } from "./ui/button";
 import { ButtonGroup } from "./ui/button-group";
+import { Badge } from "@/components/ui/badge";
 import { TopicProgress } from "@/components/topic-progress";
 import { useParams } from "next/navigation";
+import { cn } from "@/lib/utils";
 
 interface TopBarInterface {
   config?: {
@@ -24,11 +26,15 @@ interface TopBarInterface {
     progress?: boolean;
     tabs?: boolean;
   };
+  threadStatus?: string;
+  threadDepth?: number;
   backToRootHandler: () => void;
   backToParentHandler: () => void;
 }
 export function TopBar({
   config,
+  threadStatus,
+  threadDepth,
   backToRootHandler,
   backToParentHandler,
 }: TopBarInterface) {
@@ -61,6 +67,25 @@ export function TopBar({
             </ButtonGroup>
           )}
           {config?.title && <h2 className="font-medium">{config.title}</h2>}
+          {threadDepth != null && threadDepth > 0 && threadStatus && (
+            <Badge
+              variant="secondary"
+              className={cn(
+                "gap-1 text-[10px] px-1.5 py-0",
+                threadStatus === "active" && "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+                threadStatus === "explored" && "bg-muted text-muted-foreground",
+                threadStatus === "mastered" && "bg-amber-500/10 text-amber-600 dark:text-amber-400",
+              )}
+            >
+              <span className={cn(
+                "inline-block h-1.5 w-1.5 rounded-full",
+                threadStatus === "active" && "bg-emerald-500",
+                threadStatus === "explored" && "bg-muted-foreground/50",
+                threadStatus === "mastered" && "bg-amber-500",
+              )} />
+              {threadStatus}
+            </Badge>
+          )}
         </div>
       </div>
 

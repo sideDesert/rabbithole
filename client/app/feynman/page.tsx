@@ -183,6 +183,13 @@ export default function Page() {
                 <PlanCreatedCard
                   key={msg.id}
                   topicSlug={msg.metadata?.topicSlug ?? ""}
+                  onStart={threadId ? async () => {
+                    const result = await startPhase(threadId);
+                    queryClient.invalidateQueries({ queryKey: ["threads"] });
+                    queryClient.invalidateQueries({ queryKey: ["thread-tree"] });
+                    const m = `Let's start learning: ${result.phase_title ?? result.title}`;
+                    router.push(`/threads/${result.thread_id}?msg=${encodeURIComponent(m)}`);
+                  } : undefined}
                 />
               );
             }
@@ -229,18 +236,6 @@ export default function Page() {
                 });
               }}
               onDismiss={dismissBranchSuggestion}
-            />
-          )}
-          {threadId && messages.some((m) => m.type === "plan_card") && !isStreaming && (
-            <PhaseActionButton
-              label="Start Learning"
-              sublabel="Begin Phase 1 of your learning plan"
-              onClick={async () => {
-                const result = await startPhase(threadId);
-                queryClient.invalidateQueries({ queryKey: ["threads"] });
-                queryClient.invalidateQueries({ queryKey: ["thread-tree"] });
-                router.push(`/threads/${result.thread_id}`);
-              }}
             />
           )}
           {phaseComplete && !phaseComplete.isFinalPhase && !feynmanOpen && threadId && (

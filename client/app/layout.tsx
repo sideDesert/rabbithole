@@ -5,7 +5,7 @@ import "./globals.css";
 import { AppSidebar, Tool } from "@/components/app-sidebar";
 import { Providers } from "@/components/providers";
 import { MainContent } from "@/components/main-content";
-import { AtomBoldDuotone, Widget2BoldDuotone, GraphBoldDuotone, Pen2BoldDuotone } from "solar-icon-set";
+import { AtomBoldDuotone, Widget2BoldDuotone, GraphBoldDuotone, Pen2BoldDuotone, DocumentTextBoldDuotone, ChecklistBoldDuotone } from "solar-icon-set";
 
 const raleway = Raleway({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -22,6 +22,8 @@ const geistMono = Geist_Mono({
 const tools: Tool[] = [
   { name: "Dashboard", icon: Widget2BoldDuotone, href: "/dashboard" },
   { name: "Study Plans", icon: Pen2BoldDuotone, href: "/study-plans" },
+  { name: "Notes", icon: DocumentTextBoldDuotone, href: "/notes" },
+  { name: "Evaluations", icon: ChecklistBoldDuotone, href: "/evaluations" },
   { name: "Knowledge Graph", icon: GraphBoldDuotone, href: "/knowledge-graph" },
   { name: "Memory Graph", icon: AtomBoldDuotone, href: "/memory-graph" },
 ];
