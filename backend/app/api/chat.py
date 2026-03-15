@@ -37,6 +37,7 @@ from app.models.branch_point import BranchPoint, TextPosition
 from app.models.message import Message
 from app.models.thread import Thread
 from app.plan_parser import parse_plan
+from app.services.concept_extractor import extract_and_update_graph
 from app.tools_impl import AgentContext
 
 MessageRole = Literal["user", "assistant", "system"]
@@ -973,6 +974,20 @@ async def chat(thread_id: str, req: ChatRequest):
             except Exception as e:
                 logger.warning("[chat] evermemos store assistant failed: %s", e)
         yield _status("save_response", "Saving to memory...", _ms(t0))
+
+        # 9c. Fire concept extractor if teaching tools were called
+        EXTRACTOR_TRIGGERS = {"update_plan_progress", "trigger_feynman", "suggest_branches"}
+        if phase == "teaching" and EXTRACTOR_TRIGGERS & set(tool_names_called):
+            import asyncio
+
+            async def _fire_extractor():
+                try:
+                    await extract_and_update_graph(thread_id, user_id, topic_slug)
+                except Exception as e:
+                    logger.warning("[chat] extractor failed: %s", e)
+
+            asyncio.ensure_future(_fire_extractor())
+            logger.info("[chat] concept extractor fired for thread=%s", thread_id)
 
         # 9b. Generate title on first message (root threads only)
         if is_first_message and full_text:
