@@ -181,7 +181,7 @@ function CarouselPrevious({
     <button
       data-slot="carousel-previous"
       className={cn(
-        "absolute touch-manipulation rounded-full size-8 flex items-center justify-center border border-border bg-background text-foreground hover:bg-muted disabled:opacity-50 disabled:pointer-events-none",
+        "absolute touch-manipulation rounded-md size-8 flex items-center justify-center border-2 border-border bg-background text-foreground shadow-sm hover:bg-muted disabled:opacity-50 disabled:pointer-events-none",
         orientation === "horizontal"
           ? "top-1/2 -left-12 -translate-y-1/2"
           : "-top-12 left-1/2 -translate-x-1/2 rotate-90",
@@ -207,7 +207,7 @@ function CarouselNext({
     <button
       data-slot="carousel-next"
       className={cn(
-        "absolute touch-manipulation rounded-full size-8 flex items-center justify-center border border-border bg-background text-foreground hover:bg-muted disabled:opacity-50 disabled:pointer-events-none",
+        "absolute touch-manipulation rounded-md size-8 flex items-center justify-center border-2 border-border bg-background text-foreground shadow-sm hover:bg-muted disabled:opacity-50 disabled:pointer-events-none",
         orientation === "horizontal"
           ? "top-1/2 -right-12 -translate-y-1/2"
           : "-bottom-12 left-1/2 -translate-x-1/2 rotate-90",

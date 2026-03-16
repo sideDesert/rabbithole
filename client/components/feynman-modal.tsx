@@ -163,15 +163,15 @@ export function FeynmanModal({
     <>
       {/* Backdrop */}
       <div
-        className={`fixed inset-0 z-99 bg-background/70 backdrop-blur-sm transition-opacity duration-300 ease-out ${visible ? "opacity-100" : "opacity-0"}`}
+        className={`fixed inset-0 z-99 bg-background/80 transition-opacity duration-300 ease-out ${visible ? "opacity-100" : "opacity-0"}`}
         onClick={dismissable ? handleClose : undefined}
       />
       {/* Modal */}
       <div
-        className={`fixed inset-4 z-100 max-w-4xl mx-auto flex flex-col rounded-xl border border-border bg-background shadow-2xl transition-all duration-300 ease-out ${visible ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-95 translate-y-4"}`}
+        className={`fixed inset-4 z-100 max-w-4xl mx-auto flex flex-col rounded-lg border-2 border-border bg-background shadow-lg transition-all duration-300 ease-out ${visible ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-95 translate-y-4"}`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-border px-6 py-4">
+        <div className="flex items-center justify-between border-b-2 border-border px-6 py-4">
           <div>
             <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
               Feynman Mode
@@ -207,7 +207,7 @@ export function FeynmanModal({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between border-t border-border px-6 py-4">
+        <div className="flex items-center justify-between border-t-2 border-border px-6 py-4">
           <Button
             variant="outline"
             size="sm"

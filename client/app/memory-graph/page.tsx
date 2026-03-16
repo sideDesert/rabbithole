@@ -52,7 +52,7 @@ const NODE_TYPE_MAP: Record<string, string> = {
 
 function StatsBar({ stats }: { stats: MemoryGraphStats }) {
   return (
-    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-4 bg-card/90 backdrop-blur-sm border border-border rounded-xl px-5 py-2.5 shadow-lg">
+    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-4 bg-card border-2 border-border rounded-lg px-5 py-2.5 shadow-md">
       <Stat label="Concepts" value={stats.concept_count} color="text-teal-600 dark:text-teal-400" />
       <Sep />
       <Stat label="People" value={stats.person_count} color="text-purple-600 dark:text-purple-400" />
@@ -137,7 +137,7 @@ function Legend() {
     { label: "learned_from", color: "#a78bfa", dash: false },
   ];
   return (
-    <div className="absolute bottom-20 right-4 z-10 bg-card/90 backdrop-blur-sm border border-border rounded-xl p-3 shadow-lg">
+    <div className="absolute bottom-20 right-4 z-10 bg-card border-2 border-border rounded-lg p-3 shadow-md">
       <p className="text-[10px] font-medium text-muted-foreground mb-2">Nodes</p>
       <div className="space-y-1 mb-3">
         {items.map((i) => (

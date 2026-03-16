@@ -11,9 +11,9 @@ interface KgThreadNodeData {
 }
 
 const phaseColor: Record<string, string> = {
-  interview: "#a78bfa",   // violet
-  planning: "#fbbf24",    // amber
-  teaching: "#34d399",    // emerald
+  interview: "#88e5d6",   // teal
+  planning: "#ffe156",    // yellow
+  teaching: "#e85d3a",    // coral
 };
 
 export function KgThreadNode({ data, selected }: NodeProps) {
@@ -23,11 +23,10 @@ export function KgThreadNode({ data, selected }: NodeProps) {
   return (
     <div
       className={cn(
-        "rounded-md px-3 py-2 min-w-[120px] max-w-[180px] cursor-pointer transition-all bg-card",
+        "rounded-md px-3 py-2 min-w-[120px] max-w-[180px] cursor-pointer transition-all bg-card border-2 border-border shadow-sm",
         selected && "ring-2 ring-primary/50",
       )}
       style={{
-        border: `1.5px solid ${color}`,
         boxShadow: "var(--graph-node-shadow)",
       }}
     >

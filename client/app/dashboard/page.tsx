@@ -49,7 +49,7 @@ function TestCard({ test }: { test: PendingTest }) {
     >
       <Card
         size="sm"
-        className="hover:ring-foreground/20 transition-shadow cursor-pointer h-full flex flex-col"
+        className="card-hover transition-shadow cursor-pointer h-full flex flex-col"
       >
         <CardHeader>
           <CardTitle className="line-clamp-2 text-base">
@@ -127,7 +127,7 @@ function SkeletonCards({ count = 4 }: { count?: number }) {
       {Array.from({ length: count }).map((_, i) => (
         <div
           key={i}
-          className="flex flex-col rounded-xl border overflow-hidden"
+          className="flex flex-col rounded-lg border-2 border-border overflow-hidden"
         >
           <Skeleton className="h-28 rounded-none" />
           <div className="p-4 space-y-3">
@@ -148,8 +148,8 @@ function SkeletonCards({ count = 4 }: { count?: number }) {
 function NewTopicCard() {
   return (
     <Link href="/feynman" className="block h-full">
-      <div className="flex flex-col items-center justify-center h-full min-h-[280px] rounded-xl border-2 border-dashed border-muted-foreground/25 hover:border-muted-foreground/50 transition-colors cursor-pointer">
-        <div className="flex items-center justify-center size-12 rounded-full border-2 border-dashed border-muted-foreground/25 mb-3">
+      <div className="flex flex-col items-center justify-center h-full min-h-[280px] rounded-lg border-2 border-dashed border-border hover:border-foreground transition-colors cursor-pointer">
+        <div className="flex items-center justify-center size-12 rounded-full border-2 border-dashed border-border mb-3">
           <AddCircleBoldDuotone className="size-5 text-muted-foreground" />
         </div>
         <p className="text-sm font-medium text-muted-foreground">

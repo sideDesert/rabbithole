@@ -29,20 +29,20 @@ export function TopicHubNode({ data, selected }: NodeProps) {
   return (
     <div
       className={cn(
-        "rounded-2xl px-5 py-4 min-w-[200px] cursor-pointer transition-all shadow-md",
+        "rounded-lg px-5 py-4 min-w-[200px] cursor-pointer transition-all border-2 border-border shadow-md",
         selected && "ring-2 ring-primary/50",
       )}
       style={{
-        background: isDark ? `hsl(${hue}, 30%, 15%)` : `hsl(${hue}, 30%, 96%)`,
-        border: `2px solid hsl(${hue}, 60%, 50%)`,
+        background: isDark
+          ? "linear-gradient(135deg, #2a2118, #1e1c1a)"
+          : "linear-gradient(135deg, #fffef5, #f5eed8)",
       }}
     >
       <NodeHandles />
 
       <div className="text-center">
         <p
-          className="text-base font-bold capitalize"
-          style={{ color: isDark ? `hsl(${hue}, 70%, 75%)` : `hsl(${hue}, 60%, 35%)` }}
+          className="text-base font-bold capitalize text-foreground"
         >
           {d.display_name}
         </p>
@@ -52,12 +52,11 @@ export function TopicHubNode({ data, selected }: NodeProps) {
           <span>{Math.round(score * 100)}% avg</span>
         </div>
         {/* Mini progress bar */}
-        <div className="mt-2 h-1 w-full rounded-full bg-black/5 dark:bg-white/10 overflow-hidden">
+        <div className="mt-2 h-1 w-full rounded-full bg-muted overflow-hidden">
           <div
-            className="h-full rounded-full transition-all"
+            className="h-full rounded-full transition-all bg-primary"
             style={{
               width: `${Math.round(score * 100)}%`,
-              background: `hsl(${hue}, 60%, 50%)`,
             }}
           />
         </div>

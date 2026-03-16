@@ -51,7 +51,7 @@ const edgeTypes: EdgeTypes = { trail: TrailEdge };
 
 function StatsBar({ stats }: { stats: GraphStats }) {
   return (
-    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-4 bg-card/90 backdrop-blur-sm border border-border rounded-xl px-5 py-2.5 shadow-lg">
+    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-4 bg-card border-2 border-border rounded-lg px-5 py-2.5 shadow-md">
       <Stat label="Concepts" value={stats.total_concepts} />
       <Sep />
       <Stat label="Mastered" value={stats.mastered} color="text-chart-1" />
@@ -104,7 +104,7 @@ function Sep() {
 
 function EdgeLegend() {
   return (
-    <div className="group absolute bottom-4 right-4 z-10 bg-card/90 backdrop-blur-sm border border-border rounded-xl shadow-lg overflow-hidden transition-[max-height,opacity] duration-300 ease-in-out max-h-8 hover:max-h-[400px]">
+    <div className="group absolute bottom-4 right-4 z-10 bg-card border-2 border-border rounded-lg shadow-md overflow-hidden transition-[max-height,opacity] duration-300 ease-in-out max-h-8 hover:max-h-[400px]">
       <div className="px-3 py-1.5 cursor-default">
         <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
           Legend
@@ -222,7 +222,7 @@ function DomainFilter({
         <Button
           size="sm"
           variant="outline"
-          className="h-8 gap-1.5 text-xs bg-card/90 backdrop-blur-sm shadow-lg"
+          className="h-8 gap-1.5 text-xs bg-card border-2 border-border shadow-md"
           onClick={() => onChange(undefined)}
         >
           <ArrowLeftBoldDuotone className="size-3" />
@@ -232,7 +232,7 @@ function DomainFilter({
       <select
         value={selected ?? ""}
         onChange={(e) => onChange(e.target.value || undefined)}
-        className="text-xs bg-card/90 backdrop-blur-sm border border-border rounded-md px-3 py-2 text-foreground shadow-lg capitalize"
+        className="text-xs bg-card border-2 border-border rounded-md px-3 py-2 text-foreground shadow-md capitalize"
       >
         <option value="">All topics</option>
         {domains.map((d) => (

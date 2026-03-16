@@ -51,7 +51,7 @@ export function TopBar({
 
   return (
     <div
-      className={`flex bg-background z-20 items-center justify-between p-2 sticky top-0 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-6 after:translate-y-full after:bg-gradient-to-b after:from-background after:to-transparent after:pointer-events-none after:transition-opacity ${scrolled ? "after:opacity-100" : "after:opacity-0"}`}
+      className={`flex bg-background border-b-2 border-border z-20 items-center justify-between p-2 sticky top-0 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-6 after:translate-y-full after:bg-gradient-to-b after:from-background after:to-transparent after:pointer-events-none after:transition-opacity ${scrolled ? "after:opacity-100" : "after:opacity-0"}`}
     >
       <div className="flex items-center gap-2">
         <SidebarTrigger />
@@ -71,10 +71,10 @@ export function TopBar({
             <Badge
               variant="secondary"
               className={cn(
-                "gap-1 text-[10px] px-1.5 py-0",
-                threadStatus === "active" && "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+                "gap-1 text-[10px] px-1.5 py-0 border-2 border-border",
+                threadStatus === "active" && "bg-accent text-emerald-600 dark:text-emerald-400",
                 threadStatus === "explored" && "bg-muted text-muted-foreground",
-                threadStatus === "mastered" && "bg-amber-500/10 text-amber-600 dark:text-amber-400",
+                threadStatus === "mastered" && "bg-secondary text-amber-600 dark:text-amber-400",
               )}
             >
               <span className={cn(

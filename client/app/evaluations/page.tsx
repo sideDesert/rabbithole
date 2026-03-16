@@ -30,9 +30,11 @@ export default function EvaluationsPage() {
       )}
 
       {!isLoading && evaluations.length === 0 && (
-        <p className="text-sm text-muted-foreground">
-          No evaluations yet. Complete a Feynman exercise to see your results here.
-        </p>
+        <div className="border-2 border-dashed border-border rounded-lg p-6">
+          <p className="text-sm text-muted-foreground">
+            No evaluations yet. Complete a Feynman exercise to see your results here.
+          </p>
+        </div>
       )}
 
       {!isLoading && evaluations.length > 0 && !selected && (
@@ -41,7 +43,7 @@ export default function EvaluationsPage() {
             <button
               key={ev.id}
               onClick={() => setSelectedId(ev.id)}
-              className="w-full flex items-center justify-between px-4 py-3 border border-border rounded-lg hover:bg-accent/50 transition-colors text-left"
+              className="w-full flex items-center justify-between px-4 py-3 border-2 border-border rounded-md hover:bg-accent transition-colors text-left"
             >
               <div>
                 <span className="font-medium">{ev.concept_name}</span>
@@ -73,7 +75,7 @@ export default function EvaluationsPage() {
           >
             ← Back to all evaluations
           </button>
-          <div className="border border-border rounded-lg p-4">
+          <div className="border-2 border-border rounded-lg p-4">
             <EvaluationDetail evaluation={selected} />
           </div>
         </div>

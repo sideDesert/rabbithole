@@ -15,7 +15,7 @@ export function HintBanner({ hints, onDismiss }: HintBannerProps) {
       {hints.map((hint) => (
         <div
           key={hint.id}
-          className="flex items-start gap-3 rounded-lg border border-border/60 bg-muted/50 px-4 py-3 text-sm text-muted-foreground"
+          className="flex items-start gap-3 rounded-md border-2 border-border bg-secondary/20 shadow-sm px-4 py-3 text-sm text-muted-foreground"
         >
           <span className="mt-0.5 shrink-0 text-base">💡</span>
           <p className="flex-1 leading-relaxed">{hint.text}</p>

@@ -56,7 +56,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
           style: {
             background: "var(--card)",
             color: "var(--card-foreground)",
-            border: "1px solid var(--border)",
+            border: "2px solid var(--border)",
+            boxShadow: "4px 4px 0px 0px var(--border)",
+            borderRadius: "6px",
           },
         }}
       />

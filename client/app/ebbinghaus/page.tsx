@@ -68,9 +68,11 @@ export default function EbbinghausPage() {
         )}
 
         {!pendingLoading && pending.length === 0 && (
-          <p className="text-sm text-muted-foreground">
-            No tests scheduled. Pick a topic below to test yourself.
-          </p>
+          <div className="border-2 border-dashed border-border rounded-lg p-6">
+            <p className="text-sm text-muted-foreground">
+              No tests scheduled. Pick a topic below to test yourself.
+            </p>
+          </div>
         )}
 
         {pending.length > 0 && (
@@ -119,9 +121,11 @@ export default function EbbinghausPage() {
         )}
 
         {!topicsLoading && topics.length === 0 && (
-          <p className="text-sm text-muted-foreground">
-            No completed concepts yet. Learn something with Mr. Feynman first!
-          </p>
+          <div className="border-2 border-dashed border-border rounded-lg p-6">
+            <p className="text-sm text-muted-foreground">
+              No completed concepts yet. Learn something with Mr. Feynman first!
+            </p>
+          </div>
         )}
 
         {topics.map((topic) => (
@@ -148,10 +152,10 @@ function TopicGroup({
   const [open, setOpen] = useState(true);
 
   return (
-    <div className="rounded-xl border border-border overflow-hidden">
+    <div className="rounded-lg border-2 border-border shadow-md overflow-hidden">
       <button
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-muted/50 transition-colors"
+        className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-muted transition-colors"
       >
         {open ? (
           <AltArrowDownBoldDuotone className="h-4 w-4 text-muted-foreground shrink-0" />
@@ -169,7 +173,7 @@ function TopicGroup({
           {topic.concepts.map((concept) => (
             <div
               key={concept.name}
-              className="flex items-center gap-3 px-4 py-2.5 hover:bg-muted/30 transition-colors"
+              className="flex items-center gap-3 px-4 py-2.5 hover:bg-muted transition-colors"
             >
               <span className="text-sm flex-1">{concept.name}</span>
               {concept.mastery_score != null && (

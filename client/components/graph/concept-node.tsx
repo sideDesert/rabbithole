@@ -68,14 +68,13 @@ export function ConceptNode({ data, selected }: NodeProps) {
   return (
     <div
       className={cn(
-        "rounded-lg px-4 py-3 min-w-[180px] max-w-[240px] cursor-pointer transition-all",
+        "rounded-md px-4 py-3 min-w-[180px] max-w-[240px] cursor-pointer transition-all shadow-sm",
         selected && "ring-2 ring-primary/50",
       )}
       style={{
         opacity: confidence < 0.5 ? 0.5 : confidence < 0.8 ? 0.75 : 1,
         border: `2px solid ${color}`,
         background: masteryBg(score),
-        backdropFilter: "blur(8px)",
         boxShadow: "var(--graph-node-shadow)",
       }}
     >

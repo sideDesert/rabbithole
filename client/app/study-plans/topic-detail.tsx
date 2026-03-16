@@ -44,7 +44,7 @@ function ProgressRing({
       style={{
         width: size,
         height: size,
-        background: `conic-gradient(var(--primary) ${deg}deg, oklch(from var(--primary) l c h / 0.6) ${deg}deg)`,
+        background: `conic-gradient(var(--primary) ${deg}deg, color-mix(in srgb, var(--primary) 60%, transparent) ${deg}deg)`,
         mask: `radial-gradient(farthest-side, transparent calc(50% - ${strokeWidth}px), #000 calc(50% - ${strokeWidth - 1}px), #000 50%, transparent 51%)`,
         WebkitMask: `radial-gradient(farthest-side, transparent calc(50% - ${strokeWidth}px), #000 calc(50% - ${strokeWidth - 1}px), #000 50%, transparent 51%)`,
       }}

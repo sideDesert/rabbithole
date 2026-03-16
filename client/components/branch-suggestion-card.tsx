@@ -18,8 +18,8 @@ export function BranchSuggestionCard({
   onDismiss,
 }: BranchSuggestionCardProps) {
   return (
-    <div className="flex items-start gap-3 rounded-lg border border-border bg-accent/50 p-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
-      <div className="flex-shrink-0 rounded-md bg-primary/10 p-2">
+    <div className="flex items-start gap-3 rounded-lg border-2 border-border bg-card shadow-md p-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
+      <div className="flex-shrink-0 rounded-md bg-primary/10 p-2 border-2 border-border">
         <BranchingPathsDownBoldDuotone className="h-4 w-4 text-primary" />
       </div>
       <div className="flex-1 min-w-0">
@@ -28,7 +28,7 @@ export function BranchSuggestionCard({
         <button
           onClick={onBranch}
           disabled={loading}
-          className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 cursor-pointer"
+          className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground border-2 border-border shadow-sm neo-hover disabled:opacity-50 cursor-pointer"
         >
           <BranchingPathsDownBoldDuotone className="h-3 w-3" />
           {loading ? "Branching..." : "Explore as rabbit hole"}

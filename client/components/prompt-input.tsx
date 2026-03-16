@@ -108,7 +108,7 @@ export function PromptInput({
             )}
           </div>
         )}
-        <div className="bg-background pb-6 rounded-lg overflow-hidden">
+        <div className="bg-background pb-6 rounded-lg overflow-hidden border-2 border-border shadow-sm">
           {mode === MODE_INTERVIEW && interviewQuestion && (
             <div className="flex flex-col gap-2">
               {interviewQuestion.options.map((option, i) => (
@@ -141,7 +141,7 @@ export function PromptInput({
             mode === MODE_BRANCH) && (
             <>
               {(mode === MODE_TAGGED || mode === MODE_BRANCH) && (
-                <div className="text-md flex w-full justify-between p-2 border-2 text-foreground/60 rounded-xl relative z-0 mb-2">
+                <div className="text-md flex w-full justify-between p-2 border-2 border-border text-foreground/60 rounded-md relative z-0 mb-2">
                   <div className="flex justify-center items-center pl-2">
                     {mode === MODE_TAGGED && (
                       <ChatSquareBoldDuotone size={18} />
@@ -164,7 +164,7 @@ export function PromptInput({
                 variant={"secondary"}
                 disabled={!value.trim() || loading}
                 onClick={handleSubmit}
-                className="absolute right-1.5 bottom-8 shrink-0 cursor-pointer z-20"
+                className="absolute right-1.5 bottom-8 shrink-0 cursor-pointer z-20 neo-hover"
               >
                 {loading && (
                   <div className="flex gap-2 justify-center items-center">

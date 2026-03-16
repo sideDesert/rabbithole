@@ -50,7 +50,7 @@ export function MainContent({ children }: { children: ReactNode }) {
       }}
       className="w-full"
     >
-      <main className="grow grid grid-rows-[auto_1fr]">
+      <main className="grow grid grid-rows-[auto_1fr] bg-background">
         <TopBar
           config={config}
           threadStatus={thread?.status}

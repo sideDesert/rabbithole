@@ -49,9 +49,9 @@ export function PlanCreatedCard({ topicSlug, onStart }: PlanCreatedCardProps) {
   };
 
   return (
-    <div className="border border-border rounded-xl p-4 bg-card max-w-sm">
+    <div className="border-2 border-border rounded-lg shadow-md p-4 bg-card max-w-sm card-hover">
       <div className="flex items-start gap-3">
-        <div className="p-2 rounded-lg bg-primary/10">
+        <div className="p-2 rounded-md bg-primary/10">
           <ChecklistBoldDuotone className="size-5 text-primary" />
         </div>
         <div className="flex-1 min-w-0">
@@ -77,9 +77,9 @@ export function PlanCreatedCard({ topicSlug, onStart }: PlanCreatedCardProps) {
             <span className="text-muted-foreground">Progress</span>
             <span className="font-medium">{percent}%</span>
           </div>
-          <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+          <div className="h-1.5 w-full rounded-sm bg-muted border border-border overflow-hidden">
             <div
-              className="h-full rounded-full bg-primary transition-all duration-500"
+              className="h-full rounded-sm bg-primary transition-all duration-500"
               style={{ width: `${percent}%` }}
             />
           </div>
@@ -91,7 +91,7 @@ export function PlanCreatedCard({ topicSlug, onStart }: PlanCreatedCardProps) {
       <div className="flex gap-2 mt-3">
         <button
           onClick={() => setActiveTab("plan-mode")}
-          className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium hover:bg-accent transition-colors cursor-pointer"
+          className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-md border-2 border-border px-3 py-1.5 text-xs font-medium neo-hover transition-colors cursor-pointer"
         >
           <ChecklistBoldDuotone className="size-3" />
           View Plan
@@ -99,7 +99,7 @@ export function PlanCreatedCard({ topicSlug, onStart }: PlanCreatedCardProps) {
         {hasStarted ? (
           <button
             onClick={() => router.push(`/threads/${topic.latest_thread.id}`)}
-            className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors cursor-pointer"
+            className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-md border-2 border-border bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground neo-hover transition-colors cursor-pointer"
           >
             <CourseUpBoldDuotone className="size-3" />
             Continue Learning
@@ -109,7 +109,7 @@ export function PlanCreatedCard({ topicSlug, onStart }: PlanCreatedCardProps) {
           <button
             onClick={handleStart}
             disabled={loading}
-            className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 cursor-pointer"
+            className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-md border-2 border-border bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground neo-hover transition-colors disabled:opacity-50 cursor-pointer"
           >
             <PlayBoldDuotone className="size-3" />
             {loading ? "Starting..." : "Start Learning"}

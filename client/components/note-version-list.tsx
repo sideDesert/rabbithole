@@ -22,10 +22,10 @@ export function NoteVersionList({ notes }: NoteVersionListProps) {
         const score = note.evaluation?.overall_score;
 
         return (
-          <div key={note.id} className="border border-border rounded-lg">
+          <div key={note.id} className="border-2 border-border rounded-md">
             <button
               onClick={() => setExpandedId(isExpanded ? null : note.id)}
-              className="w-full flex items-center justify-between px-3 py-2 text-left hover:bg-accent/50 rounded-lg transition-colors"
+              className="w-full flex items-center justify-between px-3 py-2 text-left hover:bg-accent rounded-md transition-colors"
             >
               <div className="flex items-center gap-2">
                 <span className="text-xs font-medium text-muted-foreground">
@@ -57,7 +57,7 @@ export function NoteVersionList({ notes }: NoteVersionListProps) {
                   {note.markdown}
                 </div>
                 {note.evaluation && (
-                  <div className="mt-3 pt-2 border-t border-border/50 space-y-1">
+                  <div className="mt-3 pt-2 border-t border-border space-y-1">
                     {note.evaluation.scores && (
                       <div className="flex gap-4 text-xs text-muted-foreground">
                         <span>Clarity: {Math.round(note.evaluation.scores.clarity * 100)}%</span>

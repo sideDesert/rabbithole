@@ -111,7 +111,7 @@ function ToolCallBlock({ tc }: { tc: ToolCallEntry }) {
       </CollapsibleTrigger>
       {tc.result && (
         <CollapsibleContent>
-          <pre className="text-xs text-muted-foreground bg-muted/50 rounded p-2 mt-1 mb-2 overflow-x-auto whitespace-pre-wrap">
+          <pre className="text-xs text-muted-foreground bg-muted rounded-md p-2 mt-1 mb-2 overflow-x-auto whitespace-pre-wrap border-2 border-border">
             {(() => {
               try {
                 return JSON.stringify(JSON.parse(tc.result!), null, 2);
@@ -249,7 +249,7 @@ export function ChatMessage({
     return (
       <div
         className={clsx(
-          "chat-message bg-accent py-3 px-3 rounded-xl max-w-[85%]",
+          "chat-message bg-accent py-3 px-3 rounded-lg max-w-[85%] border-2 border-border shadow-sm",
           className,
         )}
         data-message-id={id}

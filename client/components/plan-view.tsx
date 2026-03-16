@@ -14,9 +14,9 @@ import Link from "next/link";
 
 function ProgressBar({ value }: { value: number }) {
   return (
-    <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+    <div className="h-1.5 w-full rounded-sm bg-muted border border-border overflow-hidden">
       <div
-        className="h-full rounded-full bg-primary transition-all duration-500"
+        className="h-full rounded-sm bg-primary transition-all duration-500"
         style={{ width: `${Math.round(value * 100)}%` }}
       />
     </div>
@@ -42,11 +42,11 @@ function ConceptRow({
   });
 
   return (
-    <label className="flex items-start gap-3 py-2 px-1 rounded-lg hover:bg-muted/50 cursor-pointer group transition-colors">
+    <label className="flex items-start gap-3 py-2 px-1 rounded-md hover:bg-muted/50 cursor-pointer group transition-colors">
       <button
         onClick={() => mutation.mutate()}
         disabled={mutation.isPending}
-        className="mt-0.5 shrink-0 size-[18px] rounded border border-border flex items-center justify-center transition-colors cursor-pointer data-[checked=true]:bg-primary data-[checked=true]:border-primary"
+        className="mt-0.5 shrink-0 size-[18px] rounded border-2 border-border flex items-center justify-center transition-colors cursor-pointer data-[checked=true]:bg-primary data-[checked=true]:border-primary"
         data-checked={concept.completed}
       >
         {concept.completed && (
@@ -94,10 +94,10 @@ function PhaseSection({
   const completedCount = phase.concepts.filter((c) => c.completed).length;
 
   return (
-    <div className="border border-border rounded-xl overflow-hidden w-full">
+    <div className="border-2 border-border shadow-md rounded-lg overflow-hidden w-full">
       <button
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center gap-3 p-4 hover:bg-muted/30 transition-colors text-left cursor-pointer"
+        className="w-full flex items-center gap-3 p-4 hover:bg-muted/50 transition-colors text-left cursor-pointer"
       >
         {open ? (
           <AltArrowDownBoldDuotone className="size-4 shrink-0 text-muted-foreground" />
@@ -117,7 +117,7 @@ function PhaseSection({
         </div>
       </button>
       {open && (
-        <div className="px-4 pb-3 border-t border-border pt-2">
+        <div className="px-4 pb-3 border-t-2 border-border pt-2">
           {phase.concepts.map((concept) => (
             <ConceptRow
               key={concept.name}

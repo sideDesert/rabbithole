@@ -92,9 +92,9 @@ export function InterviewWidget({
   return (
     <div className={cn("w-full", className)}>
       <div className="bg-background pb-6">
-        <div className="rounded-xl ring-1 ring-border shadow-sm overflow-hidden">
+        <div className="rounded-lg border-2 border-border shadow-md overflow-hidden">
           {/* Progress bar */}
-          <div className="h-0.5 bg-muted">
+          <div className="h-1 bg-muted border-b border-border">
             <div
               className="h-full bg-primary transition-all duration-300 ease-out"
               style={{ width: `${progress}%` }}
@@ -138,10 +138,10 @@ export function InterviewWidget({
                   type="button"
                   onClick={() => selectOption(option)}
                   className={cn(
-                    "w-full flex items-center gap-3 text-left text-sm px-2.5 py-2.5 rounded-lg transition-all duration-150",
+                    "w-full flex items-center gap-3 text-left text-sm px-2.5 py-2.5 rounded-md border-2 transition-all duration-150",
                     isSelected
-                      ? "bg-primary/10 text-foreground"
-                      : "hover:bg-muted/60 text-foreground/70",
+                      ? "border-border bg-primary/10 text-foreground"
+                      : "border-transparent hover:bg-muted/60 text-foreground/70",
                   )}
                 >
                   <span
@@ -165,10 +165,10 @@ export function InterviewWidget({
             {otherOption && (
               <div
                 className={cn(
-                  "flex items-center gap-3 text-sm px-2.5 py-2.5 rounded-lg transition-all duration-150",
+                  "flex items-center gap-3 text-sm px-2.5 py-2.5 rounded-md border-2 transition-all duration-150",
                   otherActive
-                    ? "bg-primary/10 text-foreground"
-                    : "hover:bg-muted/60 text-muted-foreground cursor-pointer",
+                    ? "border-border bg-primary/10 text-foreground"
+                    : "border-transparent hover:bg-muted/60 text-muted-foreground cursor-pointer",
                 )}
                 onClick={() => {
                   if (!otherActive) {
@@ -209,19 +209,19 @@ export function InterviewWidget({
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-between px-4 py-2.5 border-t border-border/50">
-            <div className="flex items-center gap-3 text-[11px] text-muted-foreground/40">
+          <div className="flex items-center justify-between px-4 py-2.5 border-t-2 border-border">
+            <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
               <span className="flex items-center gap-1">
-                <kbd className="inline-flex items-center justify-center size-4 rounded border border-border/50 text-[9px]">←</kbd>
-                <kbd className="inline-flex items-center justify-center size-4 rounded border border-border/50 text-[9px]">→</kbd>
+                <kbd className="inline-flex items-center justify-center size-4 rounded border-2 border-border text-[9px]">←</kbd>
+                <kbd className="inline-flex items-center justify-center size-4 rounded border-2 border-border text-[9px]">→</kbd>
                 <span className="ml-0.5">navigate</span>
               </span>
               <span className="flex items-center gap-1">
-                <kbd className="inline-flex items-center justify-center h-4 px-1 rounded border border-border/50 text-[9px]">Enter</kbd>
+                <kbd className="inline-flex items-center justify-center h-4 px-1 rounded border-2 border-border text-[9px]">Enter</kbd>
                 <span className="ml-0.5">submit</span>
               </span>
               <span className="flex items-center gap-1">
-                <kbd className="inline-flex items-center justify-center h-4 px-1 rounded border border-border/50 text-[9px]">Esc</kbd>
+                <kbd className="inline-flex items-center justify-center h-4 px-1 rounded border-2 border-border text-[9px]">Esc</kbd>
                 <span className="ml-0.5">skip</span>
               </span>
             </div>

@@ -22,7 +22,7 @@ function ScoreBar({
         <span className="text-muted-foreground">{label}</span>
         <span className="font-medium">{Math.round(value * 100)}%</span>
       </div>
-      <div className="h-2 w-full rounded-full bg-muted">
+      <div className="h-2 w-full rounded-full bg-muted border border-border">
         <div
           className="h-full rounded-full bg-primary transition-all"
           style={{ width: `${Math.round(value * 100)}%` }}
@@ -124,7 +124,7 @@ function TestPageInner() {
         </div>
 
         {/* Score dimensions */}
-        <div className="rounded-xl border border-border p-5 space-y-3">
+        <div className="rounded-lg border-2 border-border shadow-md p-5 space-y-3">
           <h3 className="text-sm font-medium">Score Breakdown</h3>
           <ScoreBar label="Accuracy" value={scores.accuracy} />
           <ScoreBar label="Depth" value={scores.depth} />
@@ -133,7 +133,7 @@ function TestPageInner() {
         </div>
 
         {/* Mastery update */}
-        <div className="rounded-xl border border-border p-5 space-y-2">
+        <div className="rounded-lg border-2 border-border shadow-md p-5 space-y-2">
           <h3 className="text-sm font-medium">Mastery Update</h3>
           <div className="flex items-center gap-3 text-sm">
             <span className="text-muted-foreground">
@@ -153,7 +153,7 @@ function TestPageInner() {
 
         {/* Overall feedback */}
         {results.feedback && (
-          <div className="rounded-xl border border-border p-5">
+          <div className="rounded-lg border-2 border-border shadow-md p-5">
             <h3 className="text-sm font-medium mb-2">Feedback</h3>
             <p className="text-sm text-muted-foreground">{results.feedback}</p>
           </div>
@@ -215,7 +215,7 @@ function TestPageInner() {
             {test?.questions.length || 0}
           </span>
         </div>
-        <div className="h-1.5 w-full rounded-full bg-muted">
+        <div className="h-1.5 w-full rounded-full bg-muted border border-border">
           <div
             className="h-full rounded-full bg-primary transition-all"
             style={{

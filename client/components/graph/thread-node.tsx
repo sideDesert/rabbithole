@@ -13,8 +13,8 @@ interface ThreadNodeData {
 }
 
 const phaseBadgeColors: Record<string, string> = {
-  interview: "bg-chart-1/20 text-chart-1",
-  planning: "bg-chart-3/20 text-chart-3",
+  interview: "bg-accent/20 text-accent-foreground",
+  planning: "bg-secondary/20 text-secondary-foreground",
   teaching: "bg-primary/20 text-primary",
 };
 
@@ -25,8 +25,8 @@ export function ThreadNode({ data, selected }: NodeProps) {
   return (
     <div
       className={cn(
-        "bg-card border rounded-lg px-4 py-3 min-w-[200px] max-w-[280px] cursor-pointer transition-shadow",
-        isRoot ? "border-primary border-2 shadow-md" : "border-border",
+        "bg-card border-2 border-border rounded-md px-4 py-3 min-w-[200px] max-w-[280px] cursor-pointer transition-shadow shadow-sm",
+        isRoot && "border-primary shadow-md",
         selected && "ring-2 ring-primary/50",
       )}
     >

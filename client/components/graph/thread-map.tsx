@@ -188,7 +188,7 @@ function ThreadMapInner({ threadId }: { threadId: string }) {
       </PreviewPanel>
 
       {data.nodes.length === 1 && (
-        <div className="absolute bottom-16 left-1/2 -translate-x-1/2 text-xs text-muted-foreground bg-card/80 backdrop-blur px-3 py-1.5 rounded-full border border-border">
+        <div className="absolute bottom-16 left-1/2 -translate-x-1/2 text-xs text-muted-foreground bg-card px-3 py-1.5 rounded-lg border-2 border-border shadow-sm">
           No branches yet — explore a sub-topic to grow the tree
         </div>
       )}

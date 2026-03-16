@@ -35,7 +35,7 @@ function QuestionHeader({
       <span className="text-sm font-medium text-muted-foreground">
         Q{index + 1}
       </span>
-      <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+      <span className="text-xs px-2 py-0.5 rounded-md border-2 border-border bg-muted text-muted-foreground">
         {typeLabel[type] || type}
       </span>
       {feedback && (
@@ -57,10 +57,10 @@ function QuestionHeader({
 function FeedbackBlock({ feedback }: { feedback: QuestionFeedback }) {
   return (
     <div
-      className={`mt-3 rounded-lg border px-4 py-3 text-sm ${
+      className={`mt-3 rounded-md border-2 px-4 py-3 text-sm ${
         feedback.correct
-          ? "border-green-500/30 bg-green-500/5 text-green-700 dark:text-green-400"
-          : "border-red-500/30 bg-red-500/5 text-red-700 dark:text-red-400"
+          ? "border-green-500 bg-green-500/10 text-green-700 dark:text-green-400"
+          : "border-red-500 bg-red-500/10 text-red-700 dark:text-red-400"
       }`}
     >
       {feedback.feedback}
@@ -82,10 +82,10 @@ function McqSingle({
         return (
           <label
             key={opt}
-            className={`flex items-center gap-3 rounded-lg border px-4 py-3 cursor-pointer transition-colors ${
+            className={`flex items-center gap-3 rounded-md border-2 px-4 py-3 cursor-pointer transition-colors ${
               answer === value
-                ? "border-primary bg-primary/5"
-                : "border-border hover:bg-muted/50"
+                ? "border-primary bg-primary/10"
+                : "border-border hover:bg-muted"
             } ${disabled ? "cursor-default opacity-70" : ""}`}
           >
             <input
@@ -131,10 +131,10 @@ function McqMulti({
         return (
           <label
             key={opt}
-            className={`flex items-center gap-3 rounded-lg border px-4 py-3 cursor-pointer transition-colors ${
+            className={`flex items-center gap-3 rounded-md border-2 px-4 py-3 cursor-pointer transition-colors ${
               selected.includes(value)
-                ? "border-primary bg-primary/5"
-                : "border-border hover:bg-muted/50"
+                ? "border-primary bg-primary/10"
+                : "border-border hover:bg-muted"
             } ${disabled ? "cursor-default opacity-70" : ""}`}
           >
             <input
@@ -172,7 +172,7 @@ function Freeform({
         disabled={disabled}
         placeholder="Type your answer..."
         rows={4}
-        className="w-full rounded-lg border border-border bg-background px-4 py-3 text-sm resize-y focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-70"
+        className="w-full rounded-md border-2 border-border bg-background px-4 py-3 text-sm resize-y focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-70"
       />
     </div>
   );
@@ -211,7 +211,7 @@ function Cloze({
               onChange={(e) => onChange(e.target.value)}
               disabled={disabled}
               placeholder="..."
-              className="inline-block w-40 border-b-2 border-primary/50 bg-transparent px-1 py-0.5 text-center text-sm focus:outline-none focus:border-primary disabled:opacity-70"
+              className="inline-block w-40 border-b-2 border-primary bg-transparent px-1 py-0.5 text-center text-sm focus:outline-none focus:border-primary disabled:opacity-70"
             />
           )}
         </span>
@@ -232,7 +232,7 @@ export function TestQuestion({
   const showQuestionText = question.type !== "cloze";
 
   return (
-    <div className="rounded-xl border border-border bg-card p-5 space-y-3">
+    <div className="rounded-lg border-2 border-border shadow-md bg-card p-5 space-y-3">
       <QuestionHeader index={index} type={question.type} feedback={feedback} />
 
       {showQuestionText && (

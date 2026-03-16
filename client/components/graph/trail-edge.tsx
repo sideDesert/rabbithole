@@ -10,10 +10,10 @@ interface TrailEdgeData {
 
 // Hardcoded colors — CSS variables don't work reliably in SVG stroke
 const EDGE_STYLES: Record<EdgeType, { stroke: string; dasharray?: string }> = {
-  prerequisite_of: { stroke: "#818cf8" },           // indigo-400 — visible on dark
-  part_of:         { stroke: "#94a3b8" },           // slate-400
-  explored_from:   { stroke: "#fbbf24", dasharray: "6 4" },  // amber-400
-  confused_with:   { stroke: "#f87171", dasharray: "4 4" },  // red-400
+  prerequisite_of: { stroke: "#88e5d6" },           // teal
+  part_of:         { stroke: "#999999" },           // neutral gray
+  explored_from:   { stroke: "#ffe156", dasharray: "6 4" },  // yellow
+  confused_with:   { stroke: "#e85d3a", dasharray: "4 4" },  // coral
 };
 
 export function TrailEdge({

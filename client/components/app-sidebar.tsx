@@ -49,7 +49,7 @@ export function AppSidebar({ tools }: { tools: Tool[] }) {
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="flex flex-col overflow-hidden">
+      <SidebarContent className="flex flex-col overflow-hidden border-r-2 border-border">
         {/* Agent Personas */}
         <SidebarGroup>
           <SidebarMenu>
@@ -101,7 +101,7 @@ export function AppSidebar({ tools }: { tools: Tool[] }) {
         <SidebarSeparator />
 
         {/* Thread Tree */}
-        <SidebarGroup className="flex-1 overflow-auto">
+        <SidebarGroup className="flex-1 overflow-auto border-t-2 border-border">
           <p className="px-2 pb-1 text-sm font-semibold text-sidebar-foreground/90">
             Topics
           </p>

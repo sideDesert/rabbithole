@@ -7,7 +7,7 @@ export function MemoryHubNode({ selected }: NodeProps) {
   return (
     <div
       className={cn(
-        "rounded-full px-5 py-4 cursor-pointer transition-all flex items-center gap-2.5 border-2 border-border bg-card/90 backdrop-blur-xl",
+        "rounded-full px-5 py-4 cursor-pointer transition-all flex items-center gap-2.5 border-2 border-border bg-card shadow-md",
         selected && "ring-2 ring-primary/50",
       )}
       style={{

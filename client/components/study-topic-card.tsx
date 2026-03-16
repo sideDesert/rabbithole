@@ -38,7 +38,7 @@ export function StudyTopicCard({
         href={`/threads/${topic.latest_thread.id}`}
         className="block h-full"
       >
-        <Card className="relative overflow-hidden pt-0 hover:ring-foreground/20 transition-all cursor-pointer h-full flex flex-col">
+        <Card className="relative overflow-hidden pt-0 card-hover transition-all cursor-pointer h-full flex flex-col">
           {/* Gradient header with progress ring */}
           <div
             className={`relative flex items-end justify-end bg-gradient-to-br ${gradient} p-4 h-28`}
@@ -52,7 +52,7 @@ export function StudyTopicCard({
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="3"
-                  className="text-foreground/10"
+                  className="text-border"
                 />
                 <circle
                   cx="24"
@@ -108,7 +108,7 @@ export function StudyTopicCard({
               <Tooltip>
                 <TooltipTrigger
                   render={
-                    <p className="truncate text-xs text-muted-foreground/70 mt-0.5" />
+                    <p className="truncate text-xs text-muted-foreground mt-0.5" />
                   }
                 >
                   {conversationTitle}

@@ -36,7 +36,7 @@ export function PreviewPanel({ open, onClose, children }: PreviewPanelProps) {
   return (
     <div
       ref={panelRef}
-      className="absolute top-4 right-4 w-80 max-h-[calc(100%-2rem)] overflow-auto bg-card border border-border rounded-xl shadow-lg z-10 animate-in slide-in-from-right-4 fade-in duration-200"
+      className="absolute top-4 right-4 w-80 max-h-[calc(100%-2rem)] overflow-auto bg-card border-2 border-border rounded-lg shadow-md z-10 animate-in slide-in-from-right-4 fade-in duration-200"
     >
       <div className="flex items-center justify-between p-3 border-b border-border">
         <span className="text-sm font-medium">Details</span>

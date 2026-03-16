@@ -8,12 +8,12 @@ interface MemoryEdgeData {
 }
 
 const EDGE_STYLES: Record<MemoryEdgeType, { stroke: string; dasharray?: string }> = {
-  part_of:       { stroke: "#2dd4bf" },
-  led_to:        { stroke: "#fbbf24", dasharray: "6 4" },
-  confused_with: { stroke: "#f87171", dasharray: "4 4" },
-  contradicts:   { stroke: "#ef4444" },
-  derived_from:  { stroke: "#94a3b8", dasharray: "2 3" },
-  learned_from:  { stroke: "#a78bfa" },
+  part_of:       { stroke: "#88e5d6" },
+  led_to:        { stroke: "#ffe156", dasharray: "6 4" },
+  confused_with: { stroke: "#e85d3a", dasharray: "4 4" },
+  contradicts:   { stroke: "#dc2626" },
+  derived_from:  { stroke: "#999999", dasharray: "2 3" },
+  learned_from:  { stroke: "#4a90d9" },
 };
 
 export function MemoryEdge({

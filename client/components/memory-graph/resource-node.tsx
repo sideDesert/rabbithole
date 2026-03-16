@@ -22,7 +22,7 @@ export function ResourceNode({ data, selected }: NodeProps) {
   return (
     <MemoryNodeShell selected={selected} entityType="resource" minWidth="140px" maxWidth="200px">
       <div className="flex items-center gap-2">
-        <Icon size={16} className="shrink-0 text-slate-500 dark:text-slate-400" />
+        <Icon size={16} className="shrink-0" style={{ color: "#999999" }} />
         <div className="flex-1 min-w-0">
           <p className="text-xs font-medium text-foreground truncate">{d.title || d.name}</p>
           <span className="text-[9px] text-muted-foreground/60">{d.resource_type}</span>

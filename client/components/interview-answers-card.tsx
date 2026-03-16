@@ -23,9 +23,9 @@ export function InterviewAnswersCard({ content }: InterviewAnswersCardProps) {
   if (!pairs.length) return null;
 
   return (
-    <div className="bg-accent rounded-xl px-4 py-3 max-w-[85%] space-y-3">
+    <div className="border-2 border-border shadow-md rounded-lg bg-card px-4 py-3 max-w-[85%] space-y-3">
       {pairs.map((qa, i) => (
-        <div key={i} className="space-y-0.5">
+        <div key={i} className="border-2 border-border rounded-md p-2 space-y-0.5">
           <p className="text-sm text-muted-foreground">
             <span className="font-medium">Q:</span> {qa.question}
           </p>

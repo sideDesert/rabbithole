@@ -51,7 +51,7 @@ export default function StudyPlansPage() {
       {isLoading && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="rounded-xl border border-border overflow-hidden">
+            <div key={i} className="rounded-lg border-2 border-border overflow-hidden">
               <Skeleton className="h-28 w-full" />
               <div className="p-4 space-y-2">
                 <Skeleton className="h-5 w-3/4" />
@@ -64,9 +64,11 @@ export default function StudyPlansPage() {
 
       {/* Empty states */}
       {!isLoading && topics.length === 0 && (
-        <p className="text-sm text-muted-foreground">
-          No study plans yet. Start a conversation to create one.
-        </p>
+        <div className="border-2 border-dashed border-border rounded-lg p-6">
+          <p className="text-sm text-muted-foreground">
+            No study plans yet. Start a conversation to create one.
+          </p>
+        </div>
       )}
 
       {!isLoading && topics.length > 0 && filtered.length === 0 && (

@@ -8,9 +8,9 @@ interface BeliefData {
 }
 
 function beliefStyle(correct: boolean | null) {
-  if (correct === true) return { border: "#fbbf24", bg: "hsla(45, 93%, 47%, 0.12)", label: "correct" };
-  if (correct === false) return { border: "#f87171", bg: "hsla(0, 84%, 60%, 0.12)", label: "incorrect" };
-  return { border: "#64748b", bg: "hsla(220, 10%, 50%, 0.12)", label: "unverified" };
+  if (correct === true) return { border: "#ffe156", bg: "#ffe15614", label: "correct" };
+  if (correct === false) return { border: "#e85d3a", bg: "#e85d3a14", label: "incorrect" };
+  return { border: "#999999", bg: "#99999914", label: "unverified" };
 }
 
 export function BeliefNode({ data, selected }: NodeProps) {

@@ -8,11 +8,11 @@ import { NodeHandles } from "@/components/graph/node-handles";
 export type EntityType = "concept" | "person" | "fact" | "belief" | "resource";
 
 export const ENTITY_COLORS: Record<EntityType, { border: string; bg: string }> = {
-  concept:  { border: "#2dd4bf", bg: "hsla(175, 60%, 40%, 0.12)" },
-  person:   { border: "#a78bfa", bg: "hsla(270, 60%, 50%, 0.12)" },
-  fact:     { border: "#60a5fa", bg: "hsla(210, 70%, 50%, 0.12)" },
-  belief:   { border: "#fbbf24", bg: "hsla(45, 93%, 47%, 0.12)" },
-  resource: { border: "#64748b", bg: "hsla(220, 10%, 40%, 0.12)" },
+  concept:  { border: "#88e5d6", bg: "#88e5d614" },
+  person:   { border: "#e85d3a", bg: "#e85d3a14" },
+  fact:     { border: "#4a90d9", bg: "#4a90d914" },
+  belief:   { border: "#ffe156", bg: "#ffe15614" },
+  resource: { border: "#999999", bg: "#99999914" },
 };
 
 // ── Shared node wrapper ─────────────────────────────────────────────────
@@ -47,13 +47,12 @@ export function MemoryNodeShell({
   return (
     <div
       className={cn(
-        "rounded-lg px-3 py-2.5 cursor-pointer transition-all",
+        "rounded-lg px-3 py-2.5 cursor-pointer transition-all shadow-sm",
         selected && "ring-2 ring-primary/50",
       )}
       style={{
         border: `2px solid ${borderColor ?? colors.border}`,
-        background: bgColor ?? colors.bg,
-        backdropFilter: "blur(8px)",
+        background: bgColor ?? "var(--card)",
         boxShadow: "var(--graph-node-shadow)",
         minWidth,
         maxWidth,
