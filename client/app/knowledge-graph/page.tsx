@@ -116,9 +116,9 @@ function EdgeLegend() {
             Edges
           </p>
           <LegendItem color="var(--graph-edge-gold)" label="Prerequisite" />
-          <LegendItem color="#999999" label="Part of" />
+          <LegendItem color="var(--color-part-of)" label="Part of" />
           <LegendItem color="var(--graph-edge-yellow)" label="Explored from" dashed />
-          <LegendItem color="#e85d3a" label="Confused with" dashed />
+          <LegendItem color="var(--color-confused-with)" label="Confused with" dashed />
         </div>
         <div className="border-t border-border pt-2 space-y-2">
           <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
@@ -127,21 +127,21 @@ function EdgeLegend() {
           <div className="flex items-center gap-1.5">
             <div
               className="w-3 h-3 rounded-full"
-              style={{ background: "hsl(0, 84%, 60%)" }}
+              style={{ background: "var(--color-weak)" }}
             />
             <span className="text-[10px] text-muted-foreground">Weak</span>
           </div>
           <div className="flex items-center gap-1.5">
             <div
               className="w-3 h-3 rounded-full"
-              style={{ background: "hsl(45, 93%, 47%)" }}
+              style={{ background: "var(--color-medium)" }}
             />
             <span className="text-[10px] text-muted-foreground">Medium</span>
           </div>
           <div className="flex items-center gap-1.5">
             <div
               className="w-3 h-3 rounded-full"
-              style={{ background: "hsl(142, 71%, 45%)" }}
+              style={{ background: "var(--color-mastered)" }}
             />
             <span className="text-[10px] text-muted-foreground">Mastered</span>
           </div>
@@ -153,14 +153,14 @@ function EdgeLegend() {
           <div className="flex items-center gap-1.5">
             <div
               className="w-3 h-3 rounded-sm border"
-              style={{ borderColor: "#64748b" }}
+              style={{ borderColor: "var(--color-undiscovered)" }}
             />
             <span className="text-[10px] text-muted-foreground">Concept</span>
           </div>
           <div className="flex items-center gap-1.5">
             <div
               className="w-3 h-3 rounded-sm"
-              style={{ background: "hsl(200, 60%, 25%)" }}
+              style={{ background: "var(--color-kg-topic-hub-legend)" }}
             />
             <span className="text-[10px] text-muted-foreground">Topic</span>
           </div>
@@ -412,10 +412,10 @@ function KnowledgeGraphInner() {
           className="bg-card/80! border-border! rounded-lg! shadow-lg!"
           maskColor={resolvedTheme === "dark" ? "rgba(0, 0, 0, 0.3)" : "rgba(0, 0, 0, 0.08)"}
           nodeColor={(node) => {
-            if (node.type === "memory_hub") return "hsl(260, 60%, 55%)";
-            if (node.type === "topic_hub") return "hsl(200, 60%, 50%)";
-            if (node.type === "thread") return "hsl(142, 50%, 40%)";
-            return "hsl(220, 20%, 50%)";
+            if (node.type === "memory_hub") return "var(--color-kg-memory-hub)";
+            if (node.type === "topic_hub") return "var(--color-kg-topic-hub)";
+            if (node.type === "thread") return "var(--color-kg-thread)";
+            return "var(--color-kg-default)";
           }}
         />
         <Controls showInteractive={false} />
