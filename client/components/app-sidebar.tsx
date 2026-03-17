@@ -17,6 +17,7 @@ import {
 import { useAgent } from "@/components/agent-context";
 import { usePlan } from "@/components/plan-context";
 import { ThreadTree } from "@/components/thread-tree";
+import { ThemePersonalitySwitcher } from "@/components/theme-personality-switcher";
 
 export type Tool = {
   name: string;
@@ -99,6 +100,10 @@ export function AppSidebar({ tools }: { tools: Tool[] }) {
             Topics
           </p>
           <ThreadTree />
+        </SidebarGroup>
+
+        <SidebarGroup className="border-t-2 border-border p-2">
+          <ThemePersonalitySwitcher />
         </SidebarGroup>
       </SidebarContent>
     </Sidebar>
