@@ -20,7 +20,7 @@ import {
   requestFeynmanHint,
   submitFeynmanExplanation,
 } from "@/lib/api";
-import { CloseCircleBoldDuotone } from "solar-icon-set";
+import { CircleX } from "lucide-react";
 
 interface FeynmanModalProps {
   threadId: string;
@@ -188,7 +188,7 @@ export function FeynmanModal({
               onClick={handleClose}
               className="rounded-lg p-2 hover:bg-accent"
             >
-              <CloseCircleBoldDuotone className="h-5 w-5" />
+              <CircleX className="h-5 w-5" />
             </button>
           )}
         </div>

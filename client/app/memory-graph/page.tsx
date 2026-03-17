@@ -15,7 +15,7 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useTheme } from "next-themes";
-import { AtomBoldDuotone, RefreshBoldDuotone } from "solar-icon-set";
+import { Atom, RefreshCw } from "lucide-react";
 
 import { useMemoryGraph, useSyncMemoryGraph } from "@/hooks/use-memory-graph";
 import { layoutMemoryGraph } from "@/lib/memory-graph-layout";
@@ -129,12 +129,12 @@ function Legend() {
     ([type, c]) => ({ label: type.charAt(0).toUpperCase() + type.slice(1), color: c.border }),
   );
   const edges = [
-    { label: "part_of", color: "#2dd4bf", dash: false },
-    { label: "led_to", color: "#fbbf24", dash: true },
-    { label: "confused_with", color: "#f87171", dash: true },
-    { label: "contradicts", color: "#ef4444", dash: false },
-    { label: "derived_from", color: "#94a3b8", dash: true },
-    { label: "learned_from", color: "#a78bfa", dash: false },
+    { label: "part_of", color: "var(--chart-5)", dash: false },
+    { label: "led_to", color: "var(--secondary)", dash: true },
+    { label: "confused_with", color: "var(--primary)", dash: true },
+    { label: "contradicts", color: "var(--destructive)", dash: false },
+    { label: "derived_from", color: "var(--muted-foreground)", dash: true },
+    { label: "learned_from", color: "var(--chart-4)", dash: false },
   ];
   return (
     <div className="absolute bottom-20 right-4 z-10 bg-card border-2 border-border rounded-lg p-3 shadow-md">
@@ -265,7 +265,7 @@ function MemoryGraphInner() {
   if (!data?.nodes?.length) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground">
-        <AtomBoldDuotone className="size-10 opacity-40" />
+        <Atom className="size-10 opacity-40" />
         <p>No memory data yet.</p>
         <Button
           variant="outline"
@@ -273,7 +273,7 @@ function MemoryGraphInner() {
           onClick={() => syncMutation.mutate()}
           disabled={syncMutation.isPending}
         >
-          <RefreshBoldDuotone className={`size-3.5 mr-1.5 ${syncMutation.isPending ? "animate-spin" : ""}`} />
+          <RefreshCw className={`size-3.5 mr-1.5 ${syncMutation.isPending ? "animate-spin" : ""}`} />
           Sync from EverMemOS
         </Button>
       </div>
@@ -298,7 +298,7 @@ function MemoryGraphInner() {
           onClick={() => syncMutation.mutate()}
           disabled={syncMutation.isPending}
         >
-          <RefreshBoldDuotone className={`size-3.5 mr-1.5 ${syncMutation.isPending ? "animate-spin" : ""}`} />
+          <RefreshCw className={`size-3.5 mr-1.5 ${syncMutation.isPending ? "animate-spin" : ""}`} />
           Sync
         </Button>
       </div>

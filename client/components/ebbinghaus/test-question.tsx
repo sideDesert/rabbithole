@@ -1,7 +1,7 @@
 "use client";
 
 import type { EbbinghausQuestion, QuestionFeedback } from "@/lib/api";
-import { CheckCircleBoldDuotone, CloseCircleBoldDuotone } from "solar-icon-set";
+import { CircleCheck, CircleX } from "lucide-react";
 
 interface TestQuestionProps {
   index: number;
@@ -41,9 +41,9 @@ function QuestionHeader({
       {feedback && (
         <span className="ml-auto flex items-center gap-1 text-sm">
           {feedback.correct ? (
-            <CheckCircleBoldDuotone className="h-4 w-4 text-green-500" />
+            <CircleCheck className="h-4 w-4 text-green-500" />
           ) : (
-            <CloseCircleBoldDuotone className="h-4 w-4 text-red-500" />
+            <CircleX className="h-4 w-4 text-red-500" />
           )}
           <span className="text-muted-foreground">
             {Math.round(feedback.score * 100)}%

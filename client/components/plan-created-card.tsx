@@ -2,11 +2,11 @@
 
 import { useRouter } from "next/navigation";
 import {
-  ChecklistBoldDuotone,
-  ArrowRightBoldDuotone,
-  CourseUpBoldDuotone,
-  PlayBoldDuotone,
-} from "solar-icon-set";
+  ListChecks,
+  ArrowRight,
+  GraduationCap,
+  Play,
+} from "lucide-react";
 import { usePlan } from "./plan-context";
 import { useStudyTopics } from "@/hooks/use-study-topics";
 import { useState } from "react";
@@ -52,7 +52,7 @@ export function PlanCreatedCard({ topicSlug, onStart }: PlanCreatedCardProps) {
     <div className="border-2 border-border rounded-lg shadow-md p-4 bg-card max-w-sm card-hover">
       <div className="flex items-start gap-3">
         <div className="p-2 rounded-md bg-primary/10">
-          <ChecklistBoldDuotone className="size-5 text-primary" />
+          <ListChecks className="size-5 text-primary" />
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium">
@@ -93,29 +93,30 @@ export function PlanCreatedCard({ topicSlug, onStart }: PlanCreatedCardProps) {
           onClick={() => setActiveTab("plan-mode")}
           className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-md border-2 border-border px-3 py-1.5 text-xs font-medium neo-hover transition-colors cursor-pointer"
         >
-          <ChecklistBoldDuotone className="size-3" />
+          <ListChecks className="size-3" />
           View Plan
         </button>
-        {hasStarted ? (
+        {hasStarted && (
           <button
             onClick={() => router.push(`/threads/${topic.latest_thread.id}`)}
             className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-md border-2 border-border bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground neo-hover transition-colors cursor-pointer"
           >
-            <CourseUpBoldDuotone className="size-3" />
+            <GraduationCap className="size-3" />
             Continue Learning
-            <ArrowRightBoldDuotone className="size-3" />
+            <ArrowRight className="size-3" />
           </button>
-        ) : onStart ? (
+        )}
+        {!hasStarted && (
           <button
             onClick={handleStart}
             disabled={loading}
             className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-md border-2 border-border bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground neo-hover transition-colors disabled:opacity-50 cursor-pointer"
           >
-            <PlayBoldDuotone className="size-3" />
+            <Play className="size-3" />
             {loading ? "Starting..." : "Start Learning"}
-            {!loading && <ArrowRightBoldDuotone className="size-3" />}
+            {!loading && <ArrowRight className="size-3" />}
           </button>
-        ) : null}
+        )}
       </div>
     </div>
   );

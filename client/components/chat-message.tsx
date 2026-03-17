@@ -6,14 +6,14 @@ import type { Branch } from "@/lib/api";
 import type { ToolCallEntry } from "@/hooks/use-chat";
 import { useAnnotations } from "@/hooks/use-annotations";
 import {
-  CheckCircleBoldDuotone,
-  MagniferBoldDuotone,
-  AtomBoldDuotone,
-  FileCheckBoldDuotone,
-  DocumentTextBoldDuotone,
-  ChecklistBoldDuotone,
-  BranchingPathsDownBoldDuotone,
-} from "solar-icon-set";
+  CircleCheck,
+  Search,
+  Atom,
+  FileCheck,
+  FileText,
+  ListChecks,
+  GitBranch,
+} from "lucide-react";
 import {
   Collapsible,
   CollapsibleTrigger,
@@ -65,14 +65,17 @@ export function PhaseDivider({ label }: { label: string }) {
   );
 }
 
-const TOOL_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
-  recall_memory: MagniferBoldDuotone,
-  store_memory: AtomBoldDuotone,
-  create_plan: FileCheckBoldDuotone,
-  read_plan: DocumentTextBoldDuotone,
-  update_plan_progress: ChecklistBoldDuotone,
-  suggest_branches: BranchingPathsDownBoldDuotone,
-  offer_branch: BranchingPathsDownBoldDuotone,
+const TOOL_ICONS: Record<
+  string,
+  React.ComponentType<{ className?: string }>
+> = {
+  recall_memory: Search,
+  store_memory: Atom,
+  create_plan: FileCheck,
+  read_plan: FileText,
+  update_plan_progress: ListChecks,
+  suggest_branches: GitBranch,
+  offer_branch: GitBranch,
 };
 
 function pickRandom() {
@@ -96,18 +99,20 @@ function useRotatingWord(active: boolean) {
 
 function ToolCallBlock({ tc }: { tc: ToolCallEntry }) {
   const isDone = tc.status === "done";
-  const Icon = TOOL_ICONS[tc.name] ?? CheckCircleBoldDuotone;
+  const Icon = TOOL_ICONS[tc.name] ?? CircleCheck;
   const rotatingWord = useRotatingWord(!isDone);
 
   return (
     <Collapsible disabled={!tc.result}>
       <CollapsibleTrigger className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors w-full justify-start py-1 cursor-pointer">
         {isDone ? (
-          <Icon className="w-3 h-3 text-emerald-400/50" />
+          <Icon className="w-4 h-4 text-primary/50" />
         ) : (
-          <Icon className="w-3 h-3 text-muted-foreground/50 animate-pulse" />
+          <Icon className="w-4 h-4 text-muted-foreground/50 animate-pulse" />
         )}
-        <span className="text-left">{isDone ? tc.doneLabel : `${rotatingWord}...`}</span>
+        <span className="text-left">
+          {isDone ? tc.doneLabel : `${rotatingWord}...`}
+        </span>
       </CollapsibleTrigger>
       {tc.result && (
         <CollapsibleContent>
@@ -249,7 +254,7 @@ export function ChatMessage({
     return (
       <div
         className={clsx(
-          "chat-message bg-accent py-3 px-3 rounded-lg max-w-[85%] border-2 border-border shadow-sm",
+          "chat-message bg-accent dark:bg-accent/70 dark:hover:bg-accent text-accent-foreground dark:font-medium py-3 px-3 rounded-lg max-w-[85%] border-2 border-border shadow-sm",
           className,
         )}
         data-message-id={id}

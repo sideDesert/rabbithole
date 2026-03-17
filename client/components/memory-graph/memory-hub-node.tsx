@@ -1,5 +1,5 @@
 import { type NodeProps } from "@xyflow/react";
-import { AtomBoldDuotone } from "solar-icon-set";
+import { Atom } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { NodeHandles } from "@/components/graph/node-handles";
 
@@ -15,7 +15,7 @@ export function MemoryHubNode({ selected }: NodeProps) {
       }}
     >
       <NodeHandles />
-      <AtomBoldDuotone size={24} className="text-foreground/80" />
+      <Atom size={24} className="text-foreground/80" />
       <span className="text-sm font-semibold text-foreground/90 tracking-wide">Memory</span>
     </div>
   );

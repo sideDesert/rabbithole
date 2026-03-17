@@ -2,10 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import {
-  AtomBoldDuotone,
-  PenNewSquareBoldDuotone,
-} from "solar-icon-set";
+import { Atom, SquarePen } from "lucide-react";
 import { Rabbit } from "lucide-react";
 import {
   Sidebar,
@@ -52,13 +49,13 @@ export function AppSidebar({ tools }: { tools: Tool[] }) {
       <SidebarContent className="flex flex-col overflow-hidden border-r-2 border-border">
         {/* Agent Personas */}
         <SidebarGroup>
-          <SidebarMenu>
+          <SidebarMenu className="gap-1">
             <SidebarMenuItem>
               <SidebarMenuButton
                 isActive={path.includes("feynman")}
                 onClick={() => handleAgentNav("feynman", "/feynman")}
               >
-                <PenNewSquareBoldDuotone className="h-4 w-4" />
+                <SquarePen className="h-4 w-4" />
                 <span>New Chat</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -69,14 +66,12 @@ export function AppSidebar({ tools }: { tools: Tool[] }) {
                 }
                 onClick={() => handleAgentNav("ebbinghaus", "/ebbinghaus")}
               >
-                <AtomBoldDuotone className="h-4 w-4" />
+                <Atom className="h-4 w-4" />
                 <span>Ebbinghaus</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarGroup>
-
-        <SidebarSeparator />
 
         {/* Tools Section */}
         <SidebarGroup>
@@ -97,8 +92,6 @@ export function AppSidebar({ tools }: { tools: Tool[] }) {
             ))}
           </SidebarMenu>
         </SidebarGroup>
-
-        <SidebarSeparator />
 
         {/* Thread Tree */}
         <SidebarGroup className="flex-1 overflow-auto border-t-2 border-border">

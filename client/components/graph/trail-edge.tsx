@@ -1,4 +1,5 @@
 import { getBezierPath, type EdgeProps } from "@xyflow/react";
+import { useRef } from "react";
 
 type EdgeType = "prerequisite_of" | "part_of" | "explored_from" | "confused_with";
 
@@ -8,12 +9,16 @@ interface TrailEdgeData {
   weight?: number;
 }
 
-// Hardcoded colors — CSS variables don't work reliably in SVG stroke
-const EDGE_STYLES: Record<EdgeType, { stroke: string; dasharray?: string }> = {
-  prerequisite_of: { stroke: "#88e5d6" },           // teal
-  part_of:         { stroke: "#999999" },           // neutral gray
-  explored_from:   { stroke: "#ffe156", dasharray: "6 4" },  // yellow
-  confused_with:   { stroke: "#e85d3a", dasharray: "4 4" },  // coral
+function getCSSVar(name: string): string {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
+// Fallbacks in case getComputedStyle returns empty
+const EDGE_STYLE_VARS: Record<EdgeType, { cssVar: string; fallback: string; dasharray?: string }> = {
+  prerequisite_of: { cssVar: "--graph-edge-gold", fallback: "#000000" },
+  part_of:         { cssVar: "",                  fallback: "#999999" },
+  explored_from:   { cssVar: "--graph-edge-yellow", fallback: "#000000", dasharray: "6 4" },
+  confused_with:   { cssVar: "",                    fallback: "#e85d3a", dasharray: "4 4" },
 };
 
 export function TrailEdge({
@@ -38,7 +43,9 @@ export function TrailEdge({
   const edgeData = data as TrailEdgeData | undefined;
   const edgeType = edgeData?.edgeType ?? "prerequisite_of";
   const weight = edgeData?.weight ?? 1.0;
-  const style = EDGE_STYLES[edgeType];
+  const config = EDGE_STYLE_VARS[edgeType];
+
+  const stroke = config.cssVar ? (getCSSVar(config.cssVar) || config.fallback) : config.fallback;
 
   // Weight → opacity (0.3 to 1.0) and thickness (1.5 to 3)
   const opacity = 0.3 + weight * 0.7;
@@ -53,12 +60,12 @@ export function TrailEdge({
         id={id}
         d={edgePath}
         fill="none"
-        stroke={style.stroke}
+        stroke={stroke}
         strokeWidth={strokeWidth}
-        strokeDasharray={style.dasharray}
+        strokeDasharray={config.dasharray}
         strokeOpacity={opacity * 0.5}
       />
-      <circle r={strokeWidth} fill={style.stroke} opacity={opacity}>
+      <circle r={strokeWidth} fill={stroke} opacity={opacity}>
         <animateMotion
           dur={animationDuration}
           repeatCount="indefinite"

@@ -832,13 +832,24 @@ def list_branches(thread_id: str):
         doc["_id"]: doc for doc in mongo.threads().find({"_id": {"$in": child_ids}})
     }
 
+    # Fetch first user message for each child thread
+    first_messages: dict[str, str] = {}
+    for cid in child_ids:
+        first_msg = mongo.messages().find_one(
+            {"thread_id": cid, "role": "user"},
+            sort=[("created_at", 1)],
+        )
+        if first_msg:
+            first_messages[cid] = str(first_msg.get("content", ""))
+
     branches: list[dict[str, object]] = []
     for bp in bps:
-        child = children.get(bp["child_thread_id"], {})
+        child_id = bp["child_thread_id"]
+        child = children.get(child_id, {})
         branches.append(
             {
                 "branch_point_id": bp["_id"],
-                "thread_id": bp["child_thread_id"],
+                "thread_id": child_id,
                 "message_id": bp["message_id"],
                 "position": bp.get("position"),
                 "type": bp["type"],
@@ -846,6 +857,7 @@ def list_branches(thread_id: str):
                 "status": child.get("status", ""),
                 "phase": child.get("phase", ""),
                 "depth": child.get("depth", 0),
+                "first_message": first_messages.get(child_id, ""),
             }
         )
 

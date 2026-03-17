@@ -8,7 +8,7 @@ interface BeliefData {
 }
 
 function beliefStyle(correct: boolean | null) {
-  if (correct === true) return { border: "#ffe156", bg: "#ffe15614", label: "correct" };
+  if (correct === true) return { border: "#ffcc00", bg: "#ffcc0014", label: "correct" };
   if (correct === false) return { border: "#e85d3a", bg: "#e85d3a14", label: "incorrect" };
   return { border: "#999999", bg: "#99999914", label: "unverified" };
 }

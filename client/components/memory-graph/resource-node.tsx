@@ -1,5 +1,5 @@
 import { type NodeProps } from "@xyflow/react";
-import { BookBoldDuotone, DocumentTextBoldDuotone, VideoFrameBoldDuotone, ChatSquareBoldDuotone, CodeBoldDuotone } from "solar-icon-set";
+import { BookOpen, FileText, Video, MessageSquare, Code } from "lucide-react";
 import { MemoryNodeShell } from "./shared";
 
 interface ResourceData {
@@ -8,17 +8,17 @@ interface ResourceData {
   resource_type: string;
 }
 
-const TYPE_ICONS: Record<string, typeof BookBoldDuotone> = {
-  book: BookBoldDuotone,
-  article: DocumentTextBoldDuotone,
-  video: VideoFrameBoldDuotone,
-  conversation: ChatSquareBoldDuotone,
-  docs: CodeBoldDuotone,
+const TYPE_ICONS: Record<string, typeof BookOpen> = {
+  book: BookOpen,
+  article: FileText,
+  video: Video,
+  conversation: MessageSquare,
+  docs: Code,
 };
 
 export function ResourceNode({ data, selected }: NodeProps) {
   const d = data as unknown as ResourceData;
-  const Icon = TYPE_ICONS[d.resource_type] || DocumentTextBoldDuotone;
+  const Icon = TYPE_ICONS[d.resource_type] || FileText;
   return (
     <MemoryNodeShell selected={selected} entityType="resource" minWidth="140px" maxWidth="200px">
       <div className="flex items-center gap-2">

@@ -5,7 +5,7 @@ import "./globals.css";
 import { AppSidebar, Tool } from "@/components/app-sidebar";
 import { Providers } from "@/components/providers";
 import { MainContent } from "@/components/main-content";
-import { AtomBoldDuotone, Widget2BoldDuotone, GraphBoldDuotone, Pen2BoldDuotone, DocumentTextBoldDuotone, ChecklistBoldDuotone } from "solar-icon-set";
+import { Atom, LayoutGrid, Network, Pencil, FileText, ListChecks } from "lucide-react";
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
@@ -26,12 +26,12 @@ const spaceMono = Space_Mono({
 });
 
 const tools: Tool[] = [
-  { name: "Dashboard", icon: Widget2BoldDuotone, href: "/dashboard" },
-  { name: "Study Plans", icon: Pen2BoldDuotone, href: "/study-plans" },
-  { name: "Notes", icon: DocumentTextBoldDuotone, href: "/notes" },
-  { name: "Evaluations", icon: ChecklistBoldDuotone, href: "/evaluations" },
-  { name: "Knowledge Graph", icon: GraphBoldDuotone, href: "/knowledge-graph" },
-  { name: "Memory Graph", icon: AtomBoldDuotone, href: "/memory-graph" },
+  { name: "Dashboard", icon: LayoutGrid, href: "/dashboard" },
+  { name: "Study Plans", icon: Pencil, href: "/study-plans" },
+  { name: "Notes", icon: FileText, href: "/notes" },
+  { name: "Evaluations", icon: ListChecks, href: "/evaluations" },
+  { name: "Knowledge Graph", icon: Network, href: "/knowledge-graph" },
+  { name: "Memory Graph", icon: Atom, href: "/memory-graph" },
 ];
 
 export default function RootLayout({
@@ -44,7 +44,10 @@ export default function RootLayout({
       <body className="antialiased bg-background font-sans">
         <Providers>
           <AppSidebar tools={tools} />
-          <MainContent>{children}</MainContent>
+          <MainContent>
+            <div className="noise-overlay" aria-hidden="true" />
+            {children}
+          </MainContent>
         </Providers>
       </body>
     </html>

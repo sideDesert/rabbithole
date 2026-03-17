@@ -23,25 +23,24 @@ import {
   TooltipProvider,
 } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { MoveLeft } from "lucide-react";
 
 export default function NotesPage() {
   const { topics, isLoading: topicsLoading } = useStudyTopics();
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
 
   const selectedTopic = selectedSlug
-    ? topics.find((t) => t.topic_slug === selectedSlug) ?? null
+    ? (topics.find((t) => t.topic_slug === selectedSlug) ?? null)
     : null;
 
   if (selectedTopic) {
     return (
       <div className="px-6 py-6 max-w-3xl mx-auto">
-        <button
-          onClick={() => setSelectedSlug(null)}
-          className="text-sm text-muted-foreground hover:text-foreground mb-4"
-        >
-          ← Back to all topics
-        </button>
-        <h1 className="text-xl font-semibold tracking-tight mb-4">
+        <Button onClick={() => setSelectedSlug(null)} className="">
+          <MoveLeft /> Back to all topics
+        </Button>
+        <h1 className="text-xl mt-4 font-semibold tracking-tight mb-4">
           {selectedTopic.topic}
         </h1>
         <TopicNotesDetail topicSlug={selectedTopic.topic_slug} />
@@ -51,12 +50,17 @@ export default function NotesPage() {
 
   return (
     <div className="px-6 py-6 max-w-5xl mx-auto">
-      <h1 className="text-xl font-semibold tracking-tight mb-4">Feynman Notes</h1>
+      <h1 className="text-xl font-semibold tracking-tight mb-4">
+        Feynman Notes
+      </h1>
 
       {topicsLoading && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="rounded-lg border-2 border-border overflow-hidden">
+            <div
+              key={i}
+              className="rounded-lg border-2 border-border overflow-hidden"
+            >
               <Skeleton className="h-28 w-full" />
               <div className="p-4 space-y-2">
                 <Skeleton className="h-5 w-3/4" />
@@ -70,7 +74,8 @@ export default function NotesPage() {
       {!topicsLoading && topics.length === 0 && (
         <div className="border-2 border-dashed border-border rounded-lg p-6">
           <p className="text-sm text-muted-foreground">
-            No study topics yet. Complete some Feynman exercises to see your notes here.
+            No study topics yet. Complete some Feynman exercises to see your
+            notes here.
           </p>
         </div>
       )}
@@ -134,9 +139,7 @@ function TopicNoteCard({
         </Tooltip>
         {topic.current_concept && (
           <Tooltip>
-            <TooltipTrigger
-              render={<CardDescription className="truncate" />}
-            >
+            <TooltipTrigger render={<CardDescription className="truncate" />}>
               {topic.current_concept}
             </TooltipTrigger>
             <TooltipContent side="right">
@@ -200,7 +203,9 @@ function TopicNotesDetail({ topicSlug }: { topicSlug: string }) {
 
   if (byConcept.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground">No notes for this topic yet.</p>
+      <p className="text-sm text-muted-foreground">
+        No notes for this topic yet.
+      </p>
     );
   }
 

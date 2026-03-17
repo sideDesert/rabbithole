@@ -90,7 +90,7 @@ function applyAnnotations(el: HTMLElement, annotations: Branch[]) {
         const link = document.createElement("a");
         link.className = "branch-annotation";
         link.href = `/threads/${annotation.thread_id}`;
-        link.dataset.tooltip = annotation.title || "";
+        link.dataset.tooltip = annotation.first_message || annotation.title || "";
         link.dataset.branchId = annotation.branch_point_id;
 
         range.surroundContents(link);

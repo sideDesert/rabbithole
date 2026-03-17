@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getProgress, type PlanPhase } from "@/lib/api";
 import { usePlan } from "./plan-context";
 import { useRef, useState, useCallback, useEffect } from "react";
-import { CheckCircleBoldDuotone, RecordCircleBoldDuotone } from "solar-icon-set";
+import { CircleCheck, Circle } from "lucide-react";
 import { Button } from "./ui/button";
 
 function ProgressRing({
@@ -66,9 +66,9 @@ function PhaseGroup({
               }`}
             >
               {concept.completed ? (
-                <CheckCircleBoldDuotone className="size-3 shrink-0 text-primary" />
+                <CircleCheck className="size-3 shrink-0 text-primary" />
               ) : (
-                <RecordCircleBoldDuotone
+                <Circle
                   className={`size-3 shrink-0 ${isCurrent ? "text-primary" : "text-muted-foreground/50"}`}
                 />
               )}

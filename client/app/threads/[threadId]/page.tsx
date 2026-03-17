@@ -39,7 +39,7 @@ import {
   ItemMedia,
   ItemTitle,
 } from "@/components/ui/item";
-import { BranchingPathsDownBoldDuotone } from "solar-icon-set";
+import { GitBranch } from "lucide-react";
 
 export default function Page({
   params,
@@ -206,11 +206,11 @@ export default function Page({
 
   return (
     <div className="px-10 pt-4 h-full max-w-3xl m-auto grid grid-rows-[1fr_auto]">
-      <div className="flex flex-col overflow-auto relative z-0 gap-4 min-h-0 pb-6">
+      <div className="flex flex-col overflow-auto relative px-4 z-0 gap-4 min-h-0 pb-6">
         {thread && thread.depth > 0 && (
           <Item variant="muted" size="sm">
             <ItemMedia>
-              <BranchingPathsDownBoldDuotone className="size-4" />
+              <GitBranch className="size-4" />
             </ItemMedia>
             <ItemContent>
               <ItemTitle>
@@ -231,13 +231,23 @@ export default function Page({
               <PlanCreatedCard
                 key={msg.id}
                 topicSlug={msg.metadata?.topicSlug ?? ""}
-                onStart={thread?.phase === "planning" ? async () => {
-                  const result = await startPhase(threadId);
-                  queryClient.invalidateQueries({ queryKey: ["threads"] });
-                  queryClient.invalidateQueries({ queryKey: ["thread-tree"] });
-                  const m = `Let's start learning: ${result.phase_title ?? result.title}`;
-                  router.push(`/threads/${result.thread_id}?msg=${encodeURIComponent(m)}`);
-                } : undefined}
+                onStart={
+                  thread?.phase === "planning"
+                    ? async () => {
+                        const result = await startPhase(threadId);
+                        queryClient.invalidateQueries({
+                          queryKey: ["threads"],
+                        });
+                        queryClient.invalidateQueries({
+                          queryKey: ["thread-tree"],
+                        });
+                        const m = `Let's start learning: ${result.phase_title ?? result.title}`;
+                        router.push(
+                          `/threads/${result.thread_id}?msg=${encodeURIComponent(m)}`,
+                        );
+                      }
+                    : undefined
+                }
               />
             );
           }
@@ -270,9 +280,13 @@ export default function Page({
             />
           );
         })}
-        {thread?.depth === 0 && thread?.phase === "teaching" && !isStreaming && thread.topic_slug && !messages.some((m) => m.type === "plan_card") && (
-          <PlanCreatedCard topicSlug={thread.topic_slug} />
-        )}
+        {thread?.depth === 0 &&
+          thread?.phase === "teaching" &&
+          !isStreaming &&
+          thread.topic_slug &&
+          !messages.some((m) => m.type === "plan_card") && (
+            <PlanCreatedCard topicSlug={thread.topic_slug} />
+          )}
         {branchSuggestion && (
           <BranchSuggestionCard
             topic={branchSuggestion.topic}
@@ -300,7 +314,9 @@ export default function Page({
               queryClient.invalidateQueries({ queryKey: ["threads"] });
               queryClient.invalidateQueries({ queryKey: ["thread-tree"] });
               const msg = `Let's continue: ${result.phase_title}`;
-              router.push(`/threads/${result.thread_id}?msg=${encodeURIComponent(msg)}`);
+              router.push(
+                `/threads/${result.thread_id}?msg=${encodeURIComponent(msg)}`,
+              );
             }}
           />
         )}

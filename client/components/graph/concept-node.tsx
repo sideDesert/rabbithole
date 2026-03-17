@@ -1,5 +1,5 @@
 import { type NodeProps } from "@xyflow/react";
-import { GraphNewUpBoldDuotone, GraphDownNewBoldDuotone, MinusCircleBoldDuotone } from "solar-icon-set";
+import { TrendingUp, TrendingDown, CircleMinus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { NodeHandles } from "./node-handles";
 
@@ -54,9 +54,9 @@ function MasteryRing({ score }: { score: number }) {
 }
 
 const TrendIcon = ({ trend }: { trend: string }) => {
-  if (trend === "improving") return <GraphNewUpBoldDuotone size={12} className="text-chart-1" />;
-  if (trend === "declining") return <GraphDownNewBoldDuotone size={12} className="text-destructive" />;
-  return <MinusCircleBoldDuotone size={12} className="text-muted-foreground" />;
+  if (trend === "improving") return <TrendingUp size={12} className="text-chart-1" />;
+  if (trend === "declining") return <TrendingDown size={12} className="text-destructive" />;
+  return <CircleMinus size={12} className="text-muted-foreground" />;
 };
 
 export function ConceptNode({ data, selected }: NodeProps) {

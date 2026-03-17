@@ -250,6 +250,7 @@ export interface Branch {
   status: string;
   phase: string;
   depth: number;
+  first_message?: string;
 }
 
 export async function listBranches(

@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { AltArrowDownBoldDuotone, AltArrowRightBoldDuotone, ClockCircleBoldDuotone, TestTubeBoldDuotone } from "solar-icon-set";
+import { ChevronDown, ChevronRight, Clock, TestTube } from "lucide-react";
 import { useState } from "react";
 
 const TIER_COLORS: Record<string, string> = {
@@ -59,7 +59,7 @@ export default function EbbinghausPage() {
       {/* Pending Tests */}
       <section className="space-y-4">
         <h2 className="text-xl font-medium flex items-center gap-2">
-          <ClockCircleBoldDuotone className="h-5 w-5" />
+          <Clock className="h-5 w-5" />
           Scheduled Reviews
         </h2>
 
@@ -112,7 +112,7 @@ export default function EbbinghausPage() {
       {/* Test Yourself */}
       <section className="space-y-4">
         <h2 className="text-xl font-medium flex items-center gap-2">
-          <TestTubeBoldDuotone className="h-5 w-5" />
+          <TestTube className="h-5 w-5" />
           Test Yourself
         </h2>
 
@@ -158,9 +158,9 @@ function TopicGroup({
         className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-muted transition-colors"
       >
         {open ? (
-          <AltArrowDownBoldDuotone className="h-4 w-4 text-muted-foreground shrink-0" />
+          <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
         ) : (
-          <AltArrowRightBoldDuotone className="h-4 w-4 text-muted-foreground shrink-0" />
+          <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
         )}
         <span className="font-medium">{topic.topic_name}</span>
         <span className="text-xs text-muted-foreground ml-auto">

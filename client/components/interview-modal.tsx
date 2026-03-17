@@ -1,7 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { AltArrowLeftBoldDuotone, AltArrowRightBoldDuotone, Pen2BoldDuotone } from "solar-icon-set";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Pencil,
+} from "lucide-react";
 import { Button } from "./ui/button";
 import type { InterviewQuestion } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -82,11 +86,14 @@ export function InterviewWidget({
 
   const selectedIsOther =
     selected !== undefined && selected.startsWith("Other: ");
-  const otherActive = selectedIsOther || selected === q.options.find((o) => isOtherOption(o));
+  const otherActive =
+    selectedIsOther || selected === q.options.find((o) => isOtherOption(o));
 
   const regularOptions = q.options.filter((o) => !isOtherOption(o));
   const otherOption = q.options.find((o) => isOtherOption(o));
-  const answeredCount = questions.filter((_, i) => answers[i] !== undefined).length;
+  const answeredCount = questions.filter(
+    (_, i) => answers[i] !== undefined,
+  ).length;
   const progress = (answeredCount / questions.length) * 100;
 
   return (
@@ -112,7 +119,7 @@ export function InterviewWidget({
                 disabled={current === 0}
                 className="p-0.5 rounded hover:bg-muted disabled:opacity-30 transition-colors"
               >
-                <AltArrowLeftBoldDuotone className="size-3.5" />
+                <ChevronLeft className="size-3.5" />
               </button>
               <span className="tabular-nums">
                 {current + 1} of {questions.length}
@@ -122,7 +129,7 @@ export function InterviewWidget({
                 disabled={isLast}
                 className="p-0.5 rounded hover:bg-muted disabled:opacity-30 transition-colors"
               >
-                <AltArrowRightBoldDuotone className="size-3.5" />
+                <ChevronRight className="size-3.5" />
               </button>
             </div>
           </div>
@@ -173,14 +180,12 @@ export function InterviewWidget({
                 onClick={() => {
                   if (!otherActive) {
                     const text = otherText[current] || "";
-                    selectOption(
-                      text.trim() ? `Other: ${text}` : otherOption,
-                    );
+                    selectOption(text.trim() ? `Other: ${text}` : otherOption);
                   }
                 }}
               >
                 <span className="shrink-0 size-5.5 flex items-center justify-center rounded-md">
-                  <Pen2BoldDuotone className="size-3" />
+                  <Pencil className="size-3" />
                 </span>
                 {otherActive ? (
                   <input
@@ -212,16 +217,24 @@ export function InterviewWidget({
           <div className="flex items-center justify-between px-4 py-2.5 border-t-2 border-border">
             <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
               <span className="flex items-center gap-1">
-                <kbd className="inline-flex items-center justify-center size-4 rounded border-2 border-border text-[9px]">←</kbd>
-                <kbd className="inline-flex items-center justify-center size-4 rounded border-2 border-border text-[9px]">→</kbd>
+                <kbd className="inline-flex items-center justify-center size-4 rounded border-2 border-border text-[9px]">
+                  ←
+                </kbd>
+                <kbd className="inline-flex items-center justify-center size-4 rounded border-2 border-border text-[9px]">
+                  →
+                </kbd>
                 <span className="ml-0.5">navigate</span>
               </span>
               <span className="flex items-center gap-1">
-                <kbd className="inline-flex items-center justify-center h-4 px-1 rounded border-2 border-border text-[9px]">Enter</kbd>
+                <kbd className="inline-flex items-center justify-center h-4 px-1 rounded border-2 border-border text-[9px]">
+                  Enter
+                </kbd>
                 <span className="ml-0.5">submit</span>
               </span>
               <span className="flex items-center gap-1">
-                <kbd className="inline-flex items-center justify-center h-4 px-1 rounded border-2 border-border text-[9px]">Esc</kbd>
+                <kbd className="inline-flex items-center justify-center h-4 px-1 rounded border-2 border-border text-[9px]">
+                  Esc
+                </kbd>
                 <span className="ml-0.5">skip</span>
               </span>
             </div>

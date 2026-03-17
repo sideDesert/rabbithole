@@ -1,6 +1,6 @@
 "use client";
 
-import { BranchingPathsDownBoldDuotone, CloseCircleBoldDuotone } from "solar-icon-set";
+import { GitBranch, CircleX } from "lucide-react";
 
 interface BranchSuggestionCardProps {
   topic: string;
@@ -20,7 +20,7 @@ export function BranchSuggestionCard({
   return (
     <div className="flex items-start gap-3 rounded-lg border-2 border-border bg-card shadow-md p-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
       <div className="flex-shrink-0 rounded-md bg-primary/10 p-2 border-2 border-border">
-        <BranchingPathsDownBoldDuotone className="h-4 w-4 text-primary" />
+        <GitBranch className="h-4 w-4 text-primary" />
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium">{topic}</p>
@@ -30,7 +30,7 @@ export function BranchSuggestionCard({
           disabled={loading}
           className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground border-2 border-border shadow-sm neo-hover disabled:opacity-50 cursor-pointer"
         >
-          <BranchingPathsDownBoldDuotone className="h-3 w-3" />
+          <GitBranch className="h-3 w-3" />
           {loading ? "Branching..." : "Explore as rabbit hole"}
         </button>
       </div>
@@ -38,7 +38,7 @@ export function BranchSuggestionCard({
         onClick={onDismiss}
         className="flex-shrink-0 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
       >
-        <CloseCircleBoldDuotone className="h-3.5 w-3.5" />
+        <CircleX className="h-3.5 w-3.5" />
       </button>
     </div>
   );

@@ -12,10 +12,10 @@ interface ThreadNodeData {
   first_question: string | null;
 }
 
-const phaseBadgeColors: Record<string, string> = {
-  interview: "bg-accent/20 text-accent-foreground",
-  planning: "bg-secondary/20 text-secondary-foreground",
-  teaching: "bg-primary/20 text-primary",
+const phaseDotColors: Record<string, string> = {
+  interview: "bg-accent",
+  planning: "bg-secondary",
+  teaching: "bg-primary",
 };
 
 export function ThreadNode({ data, selected }: NodeProps) {
@@ -32,12 +32,13 @@ export function ThreadNode({ data, selected }: NodeProps) {
     >
       <NodeHandles />
 
-      <span
-        className={cn(
-          "text-[10px] font-medium px-1.5 py-0.5 rounded-full mb-1 inline-block",
-          phaseBadgeColors[d.phase] ?? "bg-muted text-muted-foreground",
-        )}
-      >
+      <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full mb-1 inline-flex items-center gap-1 bg-background text-foreground dark:bg-black dark:text-white dark:border dark:border-border">
+        <span
+          className={cn(
+            "w-1.5 h-1.5 rounded-full",
+            phaseDotColors[d.phase] ?? "bg-muted-foreground",
+          )}
+        />
         {d.phase}
       </span>
 

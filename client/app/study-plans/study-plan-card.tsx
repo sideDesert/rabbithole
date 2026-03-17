@@ -53,7 +53,7 @@ export function StudyPlanCard({
       onClick={onClick}
     >
       <div
-        className={`relative flex items-end justify-end bg-gradient-to-br ${gradient} p-4 h-28`}
+        className={`relative flex items-end justify-end bg-linear-to-br ${gradient} p-4 h-28`}
       >
         <div className="relative flex items-center justify-center">
           <ProgressRing progress={topic.progress} />
@@ -79,9 +79,7 @@ export function StudyPlanCard({
         </Tooltip>
         {topic.current_concept && (
           <Tooltip>
-            <TooltipTrigger
-              render={<CardDescription className="truncate" />}
-            >
+            <TooltipTrigger render={<CardDescription className="truncate" />}>
               {topic.current_concept}
             </TooltipTrigger>
             <TooltipContent side="right">

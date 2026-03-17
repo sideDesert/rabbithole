@@ -1,17 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { TabsList, TabsTrigger } from "./ui/tabs";
 import {
-  AltArrowLeftBoldDuotone,
-  DoubleAltArrowLeftBoldDuotone,
-  ChecklistBoldDuotone,
-  ChatRoundBoldDuotone,
-  GraphBoldDuotone,
-  Pen2BoldDuotone,
-} from "solar-icon-set";
+  ChevronLeft,
+  ChevronsLeft,
+  ListChecks,
+  MessageCircle,
+  Network,
+  Pencil,
+} from "lucide-react";
 import { Button } from "./ui/button";
 import { ButtonGroup } from "./ui/button-group";
 import { Badge } from "@/components/ui/badge";
@@ -38,20 +37,9 @@ export function TopBar({
   backToRootHandler,
   backToParentHandler,
 }: TopBarInterface) {
-  const [scrolled, setScrolled] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 0);
-    };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
   return (
     <div
-      className={`flex bg-background border-b-2 border-border z-20 items-center justify-between p-2 sticky top-0 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-6 after:translate-y-full after:bg-gradient-to-b after:from-background after:to-transparent after:pointer-events-none after:transition-opacity ${scrolled ? "after:opacity-100" : "after:opacity-0"}`}
+      className="noise-surface flex bg-background border-b-2 border-border z-20 items-center justify-between p-2 sticky top-0"
     >
       <div className="flex items-center gap-2">
         <SidebarTrigger />
@@ -59,10 +47,10 @@ export function TopBar({
           {config?.back && (
             <ButtonGroup>
               <Button variant="outline" onClick={backToRootHandler}>
-                <DoubleAltArrowLeftBoldDuotone /> Root
+                <ChevronsLeft /> Root
               </Button>
               <Button variant="outline" onClick={backToParentHandler}>
-                <AltArrowLeftBoldDuotone /> Parent
+                <ChevronLeft /> Parent
               </Button>
             </ButtonGroup>
           )}
@@ -70,17 +58,12 @@ export function TopBar({
           {threadDepth != null && threadDepth > 0 && threadStatus && (
             <Badge
               variant="secondary"
-              className={cn(
-                "gap-1 text-[10px] px-1.5 py-0 border-2 border-border",
-                threadStatus === "active" && "bg-accent text-emerald-600 dark:text-emerald-400",
-                threadStatus === "explored" && "bg-muted text-muted-foreground",
-                threadStatus === "mastered" && "bg-secondary text-amber-600 dark:text-amber-400",
-              )}
+              className="gap-1 text-[10px] px-1.5 py-0 border-2 border-border bg-background text-foreground/70"
             >
               <span className={cn(
                 "inline-block h-1.5 w-1.5 rounded-full",
                 threadStatus === "active" && "bg-emerald-500",
-                threadStatus === "explored" && "bg-muted-foreground/50",
+                threadStatus === "explored" && "bg-muted-foreground",
                 threadStatus === "mastered" && "bg-amber-500",
               )} />
               {threadStatus}
@@ -98,16 +81,16 @@ export function TopBar({
         {config?.tabs && (
           <TabsList>
             <TabsTrigger value="chat-mode">
-              <ChatRoundBoldDuotone />
+              <MessageCircle />
             </TabsTrigger>
             <TabsTrigger value="feynman-mode">
-              <Pen2BoldDuotone />
+              <Pencil />
             </TabsTrigger>
             <TabsTrigger value="plan-mode">
-              <ChecklistBoldDuotone />
+              <ListChecks />
             </TabsTrigger>
             <TabsTrigger value="graph-mode">
-              <GraphBoldDuotone />
+              <Network />
             </TabsTrigger>
           </TabsList>
         )}

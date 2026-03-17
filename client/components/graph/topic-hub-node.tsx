@@ -41,9 +41,7 @@ export function TopicHubNode({ data, selected }: NodeProps) {
       <NodeHandles />
 
       <div className="text-center">
-        <p
-          className="text-base font-bold capitalize text-foreground"
-        >
+        <p className="text-base font-bold capitalize text-foreground">
           {d.display_name}
         </p>
         <div className="flex items-center justify-center gap-3 mt-2 text-xs text-muted-foreground">
@@ -52,7 +50,7 @@ export function TopicHubNode({ data, selected }: NodeProps) {
           <span>{Math.round(score * 100)}% avg</span>
         </div>
         {/* Mini progress bar */}
-        <div className="mt-2 h-1 w-full rounded-full bg-muted overflow-hidden">
+        <div className="mt-2 h-1 w-full rounded-full bg-primary/30 overflow-hidden">
           <div
             className="h-full rounded-full transition-all bg-primary"
             style={{

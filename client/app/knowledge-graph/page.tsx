@@ -26,7 +26,7 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useTheme } from "next-themes";
-import { GraphBoldDuotone, ChatSquareBoldDuotone, ArrowLeftBoldDuotone } from "solar-icon-set";
+import { Network, MessageSquare, ArrowLeft } from "lucide-react";
 
 import { useKnowledgeGraph } from "@/hooks/use-knowledge-graph";
 import { layoutGraph } from "@/lib/graph-layout";
@@ -115,10 +115,10 @@ function EdgeLegend() {
           <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
             Edges
           </p>
-          <LegendItem color="#818cf8" label="Prerequisite" />
-          <LegendItem color="#94a3b8" label="Part of" />
-          <LegendItem color="#fbbf24" label="Explored from" dashed />
-          <LegendItem color="#f87171" label="Confused with" dashed />
+          <LegendItem color="var(--graph-edge-gold)" label="Prerequisite" />
+          <LegendItem color="#999999" label="Part of" />
+          <LegendItem color="var(--graph-edge-yellow)" label="Explored from" dashed />
+          <LegendItem color="#e85d3a" label="Confused with" dashed />
         </div>
         <div className="border-t border-border pt-2 space-y-2">
           <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
@@ -165,7 +165,7 @@ function EdgeLegend() {
             <span className="text-[10px] text-muted-foreground">Topic</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <ChatSquareBoldDuotone className="size-3 text-muted-foreground" />
+            <MessageSquare className="size-3 text-muted-foreground" />
             <span className="text-[10px] text-muted-foreground">Thread</span>
           </div>
         </div>
@@ -225,7 +225,7 @@ function DomainFilter({
           className="h-8 gap-1.5 text-xs bg-card border-2 border-border shadow-md"
           onClick={() => onChange(undefined)}
         >
-          <ArrowLeftBoldDuotone className="size-3" />
+          <ArrowLeft className="size-3" />
           Overview
         </Button>
       )}
@@ -370,7 +370,7 @@ function KnowledgeGraphInner() {
   if (!data?.nodes?.length) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground">
-        <GraphBoldDuotone className="size-10 opacity-40" />
+        <Network className="size-10 opacity-40" />
         <p>Start a learning thread to build your knowledge map.</p>
       </div>
     );

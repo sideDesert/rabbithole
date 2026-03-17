@@ -8,10 +8,10 @@ import { NodeHandles } from "@/components/graph/node-handles";
 export type EntityType = "concept" | "person" | "fact" | "belief" | "resource";
 
 export const ENTITY_COLORS: Record<EntityType, { border: string; bg: string }> = {
-  concept:  { border: "#88e5d6", bg: "#88e5d614" },
+  concept:  { border: "var(--border)", bg: "color-mix(in srgb, var(--border) 8%, transparent)" },
   person:   { border: "#e85d3a", bg: "#e85d3a14" },
   fact:     { border: "#4a90d9", bg: "#4a90d914" },
-  belief:   { border: "#ffe156", bg: "#ffe15614" },
+  belief:   { border: "#ffcc00", bg: "#ffcc0014" },
   resource: { border: "#999999", bg: "#99999914" },
 };
 

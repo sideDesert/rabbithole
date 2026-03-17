@@ -7,7 +7,7 @@ import { useEbbinghaus } from "@/hooks/use-ebbinghaus";
 import { TestQuestion } from "@/components/ebbinghaus/test-question";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeftBoldDuotone, RefreshBoldDuotone } from "solar-icon-set";
+import { ArrowLeft, RefreshCw } from "lucide-react";
 
 function ScoreBar({
   label,
@@ -37,7 +37,7 @@ export default function TestPage() {
     <Suspense
       fallback={
         <div className="max-w-3xl mx-auto px-6 py-24 text-center">
-          <RefreshBoldDuotone className="h-8 w-8 animate-spin mx-auto text-muted-foreground" />
+          <RefreshCw className="h-8 w-8 animate-spin mx-auto text-muted-foreground" />
         </div>
       }
     >
@@ -70,7 +70,7 @@ function TestPageInner() {
         </p>
         <Link href="/ebbinghaus">
           <Button variant="ghost" className="mt-4">
-            <ArrowLeftBoldDuotone className="mr-2 h-4 w-4" /> Back to Ebbinghaus
+            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Ebbinghaus
           </Button>
         </Link>
       </div>
@@ -81,7 +81,7 @@ function TestPageInner() {
   if (phase === "loading") {
     return (
       <div className="max-w-3xl mx-auto px-6 py-24 text-center space-y-4">
-        <RefreshBoldDuotone className="h-8 w-8 animate-spin mx-auto text-muted-foreground" />
+        <RefreshCw className="h-8 w-8 animate-spin mx-auto text-muted-foreground" />
         <p className="text-muted-foreground">
           Generating your review test for <strong>{conceptName}</strong>...
         </p>
@@ -96,7 +96,7 @@ function TestPageInner() {
         <p className="text-red-500">{error}</p>
         <Link href="/ebbinghaus">
           <Button variant="ghost">
-            <ArrowLeftBoldDuotone className="mr-2 h-4 w-4" /> Back to Ebbinghaus
+            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Ebbinghaus
           </Button>
         </Link>
       </div>
@@ -111,7 +111,7 @@ function TestPageInner() {
         <div>
           <Link href="/ebbinghaus">
             <Button variant="ghost" size="sm">
-              <ArrowLeftBoldDuotone className="mr-2 h-4 w-4" /> Back
+              <ArrowLeft className="mr-2 h-4 w-4" /> Back
             </Button>
           </Link>
         </div>
@@ -196,7 +196,7 @@ function TestPageInner() {
         <div>
           <Link href="/ebbinghaus">
             <Button variant="ghost" size="sm">
-              <ArrowLeftBoldDuotone className="mr-2 h-4 w-4" /> Back
+              <ArrowLeft className="mr-2 h-4 w-4" /> Back
             </Button>
           </Link>
         </div>
@@ -255,7 +255,7 @@ function TestPageInner() {
         >
           {phase === "submitting" ? (
             <>
-              <RefreshBoldDuotone className="mr-2 h-4 w-4 animate-spin" />
+              <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
               Scoring...
             </>
           ) : (

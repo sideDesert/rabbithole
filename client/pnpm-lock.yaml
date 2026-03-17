@@ -65,9 +65,6 @@ importers:
       shadcn:
         specifier: ^3.8.5
         version: 3.8.5(@types/node@20.19.35)(typescript@5.9.3)
-      solar-icon-set:
-        specifier: ^2.0.1
-        version: 2.0.1(react@19.2.3)
       sonner:
         specifier: ^2.0.7
         version: 2.0.7(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
@@ -3949,11 +3946,6 @@ packages:
 
   sisteransi@1.0.5:
     resolution: {integrity: sha512-bLGGlR1QxBcynn2d5YmDX4MGjlZvy2MRBDRNHLJ8VI6l6+9FUiyTFNJ0IveOSP0bcXgVDPRcfGqA0pjaqUpfVg==}
-
-  solar-icon-set@2.0.1:
-    resolution: {integrity: sha512-agfVH4iJWgLmdDI9+SLc8wWOzAmRXhAdI5LMrTc1Vtwl+OhFJI7DDhANi24yaUmRy6JKg3dzj6jGBlWC5AiA4A==}
-    peerDependencies:
-      react: ^18.0.0 || ^19.0.0
 
   sonner@2.0.7:
     resolution: {integrity: sha512-W6ZN4p58k8aDKA4XPcx2hpIQXBRAgyiWVkYhT7CvK6D3iAu7xjvVyhQHg2/iaKJZ1XVJ4r7XuwGL+WGEK37i9w==}
@@ -8978,10 +8970,6 @@ snapshots:
   signal-exit@4.1.0: {}
 
   sisteransi@1.0.5: {}
-
-  solar-icon-set@2.0.1(react@19.2.3):
-    dependencies:
-      react: 19.2.3
 
   sonner@2.0.7(react-dom@19.2.3(react@19.2.3))(react@19.2.3):
     dependencies:

@@ -17,7 +17,7 @@ function MasteryRing({ score }: { score: number }) {
       <circle cx="14" cy="14" r={radius} fill="none" stroke="var(--graph-ring-track)" strokeWidth="3" />
       <circle
         cx="14" cy="14" r={radius} fill="none"
-        stroke="#88e5d6" strokeWidth="3"
+        stroke="var(--accent)" strokeWidth="3"
         strokeDasharray={`${filled} ${circumference - filled}`}
         strokeDashoffset={circumference / 4}
         strokeLinecap="round"
@@ -38,7 +38,7 @@ export function ConceptMgNode({ data, selected }: NodeProps) {
         <MasteryRing score={d.mastery} />
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium text-foreground truncate">{d.name}</p>
-          <span className="text-[10px]" style={{ color: "#88e5d6" }}>{Math.round(d.mastery * 100)}%</span>
+          <span className="text-[10px] text-accent">{Math.round(d.mastery * 100)}%</span>
           {d.domain && (
             <span className="text-[9px] text-muted-foreground/60 ml-1">{d.domain}</span>
           )}

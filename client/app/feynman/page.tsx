@@ -176,20 +176,30 @@ export default function Page() {
   return (
     <div className="px-10 pt-4 h-full max-w-3xl m-auto grid grid-rows-[1fr_auto]">
       {chatStarted ? (
-        <div className="flex flex-col overflow-auto relative z-0 gap-4 min-h-0 pb-6">
+        <div className="flex flex-col overflow-auto px-4 relative z-0 gap-4 min-h-0 pb-6">
           {messages.map((msg, index) => {
             if (msg.type === "plan_card") {
               return (
                 <PlanCreatedCard
                   key={msg.id}
                   topicSlug={msg.metadata?.topicSlug ?? ""}
-                  onStart={threadId ? async () => {
-                    const result = await startPhase(threadId);
-                    queryClient.invalidateQueries({ queryKey: ["threads"] });
-                    queryClient.invalidateQueries({ queryKey: ["thread-tree"] });
-                    const m = `Let's start learning: ${result.phase_title ?? result.title}`;
-                    router.push(`/threads/${result.thread_id}?msg=${encodeURIComponent(m)}`);
-                  } : undefined}
+                  onStart={
+                    threadId
+                      ? async () => {
+                          const result = await startPhase(threadId);
+                          queryClient.invalidateQueries({
+                            queryKey: ["threads"],
+                          });
+                          queryClient.invalidateQueries({
+                            queryKey: ["thread-tree"],
+                          });
+                          const m = `Let's start learning: ${result.phase_title ?? result.title}`;
+                          router.push(
+                            `/threads/${result.thread_id}?msg=${encodeURIComponent(m)}`,
+                          );
+                        }
+                      : undefined
+                  }
                 />
               );
             }
@@ -238,20 +248,23 @@ export default function Page() {
               onDismiss={dismissBranchSuggestion}
             />
           )}
-          {phaseComplete && !phaseComplete.isFinalPhase && !feynmanOpen && threadId && (
-            <PhaseActionButton
-              label="Continue to Next Phase"
-              sublabel={`You've completed ${phaseComplete.phaseTitle}! Up next: ${phaseComplete.nextPhaseTitle}`}
-              onClick={async () => {
-                const result = await createNextPhaseThread(threadId);
-                if (result.error) return;
-                dismissPhaseComplete();
-                queryClient.invalidateQueries({ queryKey: ["threads"] });
-                queryClient.invalidateQueries({ queryKey: ["thread-tree"] });
-                router.push(`/threads/${result.thread_id}`);
-              }}
-            />
-          )}
+          {phaseComplete &&
+            !phaseComplete.isFinalPhase &&
+            !feynmanOpen &&
+            threadId && (
+              <PhaseActionButton
+                label="Continue to Next Phase"
+                sublabel={`You've completed ${phaseComplete.phaseTitle}! Up next: ${phaseComplete.nextPhaseTitle}`}
+                onClick={async () => {
+                  const result = await createNextPhaseThread(threadId);
+                  if (result.error) return;
+                  dismissPhaseComplete();
+                  queryClient.invalidateQueries({ queryKey: ["threads"] });
+                  queryClient.invalidateQueries({ queryKey: ["thread-tree"] });
+                  router.push(`/threads/${result.thread_id}`);
+                }}
+              />
+            )}
           {phaseComplete && phaseComplete.isFinalPhase && !feynmanOpen && (
             <PhaseActionButton
               label="View Results"

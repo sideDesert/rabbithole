@@ -29,8 +29,21 @@ function pickPhrase() {
   return orbPhrases[Math.floor(Math.random() * orbPhrases.length)];
 }
 
-export function ThinkingOrb() {
+export function ThinkingOrb({ visible = true }: { visible?: boolean }) {
+  const [mounted, setMounted] = useState(visible);
+  const [show, setShow] = useState(visible);
   const [phrase, setPhrase] = useState(pickPhrase);
+
+  useEffect(() => {
+    if (visible) {
+      setMounted(true);
+      requestAnimationFrame(() => setShow(true));
+    } else {
+      setShow(false);
+      const timer = setTimeout(() => setMounted(false), 300);
+      return () => clearTimeout(timer);
+    }
+  }, [visible]);
 
   useEffect(() => {
     const tick = () => {
@@ -41,8 +54,16 @@ export function ThinkingOrb() {
     return () => clearTimeout(timer);
   }, []);
 
+  if (!mounted) return null;
+
   return (
-    <div className="flex items-center gap-3 mb-2 animate-in fade-in duration-200">
+    <div
+      className="flex items-center gap-3 mb-2 transition-all duration-300"
+      style={{
+        opacity: show ? 1 : 0,
+        transform: show ? "translateY(0)" : "translateY(-4px)",
+      }}
+    >
       <div className="thinking-orb shrink-0" />
       <span className="text-sm text-muted-foreground">{phrase}...</span>
     </div>

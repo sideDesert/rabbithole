@@ -6,15 +6,15 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Tree, type NodeRendererProps } from "react-arborist";
 import {
-  ArrowLeftBoldDuotone,
-  ArrowRightBoldDuotone,
-  AltArrowDownBoldDuotone,
-  AltArrowRightBoldDuotone,
-  ChatSquareBoldDuotone,
-  TestTubeBoldDuotone,
-  BranchingPathsDownBoldDuotone,
-} from "solar-icon-set";
-import { CheckCircleBoldDuotone, RecordCircleBoldDuotone } from "solar-icon-set";
+  ArrowLeft,
+  ArrowRight,
+  ChevronDown,
+  ChevronRight,
+  MessageSquare,
+  TestTube,
+  GitBranch,
+} from "lucide-react";
+import { CircleCheck, Circle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { phaseLabel } from "@/lib/topic-utils";
 import {
@@ -26,6 +26,7 @@ import {
 import { useThreadTree } from "@/hooks/use-thread-tree";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
 function ProgressRing({
@@ -73,9 +74,9 @@ function PhaseGroup({
       >
         <div className="flex items-center gap-1.5">
           {isOpen ? (
-            <AltArrowDownBoldDuotone className="size-3.5 text-muted-foreground" />
+            <ChevronDown className="size-3.5 text-muted-foreground" />
           ) : (
-            <AltArrowRightBoldDuotone className="size-3.5 text-muted-foreground" />
+            <ChevronRight className="size-3.5 text-muted-foreground" />
           )}
           <span className="text-sm font-semibold text-foreground">
             {phase.title}
@@ -102,9 +103,9 @@ function PhaseGroup({
                 )}
               >
                 {concept.completed ? (
-                  <CheckCircleBoldDuotone size={14} className="shrink-0 text-primary" />
+                  <CircleCheck size={14} className="shrink-0 text-primary" />
                 ) : (
-                  <RecordCircleBoldDuotone
+                  <Circle
                     size={14}
                     className={cn(
                       "shrink-0",
@@ -149,16 +150,16 @@ function ThreadNode({ node, style }: NodeRendererProps<ThreadTreeNode>) {
           }}
         >
           {node.isOpen ? (
-            <AltArrowDownBoldDuotone className="h-3.5 w-3.5" />
+            <ChevronDown className="h-3.5 w-3.5" />
           ) : (
-            <AltArrowRightBoldDuotone className="h-3.5 w-3.5" />
+            <ChevronRight className="h-3.5 w-3.5" />
           )}
         </button>
       )}
       {isRoot ? (
-        <ChatSquareBoldDuotone className="h-3.5 w-3.5 shrink-0" />
+        <MessageSquare className="h-3.5 w-3.5 shrink-0" />
       ) : (
-        <BranchingPathsDownBoldDuotone className="h-3.5 w-3.5 shrink-0" />
+        <GitBranch className="h-3.5 w-3.5 shrink-0" />
       )}
       <span className="truncate flex-1">{node.data.title}</span>
     </div>
@@ -196,7 +197,7 @@ export function TopicDetail({
       {/* Header */}
       <div>
         <Button variant="secondary" onClick={onBack} className="mb-4 -ml-2">
-          <ArrowLeftBoldDuotone className="size-4 mr-1" /> All Study Plans
+          <ArrowLeft className="size-4 mr-1" /> All Study Plans
         </Button>
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
@@ -214,7 +215,7 @@ export function TopicDetail({
             <ProgressRing progress={topic.progress} />
             <Link href={`/threads/${topic.latest_thread.id}`}>
               <Button>
-                Continue <ArrowRightBoldDuotone className="ml-1 size-4" />
+                Continue <ArrowRight className="ml-1 size-4" />
               </Button>
             </Link>
           </div>
@@ -222,86 +223,95 @@ export function TopicDetail({
       </div>
 
       {/* Plan Progress */}
-      <section>
-        <h2 className="text-lg font-semibold mb-3">Study Plan</h2>
-        {progressLoading ? (
-          <div className="space-y-3">
-            <Skeleton className="h-5 w-40" />
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-3/4" />
-            <Skeleton className="h-5 w-36 mt-4" />
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-2/3" />
-          </div>
-        ) : progressError ? (
-          <div className="rounded-lg border border-border p-4 flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">
-              Failed to load plan progress.
-            </span>
-            <Button variant="ghost" size="sm" onClick={() => refetchProgress()}>
-              Retry
-            </Button>
-          </div>
-        ) : !progress?.phases?.length ? (
-          <div className="rounded-lg border border-border p-4 text-sm text-muted-foreground">
-            Plan not yet created. Complete the interview to generate a study
-            plan.
-          </div>
-        ) : (
-          <div className="rounded-lg border border-border p-4">
-            <div className="flex items-center justify-between mb-4 pb-3 border-b border-border">
-              <span className="text-sm font-medium text-muted-foreground">
-                Progress
-              </span>
-              <span className="text-sm text-muted-foreground tabular-nums">
-                {progress.phases.reduce(
-                  (s, p) => s + p.concepts.filter((c) => c.completed).length,
-                  0,
-                )}
-                /{progress.phases.reduce((s, p) => s + p.concepts.length, 0)}{" "}
-                concepts
-              </span>
+      <Card>
+        <CardHeader>
+          <CardTitle>Study Plan</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {progressLoading ? (
+            <div className="space-y-3">
+              <Skeleton className="h-5 w-40" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-3/4" />
+              <Skeleton className="h-5 w-36 mt-4" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-2/3" />
             </div>
-            <div className="divide-y divide-border">
-              {progress.phases.map((phase) => (
-                <PhaseGroup
-                  key={phase.order}
-                  phase={phase}
-                  currentConcept={progress.current_concept}
-                />
-              ))}
+          ) : progressError ? (
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">
+                Failed to load plan progress.
+              </span>
+              <Button variant="ghost" size="sm" onClick={() => refetchProgress()}>
+                Retry
+              </Button>
             </div>
-          </div>
-        )}
-      </section>
+          ) : !progress?.phases?.length ? (
+            <p className="text-sm text-muted-foreground">
+              Plan not yet created. Complete the interview to generate a study plan.
+            </p>
+          ) : (
+            <>
+              <div className="flex items-center justify-between mb-4 pb-3 border-b border-border">
+                <span className="text-sm font-medium text-muted-foreground">
+                  Progress
+                </span>
+                <span className="text-sm text-muted-foreground tabular-nums">
+                  {progress.phases.reduce(
+                    (s, p) => s + p.concepts.filter((c) => c.completed).length,
+                    0,
+                  )}
+                  /{progress.phases.reduce((s, p) => s + p.concepts.length, 0)}{" "}
+                  concepts
+                </span>
+              </div>
+              <div className="divide-y divide-border">
+                {progress.phases.map((phase) => (
+                  <PhaseGroup
+                    key={phase.order}
+                    phase={phase}
+                    currentConcept={progress.current_concept}
+                  />
+                ))}
+              </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Mastery & Tests Placeholder */}
-      <section>
-        <h2 className="text-lg font-semibold mb-3">Tests</h2>
-        <div className="rounded-lg border border-dashed border-border p-6 flex flex-col items-center justify-center text-center">
-          <TestTubeBoldDuotone className="size-8 text-muted-foreground mb-2" />
-          <p className="text-sm text-muted-foreground">
-            Mastery tests coming soon. You&apos;ll be able to track Feynman test
-            scores for each concept here.
-          </p>
-        </div>
-      </section>
+      <Card>
+        <CardHeader>
+          <CardTitle>Tests</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col items-center justify-center text-center py-4">
+            <TestTube className="size-8 text-muted-foreground mb-2" />
+            <p className="text-sm text-muted-foreground">
+              Mastery tests coming soon. You&apos;ll be able to track Feynman test
+              scores for each concept here.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Thread Tree */}
-      <section>
-        <h2 className="text-lg font-semibold mb-3">Conversations</h2>
-        {treesLoading ? (
-          <div className="space-y-2">
-            <Skeleton className="h-4 w-48" />
-            <Skeleton className="h-4 w-40 ml-4" />
-            <Skeleton className="h-4 w-44 ml-4" />
-          </div>
-        ) : treeData.length === 0 ? (
-          <div className="rounded-lg border border-border p-4 text-sm text-muted-foreground">
-            No conversations yet.
-          </div>
-        ) : (
-          <div className="rounded-lg pb-0 border border-border p-2">
+      <Card>
+        <CardHeader>
+          <CardTitle>Conversations</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {treesLoading ? (
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-48" />
+              <Skeleton className="h-4 w-40 ml-4" />
+              <Skeleton className="h-4 w-44 ml-4" />
+            </div>
+          ) : treeData.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              No conversations yet.
+            </p>
+          ) : (
             <Tree<ThreadTreeNode>
               data={treeData}
               idAccessor="thread_id"
@@ -322,9 +332,9 @@ export function TopicDetail({
             >
               {ThreadNode}
             </Tree>
-          </div>
-        )}
-      </section>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
