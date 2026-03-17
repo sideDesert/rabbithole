@@ -40,7 +40,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${spaceGrotesk.variable} ${dmSans.variable} ${spaceMono.variable}`} suppressHydrationWarning>
+    <html lang="en" className={`theme-neo ${spaceGrotesk.variable} ${dmSans.variable} ${spaceMono.variable}`} suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem("theme-personality");if(t&&t!=="neo"){document.documentElement.classList.remove("theme-neo");document.documentElement.classList.add("theme-"+t)}}catch(e){}})()`,
+          }}
+        />
+      </head>
       <body className="antialiased bg-background font-sans">
         <Providers>
           <AppSidebar tools={tools} />
