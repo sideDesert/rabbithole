@@ -7,7 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getPendingTests, type PendingTest } from "@/lib/api";
 import { StudyTopicCard } from "@/components/study-topic-card";
 import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
+import { ThemeIcon } from "@/components/theme-icon";
 import {
   Card,
   CardContent,
@@ -24,7 +24,6 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import { Badge } from "@/components/ui/badge";
-import { ChevronRight, CirclePlus } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 function Heading({ children }: { children?: React.ReactNode }) {
@@ -71,7 +70,7 @@ function TestCard({ test }: { test: PendingTest }) {
         </CardContent>
         <CardFooter>
           <Button variant="ghost" size="sm" className="ml-auto">
-            Start Test <ChevronRight className="ml-1 size-4" />
+            Start Test <ThemeIcon name="chevronRight" className="ml-1 size-4" />
           </Button>
         </CardFooter>
       </Card>
@@ -150,7 +149,7 @@ function NewTopicCard() {
     <Link href="/feynman" className="block h-full">
       <div className="flex flex-col items-center justify-center h-full min-h-[280px] rounded-lg border-2 border-dashed border-border hover:border-foreground transition-colors cursor-pointer">
         <div className="flex items-center justify-center size-12 rounded-full border-2 border-dashed border-border mb-3">
-          <CirclePlus className="size-5 text-muted-foreground" />
+          <ThemeIcon name="circlePlus" className="size-5 text-muted-foreground" />
         </div>
         <p className="text-sm font-medium text-muted-foreground">
           Start a new topic
@@ -182,7 +181,7 @@ function ThreadsSection() {
       {!isLoading && (
         <div className="flex items-center gap-3 mt-4">
           <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
+            <ThemeIcon name="search" className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
             <Input
               placeholder="Search topics..."
               value={search}
