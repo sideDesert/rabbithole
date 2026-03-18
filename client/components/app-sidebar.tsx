@@ -40,7 +40,7 @@ export function AppSidebar({ tools }: { tools: Tool[] }) {
   function handleAgentNav(agentId: AgentId) {
     setThreadId(null);
     setActiveAgent(agentId);
-    router.push("/feynman");
+    router.push(agentId === "ebbinghaus" ? "/ebbinghaus" : "/feynman");
   }
 
   return (
