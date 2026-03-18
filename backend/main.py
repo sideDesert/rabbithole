@@ -21,6 +21,7 @@ from app.api.practice import router as practice_router
 from app.api.feynman import router as feynman_router
 from app.api.graph import router as graph_router
 from app.api.memory_graph import router as memory_graph_router
+from app.api.notify import router as notify_router
 
 # --- Validate env ---
 for name, val in [("MONGO_USER", MONGO_USER), ("MONGO_PASSWORD", MONGO_PASSWORD), ("OPENROUTER_API_KEY", LLM_API_KEY)]:
@@ -90,6 +91,7 @@ app.include_router(practice_router)
 app.include_router(feynman_router)
 app.include_router(graph_router)
 app.include_router(memory_graph_router)
+app.include_router(notify_router)
 
 
 @app.get("/health")
