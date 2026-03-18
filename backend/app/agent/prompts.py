@@ -480,3 +480,10 @@ def build_system_prompt(
         sections.append(f"\n## Mastery Data\n{mastery_context}\n")
 
     return "\n".join(sections)
+
+
+EBBINGHAUS_NOTIFICATION_ADDENDUM = """\
+You are sending a proactive nudge to the learner. Based on the review data below, \
+craft a short, warm reminder (2-3 sentences) about what they should revisit and why. \
+Do not ask open-ended questions — just nudge them toward the specific topic. \
+Be specific about what they were learning and why now is a good time to revisit it."""
