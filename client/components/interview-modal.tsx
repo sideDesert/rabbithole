@@ -1,11 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Pencil,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight, Pencil } from "lucide-react";
 import { Button } from "./ui/button";
 import type { InterviewQuestion } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -99,7 +95,7 @@ export function InterviewWidget({
   return (
     <div className={cn("w-full", className)}>
       <div className="bg-background pb-6">
-        <div className="rounded-lg border-2 border-border shadow-md overflow-hidden">
+        <div className="rounded-lg border-2 bg-card border-border shadow-md overflow-hidden">
           {/* Progress bar */}
           <div className="h-1 bg-muted border-b border-border">
             <div

@@ -38,9 +38,7 @@ export function TopBar({
   backToParentHandler,
 }: TopBarInterface) {
   return (
-    <div
-      className="noise-surface flex bg-background border-b-2 border-border z-20 items-center justify-between p-2 sticky top-0"
-    >
+    <div className="noise-surface flex bg-background border-b-2 border-border z-20 items-center justify-between p-2 sticky top-0">
       <div className="flex items-center gap-2">
         <SidebarTrigger />
         <div className="flex flex-row items-center gap-4">
@@ -58,14 +56,16 @@ export function TopBar({
           {threadDepth != null && threadDepth > 0 && threadStatus && (
             <Badge
               variant="secondary"
-              className="gap-1 text-[10px] px-1.5 py-0 border-2 border-border bg-background text-foreground/70"
+              className="gap-1  px-1.5 py-0 border-2 border-border bg-card text-foreground"
             >
-              <span className={cn(
-                "inline-block h-1.5 w-1.5 rounded-full",
-                threadStatus === "active" && "bg-emerald-500",
-                threadStatus === "explored" && "bg-muted-foreground",
-                threadStatus === "mastered" && "bg-amber-500",
-              )} />
+              <span
+                className={cn(
+                  "inline-block h-1.5 w-1.5 rounded-full",
+                  threadStatus === "active" && "bg-emerald-500",
+                  threadStatus === "explored" && "bg-muted-foreground",
+                  threadStatus === "mastered" && "bg-amber-500",
+                )}
+              />
               {threadStatus}
             </Badge>
           )}

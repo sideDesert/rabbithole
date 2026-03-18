@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronRight, Clock, TestTube } from "lucide-react";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 const TIER_COLORS: Record<string, string> = {
   weak: "destructive",
@@ -25,7 +26,15 @@ const TIER_COLORS: Record<string, string> = {
 function TierBadge({ tier }: { tier: string | null }) {
   if (!tier) return null;
   return (
-    <Badge variant={(TIER_COLORS[tier] as "destructive" | "secondary" | "default" | "outline") || "secondary"}>
+    <Badge
+      variant={
+        (TIER_COLORS[tier] as
+          | "destructive"
+          | "secondary"
+          | "default"
+          | "outline") || "secondary"
+      }
+    >
       {tier}
     </Badge>
   );
@@ -92,8 +101,7 @@ export default function EbbinghausPage() {
                     Mastery: {Math.round(test.mastery_score * 100)}%
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    Due:{" "}
-                    {new Date(test.scheduled_for).toLocaleDateString()}
+                    Due: {new Date(test.scheduled_for).toLocaleDateString()}
                   </p>
                 </CardContent>
                 <CardFooter>
@@ -150,10 +158,12 @@ function TopicGroup({
   };
 }) {
   const [open, setOpen] = useState(true);
+  const router = useRouter();
 
   return (
-    <div className="rounded-lg border-2 border-border shadow-md overflow-hidden">
-      <button
+    <div className="rounded-lg border-2 bg-card border-border shadow-md overflow-hidden">
+      <Button
+        variant={"ghost"}
         onClick={() => setOpen(!open)}
         className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-muted transition-colors"
       >
@@ -164,32 +174,36 @@ function TopicGroup({
         )}
         <span className="font-medium">{topic.topic_name}</span>
         <span className="text-xs text-muted-foreground ml-auto">
-          {topic.concepts.length} concept{topic.concepts.length !== 1 ? "s" : ""}
+          {topic.concepts.length} concept
+          {topic.concepts.length !== 1 ? "s" : ""}
         </span>
-      </button>
+      </Button>
 
       {open && (
         <div className="border-t border-border divide-y divide-border">
           {topic.concepts.map((concept) => (
-            <div
+            <Button
+              onClick={() => {
+                router.push(
+                  `/ebbinghaus/test?concept=${encodeURIComponent(concept.name)}&topic=${encodeURIComponent(topic.topic_slug)}`,
+                );
+              }}
+              variant={"ghost"}
               key={concept.name}
-              className="flex items-center gap-3 px-4 py-2.5 hover:bg-muted transition-colors"
+              className="flex w-full rounded-none justify-between items-center gap-3 px-4 py-2.5 hover:bg-muted transition-colors"
             >
-              <span className="text-sm flex-1">{concept.name}</span>
-              {concept.mastery_score != null && (
-                <span className="text-xs text-muted-foreground">
-                  {Math.round(concept.mastery_score * 100)}%
-                </span>
-              )}
-              <TierBadge tier={concept.mastery_tier} />
-              <Link
-                href={`/ebbinghaus/test?concept=${encodeURIComponent(concept.name)}&topic=${encodeURIComponent(topic.topic_slug)}`}
-              >
-                <Button variant="ghost" size="sm" className="text-xs">
-                  Take Test
-                </Button>
-              </Link>
-            </div>
+              <div>
+                <span className="text-sm flex-1">{concept.name}</span>
+              </div>
+              <div className="flex gap-2 items-center">
+                {concept.mastery_score != null && (
+                  <span className="text-xs text-muted-foreground">
+                    {Math.round(concept.mastery_score * 100)}%
+                  </span>
+                )}
+                <TierBadge tier={concept.mastery_tier} />
+              </div>
+            </Button>
           ))}
         </div>
       )}
