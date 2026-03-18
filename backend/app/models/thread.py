@@ -35,3 +35,5 @@ class Thread(MongoBase):
     parent_summary: str | None = None   # LLM-compacted summary of parent conversation (populated async)
     branch_text: str | None = None      # highlighted text / branch topic
     token_usage: TokenUsage = TokenUsage()
+    is_notification_thread: bool = False
+    last_notified_at: datetime | None = None
