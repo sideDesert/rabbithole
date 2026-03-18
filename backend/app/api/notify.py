@@ -57,7 +57,8 @@ def _find_or_create_notification_thread(user_id: str) -> dict:
 
 def _get_most_overdue_review(user_id: str) -> dict | None:
     """Return the most overdue pending review, or None."""
-    now = datetime.now(timezone.utc)
+    # Use naive UTC to match MongoDB's naive datetime storage
+    now = datetime.utcnow()
     doc = mongo.review_schedule().find_one(
         {
             "user_id": user_id,
@@ -85,7 +86,8 @@ def _get_most_overdue_review(user_id: str) -> dict | None:
 
 def _get_stalest_incomplete_topic(user_id: str) -> dict | None:
     """Find the Feynman topic untouched the longest (>24h) with uncompleted concepts."""
-    cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
+    # Use naive UTC to match MongoDB's naive datetime storage
+    cutoff = datetime.utcnow() - timedelta(hours=24)
 
     feynman_threads = list(mongo.threads().find({
         "user_id": user_id,
@@ -118,8 +120,6 @@ def _get_stalest_incomplete_topic(user_id: str) -> dict | None:
             continue
 
         last_active = latest_msg["created_at"]
-        if last_active.tzinfo is None:
-            last_active = last_active.replace(tzinfo=timezone.utc)
         if last_active > cutoff:
             continue
 
@@ -161,11 +161,14 @@ async def _run_ebbinghaus_notification(
             "content": msg["content"] if isinstance(msg["content"], str) else str(msg["content"]),
         })
 
-    system_context = (
+    # Send as user message so the LLM has a valid conversation turn.
+    # The agent's own system prompt (instructions) provides Ebbinghaus's personality.
+    notification_context = (
+        f"[INTERNAL — do not repeat this framing to the learner]\n"
         f"{EBBINGHAUS_NOTIFICATION_ADDENDUM}\n\n"
         f"Notification data:\n{json.dumps(notification_data, indent=2)}"
     )
-    input_messages.append({"role": "system", "content": system_context})
+    input_messages.append({"role": "user", "content": notification_context})
 
     agent_ctx = AgentContext(
         user_id=user_id,
