@@ -2,9 +2,6 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Brain, SquarePen } from "lucide-react";
-import { Rabbit } from "lucide-react";
-import { SquarePen, Rabbit } from "lucide-react";
 import { ThemeIcon } from "@/components/theme-icon";
 import type { IconName } from "@/lib/icon-map";
 import {
@@ -14,12 +11,16 @@ import {
   SidebarHeader,
   SidebarMenu,
   SidebarMenuItem,
+  SidebarMenuBadge,
   SidebarMenuButton,
 } from "@/components/ui/sidebar";
-import { useAgent } from "@/components/agent-context";
+import { useAgent, type AgentId } from "@/components/agent-context";
 import { usePlan } from "@/components/plan-context";
+import { useThemePersonality } from "@/components/theme-personality-provider";
 import { ThreadTree } from "@/components/thread-tree";
 import { ThemePersonalitySwitcher } from "@/components/theme-personality-switcher";
+import Image from "next/image";
+import { Rabbit } from "lucide-react";
 
 export type Tool = {
   name: string;
@@ -33,8 +34,10 @@ export function AppSidebar({ tools }: { tools: Tool[] }) {
 
   const { activeAgent, setActiveAgent } = useAgent();
   const { setThreadId } = usePlan();
+  const { activeTheme } = useThemePersonality();
+  const logoClass = activeTheme.id === "classic" ? "rounded-full" : "rounded-none border-2 border-border";
 
-  function handleAgentNav(agentId: string) {
+  function handleAgentNav(agentId: AgentId) {
     setThreadId(null);
     setActiveAgent(agentId);
     router.push("/feynman");
@@ -55,11 +58,14 @@ export function AppSidebar({ tools }: { tools: Tool[] }) {
           <SidebarMenu className="gap-1">
             <SidebarMenuItem>
               <SidebarMenuButton
-                isActive={activeAgent === "feynman" && (path.includes("feynman") || path.includes("threads"))}
+                isActive={
+                  activeAgent === "feynman" &&
+                  (path.includes("feynman") || path.includes("threads"))
+                }
                 onClick={() => handleAgentNav("feynman")}
               >
-                <SquarePen className="h-4 w-4" />
-                <span>New Chat</span>
+                <Image src="/feynman.png" alt="Feynman" width={28} height={28} className={`h-7 w-7 object-cover object-top ${logoClass}`} />
+                <span>Feynman</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
@@ -67,9 +73,10 @@ export function AppSidebar({ tools }: { tools: Tool[] }) {
                 isActive={activeAgent === "ebbinghaus"}
                 onClick={() => handleAgentNav("ebbinghaus")}
               >
-                <ThemeIcon name="atom" className="h-4 w-4" />
+                <Image src="/ebbinghaus.png" alt="Ebbinghaus" width={28} height={28} className={`h-7 w-7 object-cover object-top ${logoClass}`} />
                 <span>Ebbinghaus</span>
               </SidebarMenuButton>
+              <SidebarMenuBadge>3</SidebarMenuBadge>
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarGroup>
