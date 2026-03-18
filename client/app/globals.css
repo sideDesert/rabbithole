@@ -283,7 +283,7 @@
     --accent-foreground: oklch(0.3394 0.0441 1.7583);
     --destructive: oklch(0.6332 0.1578 22.6734);
     --destructive-foreground: oklch(0.9777 0.0041 301.4256);
-    --border: oklch(0.8447 0.0226 300.1421);
+    --border: oklch(0.9000 0.0100 300);
     --input: oklch(0.9329 0.0124 301.2783);
     --ring: oklch(0.6104 0.0767 299.7335);
 
@@ -311,7 +311,7 @@
     --font-serif: "Lora", Georgia, serif;
 
     /* Radius & spacing */
-    --radius: 0.5rem;
+    --radius: 0.75rem;
     --spacing: 0.25rem;
     --letter-spacing: 0em;
     --tracking-normal: 0em;
@@ -457,6 +457,24 @@
         background: var(--primary);
         color: var(--primary-foreground);
     }
+}
+
+/* ── Classic theme overrides ────────────────────────────────── */
+
+/* Downgrade thick neo-brutalism borders to thin classic borders */
+.theme-classic :where([class*="border-2"]) {
+    border-width: 1px;
+}
+
+/* Bump border-radius on cards, panels, and common containers */
+.theme-classic :where([class*="rounded-md"]) {
+    border-radius: var(--radius-lg);
+}
+.theme-classic :where([class*="rounded-lg"]) {
+    border-radius: var(--radius-xl);
+}
+.theme-classic :where([class*="rounded-none"]) {
+    border-radius: var(--radius-md);
 }
 
 /* ── Neo-brutalism utilities ─────────────────────────────────── */
