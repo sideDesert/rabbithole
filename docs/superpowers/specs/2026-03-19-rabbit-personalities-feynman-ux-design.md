@@ -27,6 +27,10 @@ Update all Feynman-facing prompts in `backend/app/agent/prompts.py` to inject hi
 
 **Prompt structure:** Personality block goes at the top of each conversational prompt, before the phase-specific instructions. The phase logic (tools, rules, formatting) stays unchanged.
 
+**Important:** `FEYNMAN_BASE` and the phase prompts (`INTERVIEW_PROMPT`, `TEACHING_PROMPT`) are used by *different code paths*. `build_phase_prompt()` selects from the phase map and never touches `FEYNMAN_BASE`. `build_system_prompt()` uses `FEYNMAN_BASE` directly. Personality must be injected independently into each prompt — they do not inherit from each other. `PRACTICE_BASE` is a separate agent prompt and is not part of this change.
+
+**Pre-existing bug:** `INTERVIEW_PROMPT` contains a git merge conflict marker (`<<<<<<< Updated upstream` at line 235). Fix this while editing the prompt.
+
 ## 2. Ebbinghaus Personality (System Prompt)
 
 Update `EBBINGHAUS_SYSTEM_PROMPT` in `backend/app/agent/prompts.py`.
@@ -45,8 +49,9 @@ Update `EBBINGHAUS_SYSTEM_PROMPT` in `backend/app/agent/prompts.py`.
 
 **Current state:** When no messages exist, the Feynman page shows a centered "What do you want to learn?" heading with a rotating subtitle cycling through topic suggestions.
 
-**New state:** Replace with a single assistant-style message bubble from Feynman, rendered using the existing `ChatMessage` component. The message:
+**New state:** Replace with a custom greeting component that visually matches the assistant message bubble style but does NOT use the `ChatMessage` component (since `ChatMessage` pipes content through `Streamdown` as a string, which doesn't support React nodes or animations).
 
+The greeting:
 - Written in Feynman's voice (cheeky, inviting, casual)
 - Contains a rotating topic suggestion woven naturally into the text
 - The rotating topic cycles through the existing `prompts` array with the same fade animation timing
@@ -54,14 +59,22 @@ Update `EBBINGHAUS_SYSTEM_PROMPT` in `backend/app/agent/prompts.py`.
 **Example greeting:**
 > Alright, so here's the deal — I can explain just about anything, but you've got to tell me what's on your mind first. Been thinking about **{rotating topic}** lately, but honestly, I'm game for whatever.
 
-Below the message bubble, show the topic suggestions as clickable chips/buttons (compact, muted styling) so the user can tap one directly.
+Below the greeting, show 4 clickable suggestion chips (randomly sampled from `prompts` on mount). Chips use compact, muted styling (`text-sm`, `border`, `rounded-full`, `hover:bg-muted`).
+
+**Ebbinghaus greeting example:**
+> You're here. Good. I was starting to wonder if you'd forgotten about your studies. So, what do we need to work on? I've got my eye on **{rotating topic}** — but you tell me what's been on your mind.
+
+**Interaction:**
+- Clicking a chip calls `send(chipText)` — the chip text becomes the first user message
+- Chips disappear once `chatStarted` is true (natural, since the `!chatStarted` branch no longer renders)
+- 4 chips shown, randomly sampled from the prompts array on mount
 
 **Implementation in `client/app/feynman/page.tsx`:**
 - Replace the `!chatStarted` branch (the centered `<div>` with `<h2>` and `<p>`) with:
-  - A `ChatMessage` component with `role={ROLE_AI}` containing the greeting text
-  - A row of 3-4 clickable suggestion chips below it (randomly sampled from `prompts`, refreshed on mount)
+  - A custom `<FeynmanGreeting>` component styled to look like an assistant message bubble
+  - A row of 4 clickable suggestion chips below it
 - The rotating topic inside the greeting text uses the same `index`/`visible` state and fade transition
-- Clicking a chip calls `send(chipText)` directly
+- Same pattern for `<EbbinghausGreeting>` on the ebbinghaus page
 
 ## 4. Decouple `/ebbinghaus` from `/feynman`
 
@@ -70,8 +83,9 @@ Below the message bubble, show the topic suggestions as clickable chips/buttons 
 **Change:**
 1. Extract the chat UI logic from `client/app/feynman/page.tsx` into `client/components/chat-page.tsx`
    - Props: `agent: "feynman" | "ebbinghaus"`, `greeting: ReactNode`, `suggestions: string[]`
-   - Contains: all the chat message rendering, prompt input, text selection menu, branch logic, interview widget, feynman modal, phase action buttons
-   - The parent page provides agent-specific config (greeting message, suggestions array)
+   - Contains: all the chat message rendering, prompt input, text selection menu, branch logic, interview widget, phase action buttons
+   - Feynman-specific features (`FeynmanModal`, `phaseComplete` buttons) are conditionally rendered only when `agent === "feynman"`
+   - The parent page provides agent-specific config (greeting component, suggestions array)
 
 2. `client/app/feynman/page.tsx` becomes thin:
    ```tsx
@@ -89,7 +103,7 @@ Below the message bubble, show the topic suggestions as clickable chips/buttons 
    - Ebbinghaus gets her own greeting message in her voice and her own set of suggestion prompts
    - The current practice UI content at `/ebbinghaus` is already fully duplicated at `/practice`, so nothing is lost
 
-4. Fix sidebar routing: `handleAgentNav("ebbinghaus")` should route to `/ebbinghaus` instead of `/feynman`.
+4. Fix sidebar routing: `handleAgentNav("ebbinghaus")` should route to `/ebbinghaus`, `handleAgentNav("feynman")` to `/feynman`. Also ensure `useAgent()` context stays in sync — when the page mounts, it should set `activeAgent` from the `agent` prop so direct URL navigation works correctly.
 
 ## Files Changed
 
@@ -107,4 +121,4 @@ Below the message bubble, show the topic suggestions as clickable chips/buttons 
 - The `/practice` page — stays as-is
 - Scoring prompts, plan generation prompts — no personality injection
 - The `ChatMessage` component itself — no changes needed
-- Thread tree, branch logic, feynman modal — just moved into ChatPage, not modified
+- Thread tree, branch logic — just moved into ChatPage, not modified
