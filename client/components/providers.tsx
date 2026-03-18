@@ -2,6 +2,7 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "@/components/theme-provider";
+import { ThemePersonalityProvider } from "@/components/theme-personality-provider";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { PlanProvider } from "@/components/plan-context";
 import { AgentProvider } from "@/components/agent-context";
@@ -40,6 +41,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         enableSystem
         disableTransitionOnChange
       >
+        <ThemePersonalityProvider>
         <SidebarProvider>
           <AgentProvider>
             <PlanProvider>
@@ -49,6 +51,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
             </PlanProvider>
           </AgentProvider>
         </SidebarProvider>
+        </ThemePersonalityProvider>
       </ThemeProvider>
       <Toaster
         position="bottom-right"

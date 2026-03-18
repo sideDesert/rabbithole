@@ -12,7 +12,7 @@ export function PersonNode({ data, selected }: NodeProps) {
   return (
     <MemoryNodeShell selected={selected} entityType="person" minWidth="140px" maxWidth="200px">
       <div className="flex items-center gap-2">
-        <User size={20} className="shrink-0" style={{ color: "#e85d3a" }} />
+        <User size={20} className="shrink-0" style={{ color: "var(--color-node-person)" }} />
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium text-foreground truncate">{d.name}</p>
           {d.role && <span className="text-[10px] text-muted-foreground">{d.role}</span>}

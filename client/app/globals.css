@@ -74,7 +74,7 @@
     --color-destructive-foreground: var(--destructive-foreground);
 }
 
-:root {
+.theme-neo {
     /* Graph integration */
     --graph-ring-track: #e0e0dc;
     --graph-node-bg: #ffffff;
@@ -143,9 +143,35 @@
     --shadow-lg: 6px 6px 0px 0px #1a1a1a;
     --shadow-xl: 8px 8px 0px 0px #1a1a1a;
     --shadow-2xl: 10px 10px 0px 0px #1a1a1a;
+
+    /* Semantic status colors */
+    --color-mastered: hsl(142, 71%, 45%);
+    --color-strong: hsl(142, 50%, 40%);
+    --color-medium: hsl(45, 93%, 47%);
+    --color-weak: hsl(0, 84%, 60%);
+    --color-undiscovered: #64748b;
+
+    /* Memory graph entity colors */
+    --color-node-person: #e85d3a;
+    --color-node-fact: #4a90d9;
+    --color-node-belief: #ffcc00;
+    --color-node-resource: #999999;
+
+    /* Knowledge graph hub colors */
+    --color-kg-memory-hub: hsl(260, 60%, 55%);
+    --color-kg-topic-hub: hsl(200, 60%, 50%);
+    --color-kg-topic-hub-legend: hsl(200, 60%, 25%);
+    --color-kg-thread: hsl(142, 50%, 40%);
+    --color-kg-default: hsl(220, 20%, 50%);
+    --color-confused-with: #e85d3a;
+    --color-part-of: #999999;
+
+    /* Hub node gradients */
+    --hub-gradient-start: #fffef5;
+    --hub-gradient-end: #f5eed8;
 }
 
-.dark {
+:is(.dark).theme-neo {
     /* Graph integration */
     --graph-ring-track: #444444;
     --graph-node-bg: #1e1c1a;
@@ -202,6 +228,225 @@
     --shadow-lg: 6px 6px 0px 0px rgba(0, 0, 0, 0.6);
     --shadow-xl: 8px 8px 0px 0px rgba(0, 0, 0, 0.6);
     --shadow-2xl: 10px 10px 0px 0px rgba(0, 0, 0, 0.6);
+
+    /* Semantic status colors — dark */
+    --color-mastered: hsl(142, 71%, 50%);
+    --color-strong: hsl(142, 50%, 45%);
+    --color-medium: hsl(45, 93%, 52%);
+    --color-weak: hsl(0, 84%, 65%);
+    --color-undiscovered: #94a3b8;
+
+    /* Memory graph entity colors — dark */
+    --color-node-person: #ff7a5c;
+    --color-node-fact: #5ba3e6;
+    --color-node-belief: #ffe066;
+    --color-node-resource: #aaaaaa;
+
+    /* Knowledge graph hub colors — dark */
+    --color-kg-memory-hub: hsl(260, 60%, 65%);
+    --color-kg-topic-hub: hsl(200, 60%, 60%);
+    --color-kg-topic-hub-legend: hsl(200, 60%, 40%);
+    --color-kg-thread: hsl(142, 50%, 50%);
+    --color-kg-default: hsl(220, 20%, 60%);
+    --color-confused-with: #ff7a5c;
+    --color-part-of: #aaaaaa;
+
+    /* Hub node gradients — dark */
+    --hub-gradient-start: #2a2118;
+    --hub-gradient-end: #1e1c1a;
+}
+
+.theme-classic {
+    /* Graph integration */
+    --graph-ring-track: #cbd5e1;
+    --graph-node-bg: oklch(0.97 0.001 286);
+    --graph-node-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    --graph-edge-gold: oklch(0.6104 0.0767 299.7335);
+    --graph-edge-yellow: oklch(0.854 0.0882 76.8292);
+    --graph-phase-interview: oklch(0.6104 0.0767 299.7335);
+    --graph-phase-planning: oklch(0.854 0.0882 76.8292);
+
+    /* Core palette */
+    --background: oklch(0.9777 0.0041 301.4256);
+    --foreground: oklch(0.3651 0.0325 287.0807);
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.3651 0.0325 287.0807);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.3651 0.0325 287.0807);
+    --primary: oklch(0.6104 0.0767 299.7335);
+    --primary-foreground: oklch(0.9777 0.0041 301.4256);
+    --secondary: oklch(0.8957 0.0265 300.2416);
+    --secondary-foreground: oklch(0.3651 0.0325 287.0807);
+    --muted: oklch(0.8906 0.0139 299.7754);
+    --muted-foreground: oklch(0.5288 0.0375 290.7895);
+    --accent: oklch(0.7889 0.0802 359.9375);
+    --accent-foreground: oklch(0.3394 0.0441 1.7583);
+    --destructive: oklch(0.6332 0.1578 22.6734);
+    --destructive-foreground: oklch(0.9777 0.0041 301.4256);
+    --border: oklch(0.9 0.01 300);
+    --input: oklch(0.9329 0.0124 301.2783);
+    --ring: oklch(0.6104 0.0767 299.7335);
+
+    /* Charts */
+    --chart-1: oklch(0.6104 0.0767 299.7335);
+    --chart-2: oklch(0.7889 0.0802 359.9375);
+    --chart-3: oklch(0.7321 0.0749 169.867);
+    --chart-4: oklch(0.854 0.0882 76.8292);
+    --chart-5: oklch(0.7857 0.0645 258.0839);
+
+    /* Sidebar */
+    --sidebar: oklch(0.9554 0.0082 301.3541);
+    --sidebar-foreground: oklch(0.3651 0.0325 287.0807);
+    --sidebar-primary: oklch(0.6104 0.0767 299.7335);
+    --sidebar-primary-foreground: oklch(0.9777 0.0041 301.4256);
+    --sidebar-accent: oklch(0.7889 0.0802 359.9375);
+    --sidebar-accent-foreground: oklch(0.3394 0.0441 1.7583);
+    --sidebar-border: oklch(0.8719 0.0198 302.169);
+    --sidebar-ring: oklch(0.6104 0.0767 299.7335);
+
+    /* Typography */
+    --font-sans: Geist, sans-serif;
+    --font-heading: Geist, sans-serif;
+    --font-mono: "Fira Code", "Courier New", monospace;
+    --font-serif: "Lora", Georgia, serif;
+
+    /* Radius & spacing */
+    --radius: 0.75rem;
+    --spacing: 0.25rem;
+    --letter-spacing: 0em;
+    --tracking-normal: 0em;
+
+    /* Soft blurred shadows */
+    --shadow-2xs: 1px 2px 5px 1px hsl(0 0% 0% / 0.03);
+    --shadow-xs: 1px 2px 5px 1px hsl(0 0% 0% / 0.03);
+    --shadow-sm:
+        1px 2px 5px 1px hsl(0 0% 0% / 0.06), 1px 1px 2px 0px hsl(0 0% 0% / 0.06);
+    --shadow:
+        1px 2px 5px 1px hsl(0 0% 0% / 0.06), 1px 1px 2px 0px hsl(0 0% 0% / 0.06);
+    --shadow-md:
+        1px 2px 5px 1px hsl(0 0% 0% / 0.06), 1px 2px 4px 0px hsl(0 0% 0% / 0.06);
+    --shadow-lg:
+        1px 2px 5px 1px hsl(0 0% 0% / 0.06), 1px 4px 6px 0px hsl(0 0% 0% / 0.06);
+    --shadow-xl:
+        1px 2px 5px 1px hsl(0 0% 0% / 0.06),
+        1px 8px 10px 0px hsl(0 0% 0% / 0.06);
+    --shadow-2xl: 1px 2px 5px 1px hsl(0 0% 0% / 0.15);
+
+    /* Semantic status colors */
+    --color-mastered: oklch(0.7321 0.0749 169.867);
+    --color-strong: oklch(0.68 0.07 169.867);
+    --color-medium: oklch(0.854 0.0882 76.8292);
+    --color-weak: oklch(0.6332 0.1578 22.6734);
+    --color-undiscovered: oklch(0.5288 0.0375 290.7895);
+
+    /* Memory graph entity colors */
+    --color-node-person: oklch(0.6104 0.0767 299.7335);
+    --color-node-fact: oklch(0.7857 0.0645 258.0839);
+    --color-node-belief: oklch(0.854 0.0882 76.8292);
+    --color-node-resource: oklch(0.5288 0.0375 290.7895);
+
+    /* Knowledge graph hub colors */
+    --color-kg-memory-hub: oklch(0.6104 0.0767 299.7335);
+    --color-kg-topic-hub: oklch(0.7857 0.0645 258.0839);
+    --color-kg-topic-hub-legend: oklch(0.55 0.05 258.0839);
+    --color-kg-thread: oklch(0.7321 0.0749 169.867);
+    --color-kg-default: oklch(0.5288 0.0375 290.7895);
+    --color-confused-with: oklch(0.6332 0.1578 22.6734);
+    --color-part-of: oklch(0.5288 0.0375 290.7895);
+
+    /* Hub node gradients */
+    --hub-gradient-start: oklch(0.97 0.001 286);
+    --hub-gradient-end: oklch(0.94 0.005 286);
+}
+
+:is(.dark).theme-classic {
+    /* Graph integration */
+    --graph-ring-track: #334155;
+    --graph-node-bg: hsla(222, 20%, 14%, 0.95);
+    --graph-node-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    --graph-edge-gold: oklch(0.7058 0.0777 302.0489);
+    --graph-edge-yellow: oklch(0.854 0.0882 76.8292);
+    --graph-phase-interview: oklch(0.7058 0.0777 302.0489);
+    --graph-phase-planning: oklch(0.854 0.0882 76.8292);
+
+    --sidebar: oklch(0.1985 0.02 293.6639);
+    --background: oklch(0.2166 0.0215 292.8474);
+    --foreground: oklch(0.9053 0.0245 293.557);
+    --card: oklch(0.2544 0.0301 292.7315);
+    --card-foreground: oklch(0.9053 0.0245 293.557);
+    --popover: oklch(0.2544 0.0301 292.7315);
+    --popover-foreground: oklch(0.9053 0.0245 293.557);
+    --primary: oklch(0.7058 0.0777 302.0489);
+    --primary-foreground: oklch(0.2166 0.0215 292.8474);
+    --secondary: oklch(0.4604 0.0472 295.5578);
+    --secondary-foreground: oklch(0.9053 0.0245 293.557);
+    --muted: oklch(0.256 0.032 294.838);
+    --muted-foreground: oklch(0.6974 0.0282 300.0614);
+    --accent: oklch(0.3181 0.0321 308.6149);
+    --accent-foreground: oklch(0.8391 0.0692 2.6681);
+    --destructive: oklch(0.6875 0.142 21.4566);
+    --destructive-foreground: oklch(0.2166 0.0215 292.8474);
+    --border: oklch(0.3063 0.0359 293.3367);
+    --input: oklch(0.2847 0.0346 291.2726);
+    --ring: oklch(0.7058 0.0777 302.0489);
+
+    /* Charts */
+    --chart-1: oklch(0.7058 0.0777 302.0489);
+    --chart-2: oklch(0.8391 0.0692 2.6681);
+    --chart-3: oklch(0.7321 0.0749 169.867);
+    --chart-4: oklch(0.854 0.0882 76.8292);
+    --chart-5: oklch(0.7857 0.0645 258.0839);
+
+    /* Sidebar */
+    --sidebar-foreground: oklch(0.9053 0.0245 293.557);
+    --sidebar-primary: oklch(0.7058 0.0777 302.0489);
+    --sidebar-primary-foreground: oklch(0.2166 0.0215 292.8474);
+    --sidebar-accent: oklch(0.3181 0.0321 308.6149);
+    --sidebar-accent-foreground: oklch(0.8391 0.0692 2.6681);
+    --sidebar-border: oklch(0.2847 0.0346 291.2726);
+    --sidebar-ring: oklch(0.7058 0.0777 302.0489);
+
+    /* Shadows */
+    --shadow-2xs: 1px 2px 5px 1px hsl(0 0% 0% / 0.03);
+    --shadow-xs: 1px 2px 5px 1px hsl(0 0% 0% / 0.03);
+    --shadow-sm:
+        1px 2px 5px 1px hsl(0 0% 0% / 0.06), 1px 1px 2px 0px hsl(0 0% 0% / 0.06);
+    --shadow:
+        1px 2px 5px 1px hsl(0 0% 0% / 0.06), 1px 1px 2px 0px hsl(0 0% 0% / 0.06);
+    --shadow-md:
+        1px 2px 5px 1px hsl(0 0% 0% / 0.06), 1px 2px 4px 0px hsl(0 0% 0% / 0.06);
+    --shadow-lg:
+        1px 2px 5px 1px hsl(0 0% 0% / 0.06), 1px 4px 6px 0px hsl(0 0% 0% / 0.06);
+    --shadow-xl:
+        1px 2px 5px 1px hsl(0 0% 0% / 0.06),
+        1px 8px 10px 0px hsl(0 0% 0% / 0.06);
+    --shadow-2xl: 1px 2px 5px 1px hsl(0 0% 0% / 0.15);
+
+    /* Semantic status colors */
+    --color-mastered: oklch(0.7321 0.0749 169.867);
+    --color-strong: oklch(0.68 0.07 169.867);
+    --color-medium: oklch(0.854 0.0882 76.8292);
+    --color-weak: oklch(0.6875 0.142 21.4566);
+    --color-undiscovered: oklch(0.6974 0.0282 300.0614);
+
+    /* Memory graph entity colors */
+    --color-node-person: oklch(0.7058 0.0777 302.0489);
+    --color-node-fact: oklch(0.7857 0.0645 258.0839);
+    --color-node-belief: oklch(0.854 0.0882 76.8292);
+    --color-node-resource: oklch(0.6974 0.0282 300.0614);
+
+    /* Knowledge graph hub colors */
+    --color-kg-memory-hub: oklch(0.7058 0.0777 302.0489);
+    --color-kg-topic-hub: oklch(0.7857 0.0645 258.0839);
+    --color-kg-topic-hub-legend: oklch(0.65 0.06 258.0839);
+    --color-kg-thread: oklch(0.7321 0.0749 169.867);
+    --color-kg-default: oklch(0.6974 0.0282 300.0614);
+    --color-confused-with: oklch(0.6875 0.142 21.4566);
+    --color-part-of: oklch(0.6974 0.0282 300.0614);
+
+    /* Hub node gradients */
+    --hub-gradient-start: oklch(0.25 0.015 286);
+    --hub-gradient-end: oklch(0.2 0.01 286);
 }
 
 @layer base {
@@ -226,28 +471,46 @@
     }
 }
 
+/* ── Classic theme overrides ────────────────────────────────── */
+
+/* Downgrade thick neo-brutalism borders to thin classic borders */
+.theme-classic :where([class*="border-2"]) {
+    border-width: 1px;
+}
+
+/* Bump border-radius on cards, panels, and common containers */
+.theme-classic :where([class*="rounded-md"]) {
+    border-radius: var(--radius-lg);
+}
+.theme-classic :where([class*="rounded-lg"]) {
+    border-radius: var(--radius-xl);
+}
+.theme-classic :where([class*="rounded-none"]) {
+    border-radius: var(--radius-md);
+}
+
 /* ── Neo-brutalism utilities ─────────────────────────────────── */
 
-.neo-hover {
+.theme-neo .neo-hover {
     transition:
         transform 0.1s ease,
         box-shadow 0.1s ease;
 }
-.neo-hover:hover {
+.theme-neo .neo-hover:hover {
     transform: translate(2px, 2px);
     box-shadow: 2px 2px 0px 0px var(--border) !important;
 }
-.neo-hover:active {
+.theme-neo .neo-hover:active {
     transform: translate(4px, 4px);
     box-shadow: none !important;
 }
 
-.card-hover {
+.theme-neo .card-hover {
     transition:
         transform 0.15s ease,
         box-shadow 0.15s ease;
 }
-.card-hover:hover {
+.theme-neo .card-hover:hover {
     transform: translate(-2px, -2px);
     box-shadow: 6px 6px 0px 0px var(--border);
 }
@@ -474,7 +737,7 @@ a.branch-annotation.scroll-highlight {
     width: max-content;
     white-space: pre-wrap;
     cursor: pointer;
-    z-index: 50;
+    z-index: 10;
     box-shadow: 3px 3px 0px 0px var(--border);
     opacity: 0.5;
     transition:
@@ -565,8 +828,8 @@ a.branch-annotation.scroll-highlight {
 /* ── Paper grain noise texture ─────────────────────────────── */
 
 /* Shared noise base */
-.noise-overlay,
-.noise-surface::before {
+.theme-neo .noise-overlay,
+.theme-neo .noise-surface::before {
     background-image: url("/noise.png");
     background-repeat: repeat;
     background-size: 200px 200px;
@@ -574,20 +837,20 @@ a.branch-annotation.scroll-highlight {
 }
 
 /* Full-page noise for main content area */
-.noise-overlay {
+.theme-neo .noise-overlay {
     position: fixed;
     inset: 0;
     z-index: 9999;
     opacity: 0.05;
 }
 
-.dark .noise-overlay {
+:is(.dark).theme-neo .noise-overlay {
     opacity: 0.04;
 }
 
 /* Surface-level noise for cards, modals, top-bar etc — needs a positioning context (relative/sticky/fixed) on the element */
 
-.noise-surface::before {
+.theme-neo .noise-surface::before {
     content: "";
     position: absolute;
     inset: 0;
@@ -596,6 +859,6 @@ a.branch-annotation.scroll-highlight {
     border-radius: inherit;
 }
 
-.dark .noise-surface::before {
+:is(.dark).theme-neo .noise-surface::before {
     opacity: 0.06;
 }

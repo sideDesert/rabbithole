@@ -14,18 +14,18 @@ interface ConceptNodeData {
 
 // Mastery score → color gradient (red → amber → green → bright green)
 function masteryColor(score: number): string {
-  if (score >= 0.9) return "hsl(142, 71%, 45%)"; // mastered — bright green
-  if (score >= 0.7) return "hsl(142, 50%, 40%)"; // strong — green
-  if (score >= 0.4) return "hsl(45, 93%, 47%)";  // medium — amber
-  if (score > 0)    return "hsl(0, 84%, 60%)";   // weak — red
-  return "#64748b";                                // undiscovered — slate-500
+  if (score >= 0.9) return "var(--color-mastered)";
+  if (score >= 0.7) return "var(--color-strong)";
+  if (score >= 0.4) return "var(--color-medium)";
+  if (score > 0)    return "var(--color-weak)";
+  return "var(--color-undiscovered)";
 }
 
 function masteryBg(score: number): string {
-  if (score >= 0.9) return "hsla(142, 71%, 45%, 0.15)";
-  if (score >= 0.7) return "hsla(142, 50%, 40%, 0.12)";
-  if (score >= 0.4) return "hsla(45, 93%, 47%, 0.12)";
-  if (score > 0)    return "hsla(0, 84%, 60%, 0.12)";
+  if (score >= 0.9) return "color-mix(in srgb, var(--color-mastered) 15%, transparent)";
+  if (score >= 0.7) return "color-mix(in srgb, var(--color-strong) 12%, transparent)";
+  if (score >= 0.4) return "color-mix(in srgb, var(--color-medium) 12%, transparent)";
+  if (score > 0)    return "color-mix(in srgb, var(--color-weak) 12%, transparent)";
   return "var(--graph-node-bg)";
 }
 

@@ -4,6 +4,9 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Brain, SquarePen } from "lucide-react";
 import { Rabbit } from "lucide-react";
+import { SquarePen, Rabbit } from "lucide-react";
+import { ThemeIcon } from "@/components/theme-icon";
+import type { IconName } from "@/lib/icon-map";
 import {
   Sidebar,
   SidebarContent,
@@ -16,10 +19,11 @@ import {
 import { useAgent } from "@/components/agent-context";
 import { usePlan } from "@/components/plan-context";
 import { ThreadTree } from "@/components/thread-tree";
+import { ThemePersonalitySwitcher } from "@/components/theme-personality-switcher";
 
 export type Tool = {
   name: string;
-  icon: React.ComponentType<{ className?: string }>;
+  iconName: IconName;
   href: string;
 };
 
@@ -63,7 +67,7 @@ export function AppSidebar({ tools }: { tools: Tool[] }) {
                 isActive={activeAgent === "ebbinghaus"}
                 onClick={() => handleAgentNav("ebbinghaus")}
               >
-                <Brain className="h-4 w-4" />
+                <ThemeIcon name="atom" className="h-4 w-4" />
                 <span>Ebbinghaus</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -82,7 +86,7 @@ export function AppSidebar({ tools }: { tools: Tool[] }) {
                   isActive={path.includes(tool.href)}
                   render={tool.href ? <Link href={tool.href} /> : undefined}
                 >
-                  <tool.icon className="h-4 w-4" />
+                  <ThemeIcon name={tool.iconName} className="h-4 w-4" />
                   <span>{tool.name}</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -96,6 +100,10 @@ export function AppSidebar({ tools }: { tools: Tool[] }) {
             {activeAgent === "ebbinghaus" ? "Conversations" : "Topics"}
           </p>
           <ThreadTree agent={activeAgent} />
+        </SidebarGroup>
+
+        <SidebarGroup className="border-t-2 border-border p-2">
+          <ThemePersonalitySwitcher />
         </SidebarGroup>
       </SidebarContent>
     </Sidebar>

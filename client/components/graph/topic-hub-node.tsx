@@ -1,5 +1,4 @@
 import { type NodeProps } from "@xyflow/react";
-import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
 import { NodeHandles } from "./node-handles";
 
@@ -21,8 +20,6 @@ function domainHue(domain: string): number {
 
 export function TopicHubNode({ data, selected }: NodeProps) {
   const d = data as unknown as TopicHubData;
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
   const hue = d.domain ? domainHue(d.domain) : 220;
   const score = d.mastery_score;
 
@@ -33,9 +30,7 @@ export function TopicHubNode({ data, selected }: NodeProps) {
         selected && "ring-2 ring-primary/50",
       )}
       style={{
-        background: isDark
-          ? "linear-gradient(135deg, #2a2118, #1e1c1a)"
-          : "linear-gradient(135deg, #fffef5, #f5eed8)",
+        background: "linear-gradient(135deg, var(--hub-gradient-start), var(--hub-gradient-end))",
       }}
     >
       <NodeHandles />

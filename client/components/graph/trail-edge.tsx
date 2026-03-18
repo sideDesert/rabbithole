@@ -1,5 +1,4 @@
 import { getBezierPath, type EdgeProps } from "@xyflow/react";
-import { useRef } from "react";
 
 type EdgeType = "prerequisite_of" | "part_of" | "explored_from" | "confused_with";
 
@@ -9,16 +8,11 @@ interface TrailEdgeData {
   weight?: number;
 }
 
-function getCSSVar(name: string): string {
-  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-}
-
-// Fallbacks in case getComputedStyle returns empty
-const EDGE_STYLE_VARS: Record<EdgeType, { cssVar: string; fallback: string; dasharray?: string }> = {
-  prerequisite_of: { cssVar: "--graph-edge-gold", fallback: "#000000" },
-  part_of:         { cssVar: "",                  fallback: "#999999" },
-  explored_from:   { cssVar: "--graph-edge-yellow", fallback: "#000000", dasharray: "6 4" },
-  confused_with:   { cssVar: "",                    fallback: "#e85d3a", dasharray: "4 4" },
+const EDGE_STYLES: Record<EdgeType, { color: string; dasharray?: string }> = {
+  prerequisite_of: { color: "var(--graph-edge-gold)" },
+  part_of:         { color: "var(--color-part-of)" },
+  explored_from:   { color: "var(--graph-edge-yellow)", dasharray: "6 4" },
+  confused_with:   { color: "var(--color-confused-with)", dasharray: "4 4" },
 };
 
 export function TrailEdge({
@@ -43,9 +37,8 @@ export function TrailEdge({
   const edgeData = data as TrailEdgeData | undefined;
   const edgeType = edgeData?.edgeType ?? "prerequisite_of";
   const weight = edgeData?.weight ?? 1.0;
-  const config = EDGE_STYLE_VARS[edgeType];
-
-  const stroke = config.cssVar ? (getCSSVar(config.cssVar) || config.fallback) : config.fallback;
+  const config = EDGE_STYLES[edgeType];
+  const stroke = config.color;
 
   // Weight → opacity (0.3 to 1.0) and thickness (1.5 to 3)
   const opacity = 0.3 + weight * 0.7;
@@ -62,7 +55,7 @@ export function TrailEdge({
         fill="none"
         stroke={stroke}
         strokeWidth={strokeWidth}
-        strokeDasharray={config.dasharray}
+        strokeDasharray={config.dasharray ?? undefined}
         strokeOpacity={opacity * 0.5}
       />
       <circle r={strokeWidth} fill={stroke} opacity={opacity}>

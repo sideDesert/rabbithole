@@ -1,11 +1,12 @@
 "use client";
 
-import { Space_Grotesk, DM_Sans, Space_Mono } from "next/font/google";
+import { Space_Grotesk, DM_Sans, Space_Mono, Geist, Fira_Code } from "next/font/google";
 import "./globals.css";
 import { AppSidebar, Tool } from "@/components/app-sidebar";
 import { Providers } from "@/components/providers";
 import { MainContent } from "@/components/main-content";
 import { Atom, Dumbbell, LayoutGrid, Network, Pencil, FileText, ListChecks } from "lucide-react";
+import type { IconName } from "@/lib/icon-map";
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
@@ -25,6 +26,16 @@ const spaceMono = Space_Mono({
   weight: ["400", "700"],
 });
 
+const geist = Geist({
+  subsets: ["latin"],
+  variable: "--font-geist",
+});
+
+const firaCode = Fira_Code({
+  subsets: ["latin"],
+  variable: "--font-fira-code",
+});
+
 const tools: Tool[] = [
   { name: "Dashboard", icon: LayoutGrid, href: "/dashboard" },
   { name: "Study Plans", icon: Pencil, href: "/study-plans" },
@@ -41,7 +52,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${spaceGrotesk.variable} ${dmSans.variable} ${spaceMono.variable}`} suppressHydrationWarning>
+    <html lang="en" className={`theme-neo ${spaceGrotesk.variable} ${dmSans.variable} ${spaceMono.variable} ${geist.variable} ${firaCode.variable}`} suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem("theme-personality");if(t&&t!=="neo"){document.documentElement.classList.remove("theme-neo");document.documentElement.classList.add("theme-"+t)}}catch(e){}})()`,
+          }}
+        />
+      </head>
       <body className="antialiased bg-background font-sans">
         <Providers>
           <AppSidebar tools={tools} />

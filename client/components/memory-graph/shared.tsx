@@ -9,10 +9,10 @@ export type EntityType = "concept" | "person" | "fact" | "belief" | "resource";
 
 export const ENTITY_COLORS: Record<EntityType, { border: string; bg: string }> = {
   concept:  { border: "var(--border)", bg: "color-mix(in srgb, var(--border) 8%, transparent)" },
-  person:   { border: "#e85d3a", bg: "#e85d3a14" },
-  fact:     { border: "#4a90d9", bg: "#4a90d914" },
-  belief:   { border: "#ffcc00", bg: "#ffcc0014" },
-  resource: { border: "#999999", bg: "#99999914" },
+  person:   { border: "var(--color-node-person)", bg: "color-mix(in srgb, var(--color-node-person) 8%, transparent)" },
+  fact:     { border: "var(--color-node-fact)", bg: "color-mix(in srgb, var(--color-node-fact) 8%, transparent)" },
+  belief:   { border: "var(--color-node-belief)", bg: "color-mix(in srgb, var(--color-node-belief) 8%, transparent)" },
+  resource: { border: "var(--color-node-resource)", bg: "color-mix(in srgb, var(--color-node-resource) 8%, transparent)" },
 };
 
 // ── Shared node wrapper ─────────────────────────────────────────────────

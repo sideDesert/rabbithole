@@ -10,20 +10,15 @@ interface KgThreadNodeData {
   thread_depth: number;
 }
 
-function getCSSVar(name: string): string {
-  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-}
-
-const phaseConfig: Record<string, { cssVar: string; fallback: string }> = {
-  interview: { cssVar: "--graph-phase-interview", fallback: "#000000" },
-  planning:  { cssVar: "--graph-phase-planning",  fallback: "#000000" },
-  teaching:  { cssVar: "",                        fallback: "#e85d3a" },
+const PHASE_COLORS: Record<string, string> = {
+  interview: "var(--graph-phase-interview)",
+  planning:  "var(--graph-phase-planning)",
+  teaching:  "var(--primary)",
 };
 
 export function KgThreadNode({ data, selected }: NodeProps) {
   const d = data as unknown as KgThreadNodeData;
-  const config = phaseConfig[d.thread_phase] ?? { cssVar: "", fallback: "#64748b" };
-  const color = config.cssVar ? (getCSSVar(config.cssVar) || config.fallback) : config.fallback;
+  const color = PHASE_COLORS[d.thread_phase] ?? "var(--color-undiscovered)";
 
   return (
     <div
