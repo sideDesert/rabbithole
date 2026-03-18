@@ -29,8 +29,10 @@ import type { Branch } from "@/lib/api";
 import { getProgress, startPhase, createNextPhaseThread } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useRef, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useThemePersonality } from "@/components/theme-personality-provider";
+import { useEbbinghausNotifications } from "@/hooks/use-ebbinghaus-notifications";
+import { getNotificationMessages } from "@/lib/api-notify";
 import Image from "next/image";
 
 interface ChatPageProps {
@@ -100,6 +102,17 @@ export function ChatPage({ agent, greeting, suggestions }: ChatPageProps) {
   useEffect(() => {
     setActiveAgent(agent);
   }, [agent, setActiveAgent]);
+
+  // Fetch latest notification for Ebbinghaus
+  const { notificationThreadId, markAsRead } = useEbbinghausNotifications();
+  const { data: notifMessages } = useQuery({
+    queryKey: ["ebbinghaus-notification-messages", notificationThreadId],
+    queryFn: () => getNotificationMessages(notificationThreadId!),
+    enabled: agent === "ebbinghaus" && !!notificationThreadId,
+  });
+  const latestNotification = notifMessages
+    ?.filter((m) => m.role === "assistant")
+    .at(-1);
 
   const [tagged, setTagged] = useState("");
   const [branchMessageId, setBranchMessageId] = useState("");
@@ -308,19 +321,35 @@ export function ChatPage({ agent, greeting, suggestions }: ChatPageProps) {
         </div>
       ) : (
         <div className="flex flex-col justify-center items-center gap-2">
-          {greeting}
-          {suggestions && suggestions.length > 0 && (
-            <div className="flex flex-wrap gap-2 mt-4 px-1">
-              {suggestions.map((s) => (
-                <button
-                  key={s}
-                  onClick={() => send(s)}
-                  className="text-sm border border-border rounded-full px-3 py-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-                >
-                  {s}
-                </button>
-              ))}
+          {agent === "ebbinghaus" && latestNotification ? (
+            <div className="w-full px-4">
+              <ChatMessage
+                id={latestNotification._id}
+                role={ROLE_AI}
+                content={latestNotification.content}
+                isLast
+                isStreaming={false}
+                isLoading={false}
+                agent={agent}
+              />
             </div>
+          ) : (
+            <>
+              {greeting}
+              {suggestions && suggestions.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-4 px-1">
+                  {suggestions.map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => send(s)}
+                      className="text-sm border border-border rounded-full px-3 py-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </div>
       )}
