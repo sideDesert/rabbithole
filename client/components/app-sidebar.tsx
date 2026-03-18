@@ -21,6 +21,7 @@ import { ThreadTree } from "@/components/thread-tree";
 import { ThemePersonalitySwitcher } from "@/components/theme-personality-switcher";
 import Image from "next/image";
 import { Rabbit } from "lucide-react";
+import { useEbbinghausNotifications } from "@/hooks/use-ebbinghaus-notifications";
 
 export type Tool = {
   name: string;
@@ -36,6 +37,7 @@ export function AppSidebar({ tools }: { tools: Tool[] }) {
   const { setThreadId } = usePlan();
   const { activeTheme } = useThemePersonality();
   const logoClass = activeTheme.id === "classic" ? "rounded-full" : "rounded-none border-2 border-border";
+  const { unreadCount, notificationThreadId, markAsRead } = useEbbinghausNotifications();
 
   function handleAgentNav(agentId: AgentId) {
     setThreadId(null);
@@ -71,12 +73,22 @@ export function AppSidebar({ tools }: { tools: Tool[] }) {
             <SidebarMenuItem>
               <SidebarMenuButton
                 isActive={activeAgent === "ebbinghaus"}
-                onClick={() => handleAgentNav("ebbinghaus")}
+                onClick={() => {
+                  if (unreadCount > 0 && notificationThreadId) {
+                    markAsRead();
+                    setActiveAgent("ebbinghaus");
+                    router.push(`/threads/${notificationThreadId}`);
+                  } else {
+                    handleAgentNav("ebbinghaus");
+                  }
+                }}
               >
                 <Image src="/ebbinghaus.png" alt="Ebbinghaus" width={28} height={28} className={`h-7 w-7 object-cover object-top ${logoClass}`} />
                 <span>Ebbinghaus</span>
               </SidebarMenuButton>
-              <SidebarMenuBadge>3</SidebarMenuBadge>
+              {unreadCount > 0 && (
+                <SidebarMenuBadge>{unreadCount}</SidebarMenuBadge>
+              )}
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarGroup>
