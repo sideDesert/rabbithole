@@ -48,7 +48,7 @@ export function useEbbinghausNotifications() {
     if (assistantMessages.length === 0) return 0;
     const lastSeenId = getLastSeenId(notificationThreadId);
     if (!lastSeenId) return assistantMessages.length;
-    const lastSeenIdx = assistantMessages.findIndex((m) => m._id === lastSeenId);
+    const lastSeenIdx = assistantMessages.findIndex((m) => m.id === lastSeenId);
     if (lastSeenIdx === -1) return assistantMessages.length;
     return assistantMessages.length - lastSeenIdx - 1;
   })();

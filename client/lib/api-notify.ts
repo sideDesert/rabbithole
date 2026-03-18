@@ -6,11 +6,10 @@ export interface NotifyResponse {
 }
 
 export interface NotificationMessage {
-  _id: string;
+  id: string;
   role: "assistant" | "user" | "system";
   content: string;
   type: string;
-  created_at: string;
 }
 
 export async function triggerNotify(): Promise<NotifyResponse> {

@@ -324,7 +324,7 @@ export function ChatPage({ agent, greeting, suggestions }: ChatPageProps) {
           {agent === "ebbinghaus" && latestNotification ? (
             <div className="w-full px-4">
               <ChatMessage
-                id={latestNotification._id}
+                id={latestNotification.id}
                 role={ROLE_AI}
                 content={latestNotification.content}
                 isLast
