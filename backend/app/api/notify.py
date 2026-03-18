@@ -2,6 +2,7 @@
 
 import json
 import logging
+import uuid
 from datetime import datetime, timedelta, timezone
 
 from agents import Runner
@@ -39,7 +40,6 @@ def _find_or_create_notification_thread(user_id: str) -> dict:
     if doc:
         return doc
 
-    import uuid
     thread = Thread(
         user_id=user_id,
         title="Notifications",
@@ -50,8 +50,9 @@ def _find_or_create_notification_thread(user_id: str) -> dict:
         is_notification_thread=True,
     )
     thread.root_thread_id = thread.id
-    mongo.threads().insert_one(thread.to_doc())
-    return thread.to_doc()
+    doc = thread.to_doc()
+    mongo.threads().insert_one(doc)
+    return doc
 
 
 def _get_most_overdue_review(user_id: str) -> dict | None:
