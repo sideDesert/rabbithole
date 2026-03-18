@@ -118,6 +118,8 @@ def _get_stalest_incomplete_topic(user_id: str) -> dict | None:
             continue
 
         last_active = latest_msg["created_at"]
+        if last_active.tzinfo is None:
+            last_active = last_active.replace(tzinfo=timezone.utc)
         if last_active > cutoff:
             continue
 
