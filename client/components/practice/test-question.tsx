@@ -1,11 +1,11 @@
 "use client";
 
-import type { EbbinghausQuestion, QuestionFeedback } from "@/lib/api";
+import type { PracticeQuestion, QuestionFeedback } from "@/lib/api";
 import { CircleCheck, CircleX } from "lucide-react";
 
 interface TestQuestionProps {
   index: number;
-  question: EbbinghausQuestion;
+  question: PracticeQuestion;
   answer: string;
   onChange: (answer: string) => void;
   disabled?: boolean;

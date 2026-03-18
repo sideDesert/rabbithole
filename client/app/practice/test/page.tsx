@@ -3,8 +3,8 @@
 import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { useEbbinghaus } from "@/hooks/use-ebbinghaus";
-import { TestQuestion } from "@/components/ebbinghaus/test-question";
+import { usePractice } from "@/hooks/use-practice";
+import { TestQuestion } from "@/components/practice/test-question";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, RefreshCw } from "lucide-react";
@@ -60,7 +60,7 @@ function TestPageInner() {
     allAnswered,
     updateAnswer,
     submit,
-  } = useEbbinghaus(conceptName, topicSlug);
+  } = usePractice(conceptName, topicSlug);
 
   if (!conceptName || !topicSlug) {
     return (
@@ -68,9 +68,9 @@ function TestPageInner() {
         <p className="text-muted-foreground">
           Missing concept or topic. Go back and select a concept to test.
         </p>
-        <Link href="/ebbinghaus">
+        <Link href="/practice">
           <Button variant="ghost" className="mt-4">
-            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Ebbinghaus
+            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Practice
           </Button>
         </Link>
       </div>
@@ -94,9 +94,9 @@ function TestPageInner() {
     return (
       <div className="max-w-3xl mx-auto px-6 py-12 text-center space-y-4">
         <p className="text-red-500">{error}</p>
-        <Link href="/ebbinghaus">
+        <Link href="/practice">
           <Button variant="ghost">
-            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Ebbinghaus
+            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Practice
           </Button>
         </Link>
       </div>
@@ -109,7 +109,7 @@ function TestPageInner() {
     return (
       <div className="max-w-3xl mx-auto px-6 py-8 space-y-8">
         <div>
-          <Link href="/ebbinghaus">
+          <Link href="/practice">
             <Button variant="ghost" size="sm">
               <ArrowLeft className="mr-2 h-4 w-4" /> Back
             </Button>
@@ -181,8 +181,8 @@ function TestPageInner() {
         </div>
 
         <div className="text-center pb-8">
-          <Link href="/ebbinghaus">
-            <Button>Back to Ebbinghaus</Button>
+          <Link href="/practice">
+            <Button>Back to Practice</Button>
           </Link>
         </div>
       </div>
@@ -194,7 +194,7 @@ function TestPageInner() {
     <div className="max-w-3xl mx-auto px-6 py-8 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <Link href="/ebbinghaus">
+          <Link href="/practice">
             <Button variant="ghost" size="sm">
               <ArrowLeft className="mr-2 h-4 w-4" /> Back
             </Button>

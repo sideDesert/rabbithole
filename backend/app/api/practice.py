@@ -1,4 +1,4 @@
-"""Ebbinghaus testing agent — structured review tests with spaced repetition."""
+"""Practice testing agent — structured review tests with spaced repetition."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ from fastapi import APIRouter, HTTPException
 from openai import AsyncOpenAI
 from pydantic import BaseModel
 
-from app.agent.prompts import EBBINGHAUS_GENERATE_PROMPT, EBBINGHAUS_SCORING_PROMPT
+from app.agent.prompts import PRACTICE_GENERATE_PROMPT, PRACTICE_SCORING_PROMPT
 from app.config import LLM_API_KEY, LLM_BASE_URL, PLANS_DIR, SCORING_MODEL
 from app.db import mongo
 from app.memory import evermemos
@@ -21,7 +21,7 @@ from app.services.mastery import get_tier, update_concept_mastery
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/ebbinghaus", tags=["ebbinghaus"])
+router = APIRouter(prefix="/api/practice", tags=["practice"])
 
 _oai = AsyncOpenAI(base_url=LLM_BASE_URL, api_key=LLM_API_KEY)
 
@@ -65,7 +65,7 @@ class PollRequest(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# GET /api/ebbinghaus/topics — list testable concepts grouped by topic
+# GET /api/practice/topics — list testable concepts grouped by topic
 # ---------------------------------------------------------------------------
 
 
@@ -114,7 +114,7 @@ async def get_testable_topics(user_id: str = "user_001"):
 
 
 # ---------------------------------------------------------------------------
-# GET /api/ebbinghaus/pending — list scheduled tests due now
+# GET /api/practice/pending — list scheduled tests due now
 # ---------------------------------------------------------------------------
 
 
@@ -156,7 +156,7 @@ async def get_pending_tests(user_id: str = "user_001"):
 
 
 # ---------------------------------------------------------------------------
-# POST /api/ebbinghaus/generate — generate a structured test
+# POST /api/practice/generate — generate a structured test
 # ---------------------------------------------------------------------------
 
 
@@ -219,7 +219,7 @@ async def generate_test(req: GenerateRequest):
     num_questions = TIER_QUESTION_COUNT.get(tier_name, 4)
 
     # 4. Build prompt and call LLM
-    prompt = EBBINGHAUS_GENERATE_PROMPT.format(
+    prompt = PRACTICE_GENERATE_PROMPT.format(
         concept_name=req.concept_name,
         concept_description=target_concept.description or req.concept_name,
         plan_context="\n".join(concept_context_parts[:20]),
@@ -247,7 +247,7 @@ async def generate_test(req: GenerateRequest):
         "user_id": req.user_id,
         "concept_id": req.concept_name,
         "topic_slug": req.topic_slug,
-        "test_type": "ebbinghaus",
+        "test_type": "practice",
         "status": "in_progress",
         "questions": questions,
         "answers": [],
@@ -293,7 +293,7 @@ async def generate_test(req: GenerateRequest):
 
 
 # ---------------------------------------------------------------------------
-# POST /api/ebbinghaus/submit — score answers and update mastery
+# POST /api/practice/submit — score answers and update mastery
 # ---------------------------------------------------------------------------
 
 
@@ -350,7 +350,7 @@ async def submit_test(req: SubmitRequest):
         logger.warning("EverMemOS search failed during scoring: %s", e)
 
     # 4. Call LLM for scoring
-    scoring_prompt = EBBINGHAUS_SCORING_PROMPT.format(
+    scoring_prompt = PRACTICE_SCORING_PROMPT.format(
         concept_name=concept_name,
         memory_context=memory_context,
         questions_and_answers="\n\n".join(qa_parts),
@@ -419,24 +419,24 @@ async def submit_test(req: SubmitRequest):
 
     # 8. Store observation in EverMemOS
     try:
-        ebbinghaus_group = f"ebbinghaus_{user_id}"
+        practice_group = f"practice_{user_id}"
         await evermemos.ensure_conversation_meta(
-            group_id=ebbinghaus_group, user_id=user_id,
+            group_id=practice_group, user_id=user_id,
         )
         weak_str = ", ".join(weak_areas) if weak_areas else "none"
         await evermemos.store_memory(
             message_id=req.test_id,
             content=(
-                f"Ebbinghaus review test on '{concept_name}': "
+                f"Practice review test on '{concept_name}': "
                 f"scored {overall_score:.2f}/1.0. "
                 f"Weak areas: {weak_str}. "
                 f"New mastery: {mastery_update['new_score']:.2f} ({mastery_update['tier']}). "
                 f"Next review: {mastery_update['next_review']}"
             ),
             sender=user_id,
-            group_id=ebbinghaus_group,
+            group_id=practice_group,
             role="assistant",
-            sender_name="Ebbinghaus",
+            sender_name="Practice",
         )
     except Exception as e:
         logger.warning("Failed to store test result in EverMemOS: %s", e)
@@ -458,15 +458,15 @@ async def submit_test(req: SubmitRequest):
 
 
 # ---------------------------------------------------------------------------
-# GET /api/ebbinghaus/history — test history
+# GET /api/practice/history — test history
 # ---------------------------------------------------------------------------
 
 
 @router.get("/history")
 async def get_test_history(user_id: str = "user_001", limit: int = 20):
-    """Return recent Ebbinghaus test results."""
+    """Return recent Practice test results."""
     cursor = mongo.test_results().find(
-        {"user_id": user_id, "test_type": "ebbinghaus", "status": "scored"},
+        {"user_id": user_id, "test_type": "practice", "status": "scored"},
         sort=[("created_at", -1)],
         limit=limit,
     )
@@ -489,7 +489,7 @@ async def get_test_history(user_id: str = "user_001", limit: int = 20):
 
 
 # ---------------------------------------------------------------------------
-# POST /api/ebbinghaus/poll — manual foresight poll trigger (dev/testing)
+# POST /api/practice/poll — manual foresight poll trigger (dev/testing)
 # ---------------------------------------------------------------------------
 
 

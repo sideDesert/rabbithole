@@ -21,6 +21,7 @@ import { BranchSuggestionCard } from "@/components/branch-suggestion-card";
 import { FeynmanModal } from "@/components/feynman-modal";
 import { TextSelectionMenu } from "@/components/text-selection-menu";
 import { useChat } from "@/hooks/use-chat";
+import { useAgent } from "@/components/agent-context";
 import { useTextSelectionMenu } from "@/hooks/use-text-selection-menu";
 import { useBranchout, useBranches } from "@/hooks/use-branch";
 import { PhaseActionButton } from "@/components/phase-action-button";
@@ -59,6 +60,7 @@ export default function Page() {
   const router = useRouter();
   const queryClient = useQueryClient();
 
+  const { activeAgent } = useAgent();
   const { feynmanRequested, setFeynmanRequested, setThreadId, setTopicSlug } =
     usePlan();
 
@@ -88,6 +90,7 @@ export default function Page() {
     phaseComplete,
     dismissPhaseComplete,
   } = useChat({
+    agent: activeAgent,
     onThreadCreated: (id) => setThreadId(id),
     onPlanCreated: (slug) => setTopicSlug(slug),
   });

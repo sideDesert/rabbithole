@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Atom, SquarePen } from "lucide-react";
+import { Brain, SquarePen } from "lucide-react";
 import { Rabbit } from "lucide-react";
 import {
   Sidebar,
@@ -12,7 +12,6 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-  SidebarSeparator,
 } from "@/components/ui/sidebar";
 import { useAgent } from "@/components/agent-context";
 import { usePlan } from "@/components/plan-context";
@@ -31,10 +30,10 @@ export function AppSidebar({ tools }: { tools: Tool[] }) {
   const { activeAgent, setActiveAgent } = useAgent();
   const { setThreadId } = usePlan();
 
-  function handleAgentNav(agentId: string, path: string) {
-    if (agentId === "feynman") setThreadId(null);
+  function handleAgentNav(agentId: string) {
+    setThreadId(null);
     setActiveAgent(agentId);
-    router.push(path);
+    router.push("/feynman");
   }
 
   return (
@@ -52,8 +51,8 @@ export function AppSidebar({ tools }: { tools: Tool[] }) {
           <SidebarMenu className="gap-1">
             <SidebarMenuItem>
               <SidebarMenuButton
-                isActive={path.includes("feynman")}
-                onClick={() => handleAgentNav("feynman", "/feynman")}
+                isActive={activeAgent === "feynman" && (path.includes("feynman") || path.includes("threads"))}
+                onClick={() => handleAgentNav("feynman")}
               >
                 <SquarePen className="h-4 w-4" />
                 <span>New Chat</span>
@@ -61,12 +60,10 @@ export function AppSidebar({ tools }: { tools: Tool[] }) {
             </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton
-                isActive={
-                  activeAgent === "ebbinghaus" || path.includes("ebbinghaus")
-                }
-                onClick={() => handleAgentNav("ebbinghaus", "/ebbinghaus")}
+                isActive={activeAgent === "ebbinghaus"}
+                onClick={() => handleAgentNav("ebbinghaus")}
               >
-                <Atom className="h-4 w-4" />
+                <Brain className="h-4 w-4" />
                 <span>Ebbinghaus</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -96,9 +93,9 @@ export function AppSidebar({ tools }: { tools: Tool[] }) {
         {/* Thread Tree */}
         <SidebarGroup className="flex-1 overflow-auto border-t-2 border-border">
           <p className="px-2 pb-1 text-sm font-semibold text-sidebar-foreground/90">
-            Topics
+            {activeAgent === "ebbinghaus" ? "Conversations" : "Topics"}
           </p>
-          <ThreadTree />
+          <ThreadTree agent={activeAgent} />
         </SidebarGroup>
       </SidebarContent>
     </Sidebar>

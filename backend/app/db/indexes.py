@@ -20,6 +20,7 @@ def ensure_indexes():
     _ = threads().create_index([("root_thread_id", ASCENDING)])
     _ = threads().create_index([("parent_thread_id", ASCENDING)])
     _ = threads().create_index([("user_id", ASCENDING), ("topic_slug", ASCENDING)])
+    _ = threads().create_index([("user_id", ASCENDING), ("agent", ASCENDING)])
 
     # messages
     _ = messages().create_index([("thread_id", ASCENDING), ("created_at", ASCENDING)])

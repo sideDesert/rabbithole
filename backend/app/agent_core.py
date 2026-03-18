@@ -9,7 +9,7 @@ from agents import Agent, OpenAIChatCompletionsModel, set_default_openai_api, se
 from openai import AsyncOpenAI
 
 from app.config import DEFAULT_MODEL, LLM_API_KEY, LLM_BASE_URL
-from app.agent.prompts import build_phase_prompt
+from app.agent.prompts import EBBINGHAUS_SYSTEM_PROMPT, build_phase_prompt
 from app.tools_impl import (
     AgentContext,
     create_plan,
@@ -19,6 +19,7 @@ from app.tools_impl import (
     present_interview,
     read_plan,
     recall_memory,
+    recall_memory_agentic,
     store_memory,
     suggest_branches,
     trigger_feynman,
@@ -84,3 +85,20 @@ def build_agent(
         model=_model,
         tools=tools,
     )
+
+
+# ---------------------------------------------------------------------------
+# Ebbinghaus agent — memory-powered chat (singleton)
+# ---------------------------------------------------------------------------
+
+_ebbinghaus_agent: Agent[AgentContext] = Agent(
+    name="Ebbinghaus",
+    instructions=EBBINGHAUS_SYSTEM_PROMPT,
+    model=_model,
+    tools=[recall_memory_agentic],
+)
+
+
+def build_ebbinghaus_agent() -> Agent[AgentContext]:
+    """Return the singleton Ebbinghaus agent."""
+    return _ebbinghaus_agent

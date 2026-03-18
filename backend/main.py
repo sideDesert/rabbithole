@@ -17,7 +17,7 @@ from app.config import MONGO_USER, MONGO_PASSWORD, LLM_API_KEY, PLANS_DIR
 from app.db.mongo import get_client
 from app.db.indexes import ensure_indexes
 from app.api.chat import router as chat_router
-from app.api.ebbinghaus import router as ebbinghaus_router
+from app.api.practice import router as practice_router
 from app.api.feynman import router as feynman_router
 from app.api.graph import router as graph_router
 from app.api.memory_graph import router as memory_graph_router
@@ -86,7 +86,7 @@ async def global_exception_handler(request: Request, exc: Exception):
     )
 
 app.include_router(chat_router)
-app.include_router(ebbinghaus_router)
+app.include_router(practice_router)
 app.include_router(feynman_router)
 app.include_router(graph_router)
 app.include_router(memory_graph_router)

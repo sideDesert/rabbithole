@@ -5,7 +5,7 @@ import "./globals.css";
 import { AppSidebar, Tool } from "@/components/app-sidebar";
 import { Providers } from "@/components/providers";
 import { MainContent } from "@/components/main-content";
-import { Atom, LayoutGrid, Network, Pencil, FileText, ListChecks } from "lucide-react";
+import { Atom, Dumbbell, LayoutGrid, Network, Pencil, FileText, ListChecks } from "lucide-react";
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
@@ -30,6 +30,7 @@ const tools: Tool[] = [
   { name: "Study Plans", icon: Pencil, href: "/study-plans" },
   { name: "Notes", icon: FileText, href: "/notes" },
   { name: "Evaluations", icon: ListChecks, href: "/evaluations" },
+  { name: "Practice", icon: Dumbbell, href: "/practice" },
   { name: "Knowledge Graph", icon: Network, href: "/knowledge-graph" },
   { name: "Memory Graph", icon: Atom, href: "/memory-graph" },
 ];

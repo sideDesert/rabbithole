@@ -37,6 +37,7 @@ export interface ChatMessage {
 
 interface UseChatOptions {
   threadId?: string | null;
+  agent?: string;
   onThreadCreated?: (threadId: string) => void;
   onPlanCreated?: (topicSlug: string) => void;
 }
@@ -64,6 +65,7 @@ interface UseChatReturn {
 
 export function useChat({
   threadId: initialThreadId = null,
+  agent: agentType,
   onThreadCreated,
   onPlanCreated,
 }: UseChatOptions = {}): UseChatReturn {
@@ -154,7 +156,7 @@ export function useChat({
   });
 
   const createThreadMutation = useMutation({
-    mutationFn: createThread,
+    mutationFn: (content: string) => createThread(content, agentType),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["thread-tree"] });
     },

@@ -10,7 +10,7 @@ import {
 
 type Phase = "loading" | "answering" | "submitting" | "results" | "error";
 
-export function useEbbinghaus(conceptName: string, topicSlug: string) {
+export function usePractice(conceptName: string, topicSlug: string) {
   const [phase, setPhase] = useState<Phase>("loading");
   const [test, setTest] = useState<GenerateTestResponse | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});

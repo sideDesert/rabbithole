@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Tree, type NodeRendererProps } from "react-arborist";
 import { useRouter, usePathname } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   ChevronRight,
   ChevronDown,
@@ -30,7 +31,7 @@ function hasDescendant(n: TreeData, threadId: string): boolean {
 function Node({ node, style, dragHandle }: NodeRendererProps<TreeData>) {
   const router = useRouter();
   const path = usePathname();
-  const { refetch } = useThreadTree();
+  const queryClient = useQueryClient();
   const [deleting, setDeleting] = useState(false);
   const isActive = path.includes(node.data.thread_id);
   const isAncestor =
@@ -44,8 +45,8 @@ function Node({ node, style, dragHandle }: NodeRendererProps<TreeData>) {
     if (deleting) return;
     setDeleting(true);
     await deleteThread(node.data.thread_id);
-    refetch();
-    if (isActive) router.push("/threads");
+    queryClient.invalidateQueries({ queryKey: ["thread-tree"] });
+    if (isActive) router.push("/feynman");
   }
 
   return (
@@ -142,8 +143,8 @@ function Node({ node, style, dragHandle }: NodeRendererProps<TreeData>) {
   );
 }
 
-export function ThreadTree() {
-  const { trees, isLoading } = useThreadTree();
+export function ThreadTree({ agent }: { agent?: string }) {
+  const { trees, isLoading } = useThreadTree(agent);
 
   if (isLoading) {
     return (

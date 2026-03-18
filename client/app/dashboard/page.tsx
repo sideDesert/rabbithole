@@ -44,7 +44,7 @@ const TIER_VARIANTS: Record<
 function TestCard({ test }: { test: PendingTest }) {
   return (
     <Link
-      href={`/ebbinghaus/test?concept=${encodeURIComponent(test.concept_name)}&topic=${encodeURIComponent(test.topic_slug)}`}
+      href={`/practice/test?concept=${encodeURIComponent(test.concept_name)}&topic=${encodeURIComponent(test.topic_slug)}`}
       className="block h-full"
     >
       <Card
@@ -81,7 +81,7 @@ function TestCard({ test }: { test: PendingTest }) {
 
 function TestsSection() {
   const { data, isLoading } = useQuery({
-    queryKey: ["ebbinghaus-pending"],
+    queryKey: ["practice-pending"],
     queryFn: getPendingTests,
     refetchInterval: 60_000,
   });
@@ -97,7 +97,7 @@ function TestsSection() {
       {!isLoading && tests.length === 0 && (
         <p className="text-muted-foreground text-sm mt-4">
           No upcoming tests.{" "}
-          <Link href="/ebbinghaus" className="underline">
+          <Link href="/practice" className="underline">
             Test yourself
           </Link>
         </p>

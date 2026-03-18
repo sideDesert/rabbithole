@@ -67,7 +67,7 @@ function ConceptRow({
       </div>
       {concept.completed && topicSlug && (
         <Link
-          href={`/ebbinghaus/test?concept=${encodeURIComponent(concept.name)}&topic=${encodeURIComponent(topicSlug)}`}
+          href={`/practice/test?concept=${encodeURIComponent(concept.name)}&topic=${encodeURIComponent(topicSlug)}`}
           onClick={(e) => e.stopPropagation()}
           className="shrink-0 mt-0.5 p-1 rounded hover:bg-muted transition-colors opacity-0 group-hover:opacity-100"
           title="Take a test"

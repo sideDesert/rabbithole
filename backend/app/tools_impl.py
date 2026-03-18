@@ -42,6 +42,17 @@ class AgentContext:
 # ── Memory Tools ────────────────────────────────────────────────────────────
 
 
+def _simplify_memory(m: dict[str, Any]) -> dict[str, Any]:
+    """Extract the readable text from an EverMemOS memory record."""
+    text = m.get("episode") or m.get("summary") or m.get("content") or ""
+    return {
+        "text": text,
+        "memory_type": m.get("memory_type", ""),
+        "timestamp": m.get("timestamp", ""),
+        "score": m.get("score", 0),
+    }
+
+
 @function_tool
 async def recall_memory(
     ctx: RunContextWrapper[AgentContext], query: str
@@ -58,22 +69,48 @@ async def recall_memory(
         if not memories:
             return json.dumps({"memories": [], "note": "No memories found for this query."})
 
-        simplified = []
-        for m in memories:
-            entry: dict[str, Any] = {}
-            if "summary" in m:
-                entry["summary"] = m["summary"]
-            if "atomic_fact" in m:
-                entry["fact"] = m["atomic_fact"]
-            if "content" in m:
-                entry["content"] = m["content"]
-            if "episode" in m:
-                entry["episode"] = m["episode"]
-            simplified.append(entry)
-
+        simplified = [_simplify_memory(m) for m in memories if _simplify_memory(m)["text"]]
         return json.dumps({"memories": simplified})
     except Exception as e:
         return json.dumps({"error": f"Memory search failed: {e}", "memories": []})
+
+
+@function_tool
+async def recall_memory_agentic(
+    ctx: RunContextWrapper[AgentContext], query: str
+) -> str:
+    """Search the learner's long-term memory using intelligent agentic retrieval.
+
+    Use this tool when the user asks about something they've learned, studied,
+    or discussed before. Craft a specific, detailed query for best results.
+    Do NOT call this for greetings, thanks, or casual conversation.
+    """
+    try:
+        resp = await evermemos.search_memories(
+            user_id=ctx.context.user_id,
+            query=query,
+            retrieve_method="agentic",
+            top_k=20,
+        )
+        result = resp.get("result", {})
+        memories = result.get("memories", [])
+        profiles = result.get("profiles", [])
+
+        profile_items = [
+            {"label": p.get("category") or p.get("trait_name") or "trait", "description": p.get("description", "")}
+            for p in profiles
+        ]
+        memory_items = [_simplify_memory(m) for m in memories if _simplify_memory(m)["text"]]
+
+        return json.dumps({
+            "profiles": profile_items,
+            "memories": memory_items,
+            "memory_count": len(memory_items),
+            "profile_count": len(profile_items),
+        })
+    except Exception as e:
+        logger.warning("EverMemOS agentic retrieval failed: %s", e)
+        return json.dumps({"error": f"Memory search failed: {e}", "memories": [], "profiles": []})
 
 
 @function_tool

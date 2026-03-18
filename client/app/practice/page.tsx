@@ -31,15 +31,15 @@ function TierBadge({ tier }: { tier: string | null }) {
   );
 }
 
-export default function EbbinghausPage() {
+export default function PracticePage() {
   const { data: pendingData, isLoading: pendingLoading } = useQuery({
-    queryKey: ["ebbinghaus-pending"],
+    queryKey: ["practice-pending"],
     queryFn: getPendingTests,
     refetchInterval: 60_000,
   });
 
   const { data: topicsData, isLoading: topicsLoading } = useQuery({
-    queryKey: ["ebbinghaus-topics"],
+    queryKey: ["practice-topics"],
     queryFn: getTestableTopics,
     staleTime: 60_000,
   });
@@ -50,7 +50,7 @@ export default function EbbinghausPage() {
   return (
     <div className="w-full max-w-3xl mx-auto px-6 py-8 space-y-10">
       <div>
-        <h1 className="text-3xl font-semibold">Ebbinghaus</h1>
+        <h1 className="text-3xl font-semibold">Practice</h1>
         <p className="text-muted-foreground mt-1">
           Spaced repetition review tests
         </p>
@@ -98,7 +98,7 @@ export default function EbbinghausPage() {
                 </CardContent>
                 <CardFooter>
                   <Link
-                    href={`/ebbinghaus/test?concept=${encodeURIComponent(test.concept_name)}&topic=${encodeURIComponent(test.topic_slug)}`}
+                    href={`/practice/test?concept=${encodeURIComponent(test.concept_name)}&topic=${encodeURIComponent(test.topic_slug)}`}
                   >
                     <Button size="sm">Start Test</Button>
                   </Link>
@@ -183,7 +183,7 @@ function TopicGroup({
               )}
               <TierBadge tier={concept.mastery_tier} />
               <Link
-                href={`/ebbinghaus/test?concept=${encodeURIComponent(concept.name)}&topic=${encodeURIComponent(topic.topic_slug)}`}
+                href={`/practice/test?concept=${encodeURIComponent(concept.name)}&topic=${encodeURIComponent(topic.topic_slug)}`}
               >
                 <Button variant="ghost" size="sm" className="text-xs">
                   Take Test

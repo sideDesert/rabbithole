@@ -25,7 +25,7 @@ class Thread(MongoBase):
     root_thread_id: str | None = None  # set to self id if root
     branch_point_id: str | None = None
     branch_source_message_id: str | None = None
-    agent: Literal["feynman", "ebbinghaus"] = "feynman"
+    agent: Literal["feynman", "ebbinghaus", "practice"] = "feynman"
     evermemos_group_id: str
     closed_at: datetime | None = None
     pending_test: str | None = None  # concept name if a test is pending
