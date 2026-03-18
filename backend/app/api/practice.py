@@ -367,30 +367,10 @@ async def submit_test(req: SubmitRequest):
 
     scores = _extract_json(response.choices[0].message.content or "{}")
 
-    # 5. Update test result
+    # 5. Extract scores
     per_question = scores.get("per_question", [])
     overall_score = scores.get("overall_score", 0.0)
     weak_areas = scores.get("weak_areas", [])
-
-    mongo.test_results().update_one(
-        {"_id": ObjectId(req.test_id)},
-        {
-            "$set": {
-                "answers": req.answers,
-                "per_question_results": per_question,
-                "scores": {
-                    "clarity": scores.get("clarity", 0.0),
-                    "accuracy": scores.get("accuracy", 0.0),
-                    "depth": scores.get("depth", 0.0),
-                    "transferability": scores.get("transferability", 0.0),
-                },
-                "overall_score": overall_score,
-                "feedback": scores.get("feedback", ""),
-                "weak_areas": weak_areas,
-                "status": "scored",
-            }
-        },
-    )
 
     # 6. Mark ReviewSchedule as completed
     mongo.review_schedule().update_many(
@@ -415,6 +395,29 @@ async def submit_test(req: SubmitRequest):
         topic_slug=topic_slug,
         overall_score=overall_score,
         weak_areas=weak_areas,
+    )
+
+    # 8. Persist scores + mastery on the test result (single write)
+    mongo.test_results().update_one(
+        {"_id": ObjectId(req.test_id)},
+        {
+            "$set": {
+                "answers": req.answers,
+                "per_question_results": per_question,
+                "scores": {
+                    "clarity": scores.get("clarity", 0.0),
+                    "accuracy": scores.get("accuracy", 0.0),
+                    "depth": scores.get("depth", 0.0),
+                    "transferability": scores.get("transferability", 0.0),
+                },
+                "overall_score": overall_score,
+                "feedback": scores.get("feedback", ""),
+                "weak_areas": weak_areas,
+                "improvements": scores.get("improvements", []),
+                "mastery_update": mastery_update,
+                "status": "scored",
+            }
+        },
     )
 
     # 8. Store observation in EverMemOS

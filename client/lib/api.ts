@@ -422,6 +422,7 @@ export async function getFeynmanNotes(
 
 export interface Evaluation {
   id: string;
+  test_type: "feynman" | "practice";
   concept_name: string;
   topic_slug: string;
   overall_score: number;
@@ -438,13 +439,19 @@ export interface Evaluation {
     next_review: string;
   } | null;
   created_at: string;
+  // Practice-specific fields
+  questions?: PracticeQuestion[];
+  answers?: { question_id: string; answer: string }[];
+  per_question_results?: QuestionFeedback[];
 }
 
 export async function getEvaluations(
   topicSlug?: string,
+  testType?: "feynman" | "practice",
 ): Promise<{ evaluations: Evaluation[] }> {
   const params = new URLSearchParams();
   if (topicSlug) params.set("topic_slug", topicSlug);
+  if (testType) params.set("test_type", testType);
   const res = await fetch(`${API_BASE}/feynman/evaluations?${params}`);
   if (!res.ok) throw new Error("Failed to get evaluations");
   return res.json();

@@ -1,6 +1,8 @@
 "use client";
 
 import type { Evaluation } from "@/lib/api";
+import { Badge } from "@/components/ui/badge";
+import { TestQuestion } from "@/components/practice/test-question";
 
 function ScoreBar({ label, score }: { label: string; score: number }) {
   const pct = Math.round(score * 100);
@@ -27,9 +29,14 @@ export function EvaluationDetail({ evaluation }: { evaluation: Evaluation }) {
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div className="space-y-1">
-          <h2 className="font-heading text-xl font-bold">
-            {evaluation.concept_name}
-          </h2>
+          <div className="flex items-center gap-2">
+            <h2 className="font-heading text-xl font-bold">
+              {evaluation.concept_name}
+            </h2>
+            <Badge variant="secondary" className="text-[10px] capitalize">
+              {evaluation.test_type}
+            </Badge>
+          </div>
           <p className="text-xs text-muted-foreground">
             {new Date(evaluation.created_at).toLocaleDateString()}
           </p>
@@ -93,6 +100,35 @@ export function EvaluationDetail({ evaluation }: { evaluation: Evaluation }) {
           </span>
         </div>
       )}
+
+      {evaluation.test_type === "practice" &&
+        evaluation.questions &&
+        evaluation.questions.length > 0 && (
+          <div className="space-y-4 border-t-2 border-border pt-4">
+            <span className="font-heading font-semibold text-sm">
+              Question Details
+            </span>
+            {evaluation.questions.map((q, i) => {
+              const fb = evaluation.per_question_results?.find(
+                (pq) => pq.question_id === q.id,
+              );
+              const answer =
+                evaluation.answers?.find((a) => a.question_id === q.id)
+                  ?.answer || "";
+              return (
+                <TestQuestion
+                  key={q.id}
+                  index={i}
+                  question={q}
+                  answer={answer}
+                  onChange={() => {}}
+                  disabled
+                  feedback={fb}
+                />
+              );
+            })}
+          </div>
+        )}
     </div>
   );
 }
