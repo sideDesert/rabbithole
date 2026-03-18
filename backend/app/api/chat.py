@@ -191,6 +191,7 @@ def save_message(
         "tool_result",
         "plan_card",
         "interview_questions",
+        "notification",
     ],
     group_id: str,
     index: int,
