@@ -579,7 +579,7 @@ def get_messages(thread_id: str):
             {
                 "thread_id": thread_id,
                 "type": {
-                    "$in": ["text", "markdown", "plan_card", "interview_questions"]
+                    "$in": ["text", "markdown", "plan_card", "interview_questions", "notification"]
                 },
             }
         )
