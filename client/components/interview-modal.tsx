@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { AltArrowLeftBoldDuotone, AltArrowRightBoldDuotone, Pen2BoldDuotone } from "solar-icon-set";
+import { ChevronLeft, ChevronRight, Pencil } from "lucide-react";
 import { Button } from "./ui/button";
 import type { InterviewQuestion } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -82,19 +82,22 @@ export function InterviewWidget({
 
   const selectedIsOther =
     selected !== undefined && selected.startsWith("Other: ");
-  const otherActive = selectedIsOther || selected === q.options.find((o) => isOtherOption(o));
+  const otherActive =
+    selectedIsOther || selected === q.options.find((o) => isOtherOption(o));
 
   const regularOptions = q.options.filter((o) => !isOtherOption(o));
   const otherOption = q.options.find((o) => isOtherOption(o));
-  const answeredCount = questions.filter((_, i) => answers[i] !== undefined).length;
+  const answeredCount = questions.filter(
+    (_, i) => answers[i] !== undefined,
+  ).length;
   const progress = (answeredCount / questions.length) * 100;
 
   return (
     <div className={cn("w-full", className)}>
       <div className="bg-background pb-6">
-        <div className="rounded-xl ring-1 ring-border shadow-sm overflow-hidden">
+        <div className="rounded-lg border-2 bg-card border-border shadow-md overflow-hidden">
           {/* Progress bar */}
-          <div className="h-0.5 bg-muted">
+          <div className="h-1 bg-muted border-b border-border">
             <div
               className="h-full bg-primary transition-all duration-300 ease-out"
               style={{ width: `${progress}%` }}
@@ -112,7 +115,7 @@ export function InterviewWidget({
                 disabled={current === 0}
                 className="p-0.5 rounded hover:bg-muted disabled:opacity-30 transition-colors"
               >
-                <AltArrowLeftBoldDuotone className="size-3.5" />
+                <ChevronLeft className="size-3.5" />
               </button>
               <span className="tabular-nums">
                 {current + 1} of {questions.length}
@@ -122,7 +125,7 @@ export function InterviewWidget({
                 disabled={isLast}
                 className="p-0.5 rounded hover:bg-muted disabled:opacity-30 transition-colors"
               >
-                <AltArrowRightBoldDuotone className="size-3.5" />
+                <ChevronRight className="size-3.5" />
               </button>
             </div>
           </div>
@@ -138,10 +141,10 @@ export function InterviewWidget({
                   type="button"
                   onClick={() => selectOption(option)}
                   className={cn(
-                    "w-full flex items-center gap-3 text-left text-sm px-2.5 py-2.5 rounded-lg transition-all duration-150",
+                    "w-full flex items-center gap-3 text-left text-sm px-2.5 py-2.5 rounded-md border-2 transition-all duration-150",
                     isSelected
-                      ? "bg-primary/10 text-foreground"
-                      : "hover:bg-muted/60 text-foreground/70",
+                      ? "border-border bg-primary/10 text-foreground"
+                      : "border-transparent hover:bg-muted/60 text-foreground/70",
                   )}
                 >
                   <span
@@ -165,22 +168,20 @@ export function InterviewWidget({
             {otherOption && (
               <div
                 className={cn(
-                  "flex items-center gap-3 text-sm px-2.5 py-2.5 rounded-lg transition-all duration-150",
+                  "flex items-center gap-3 text-sm px-2.5 py-2.5 rounded-md border-2 transition-all duration-150",
                   otherActive
-                    ? "bg-primary/10 text-foreground"
-                    : "hover:bg-muted/60 text-muted-foreground cursor-pointer",
+                    ? "border-border bg-primary/10 text-foreground"
+                    : "border-transparent hover:bg-muted/60 text-muted-foreground cursor-pointer",
                 )}
                 onClick={() => {
                   if (!otherActive) {
                     const text = otherText[current] || "";
-                    selectOption(
-                      text.trim() ? `Other: ${text}` : otherOption,
-                    );
+                    selectOption(text.trim() ? `Other: ${text}` : otherOption);
                   }
                 }}
               >
                 <span className="shrink-0 size-5.5 flex items-center justify-center rounded-md">
-                  <Pen2BoldDuotone className="size-3" />
+                  <Pencil className="size-3" />
                 </span>
                 {otherActive ? (
                   <input
@@ -209,19 +210,27 @@ export function InterviewWidget({
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-between px-4 py-2.5 border-t border-border/50">
-            <div className="flex items-center gap-3 text-[11px] text-muted-foreground/40">
+          <div className="flex items-center justify-between px-4 py-2.5 border-t-2 border-border">
+            <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
               <span className="flex items-center gap-1">
-                <kbd className="inline-flex items-center justify-center size-4 rounded border border-border/50 text-[9px]">←</kbd>
-                <kbd className="inline-flex items-center justify-center size-4 rounded border border-border/50 text-[9px]">→</kbd>
+                <kbd className="inline-flex items-center justify-center size-4 rounded border-2 border-border text-[9px]">
+                  ←
+                </kbd>
+                <kbd className="inline-flex items-center justify-center size-4 rounded border-2 border-border text-[9px]">
+                  →
+                </kbd>
                 <span className="ml-0.5">navigate</span>
               </span>
               <span className="flex items-center gap-1">
-                <kbd className="inline-flex items-center justify-center h-4 px-1 rounded border border-border/50 text-[9px]">Enter</kbd>
+                <kbd className="inline-flex items-center justify-center h-4 px-1 rounded border-2 border-border text-[9px]">
+                  Enter
+                </kbd>
                 <span className="ml-0.5">submit</span>
               </span>
               <span className="flex items-center gap-1">
-                <kbd className="inline-flex items-center justify-center h-4 px-1 rounded border border-border/50 text-[9px]">Esc</kbd>
+                <kbd className="inline-flex items-center justify-center h-4 px-1 rounded border-2 border-border text-[9px]">
+                  Esc
+                </kbd>
                 <span className="ml-0.5">skip</span>
               </span>
             </div>

@@ -7,16 +7,17 @@ import {
   type PlanPhase,
   type PlanConcept,
 } from "@/lib/api";
-import { usePlan } from "./plan-context";
-import { ChecklistBoldDuotone, AltArrowDownBoldDuotone, AltArrowRightBoldDuotone, CheckCircleBoldDuotone, TestTubeBoldDuotone } from "solar-icon-set";
+import { useThread } from "@/hooks/use-thread";
+import { ListChecks, ChevronDown, ChevronRight, CircleCheck, TestTube } from "lucide-react";
 import { useState } from "react";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 
 function ProgressBar({ value }: { value: number }) {
   return (
-    <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+    <div className="h-1.5 w-full rounded-sm bg-muted border border-border overflow-hidden">
       <div
-        className="h-full rounded-full bg-primary transition-all duration-500"
+        className="h-full rounded-sm bg-primary transition-all duration-500"
         style={{ width: `${Math.round(value * 100)}%` }}
       />
     </div>
@@ -42,15 +43,15 @@ function ConceptRow({
   });
 
   return (
-    <label className="flex items-start gap-3 py-2 px-1 rounded-lg hover:bg-muted/50 cursor-pointer group transition-colors">
+    <label className="flex items-start gap-3 py-2 px-1 rounded-md hover:bg-muted/50 cursor-pointer group transition-colors">
       <button
         onClick={() => mutation.mutate()}
         disabled={mutation.isPending}
-        className="mt-0.5 shrink-0 size-[18px] rounded border border-border flex items-center justify-center transition-colors cursor-pointer data-[checked=true]:bg-primary data-[checked=true]:border-primary"
+        className="mt-0.5 shrink-0 size-[18px] rounded border-2 border-border flex items-center justify-center transition-colors cursor-pointer data-[checked=true]:bg-primary data-[checked=true]:border-primary"
         data-checked={concept.completed}
       >
         {concept.completed && (
-          <CheckCircleBoldDuotone className="size-3 text-primary-foreground" />
+          <CircleCheck className="size-3 text-primary-foreground" />
         )}
       </button>
       <div className="flex-1 min-w-0">
@@ -67,12 +68,12 @@ function ConceptRow({
       </div>
       {concept.completed && topicSlug && (
         <Link
-          href={`/ebbinghaus/test?concept=${encodeURIComponent(concept.name)}&topic=${encodeURIComponent(topicSlug)}`}
+          href={`/practice/test?concept=${encodeURIComponent(concept.name)}&topic=${encodeURIComponent(topicSlug)}`}
           onClick={(e) => e.stopPropagation()}
           className="shrink-0 mt-0.5 p-1 rounded hover:bg-muted transition-colors opacity-0 group-hover:opacity-100"
           title="Take a test"
         >
-          <TestTubeBoldDuotone className="size-3.5 text-muted-foreground" />
+          <TestTube className="size-3.5 text-muted-foreground" />
         </Link>
       )}
     </label>
@@ -94,15 +95,15 @@ function PhaseSection({
   const completedCount = phase.concepts.filter((c) => c.completed).length;
 
   return (
-    <div className="border border-border rounded-xl overflow-hidden w-full">
+    <div className="border-2 border-border shadow-md rounded-lg overflow-hidden w-full">
       <button
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center gap-3 p-4 hover:bg-muted/30 transition-colors text-left cursor-pointer"
+        className="w-full flex items-center gap-3 p-4 hover:bg-muted/50 transition-colors text-left cursor-pointer"
       >
         {open ? (
-          <AltArrowDownBoldDuotone className="size-4 shrink-0 text-muted-foreground" />
+          <ChevronDown className="size-4 shrink-0 text-muted-foreground" />
         ) : (
-          <AltArrowRightBoldDuotone className="size-4 shrink-0 text-muted-foreground" />
+          <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
         )}
         <div className="flex-1 min-w-0">
           <div className="flex items-baseline justify-between gap-2">
@@ -117,7 +118,7 @@ function PhaseSection({
         </div>
       </button>
       {open && (
-        <div className="px-4 pb-3 border-t border-border pt-2">
+        <div className="px-4 pb-3 border-t-2 border-border pt-2">
           {phase.concepts.map((concept) => (
             <ConceptRow
               key={concept.name}
@@ -133,7 +134,10 @@ function PhaseSection({
 }
 
 export function PlanView() {
-  const { threadId, topicSlug } = usePlan();
+  const params = useParams();
+  const threadId = typeof params?.threadId === "string" ? params.threadId : null;
+  const { thread } = useThread(threadId);
+  const topicSlug = thread?.topic_slug ?? null;
   const { data, isLoading } = useQuery({
     queryKey: ["progress", threadId],
     queryFn: () => getProgress(threadId!),
@@ -143,7 +147,7 @@ export function PlanView() {
   if (!threadId) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground">
-        <ChecklistBoldDuotone className="size-10 opacity-40" />
+        <ListChecks className="size-10 opacity-40" />
         <p>Start a conversation to create a learning plan.</p>
       </div>
     );
@@ -160,7 +164,7 @@ export function PlanView() {
   if (!data?.phases?.length) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground">
-        <ChecklistBoldDuotone className="size-10 opacity-40" />
+        <ListChecks className="size-10 opacity-40" />
         <p>No plan created yet for this thread.</p>
       </div>
     );

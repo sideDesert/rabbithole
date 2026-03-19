@@ -1,5 +1,5 @@
 import { type NodeProps } from "@xyflow/react";
-import { GraphNewUpBoldDuotone, GraphDownNewBoldDuotone, MinusCircleBoldDuotone } from "solar-icon-set";
+import { TrendingUp, TrendingDown, CircleMinus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { NodeHandles } from "./node-handles";
 
@@ -14,18 +14,18 @@ interface ConceptNodeData {
 
 // Mastery score → color gradient (red → amber → green → bright green)
 function masteryColor(score: number): string {
-  if (score >= 0.9) return "hsl(142, 71%, 45%)"; // mastered — bright green
-  if (score >= 0.7) return "hsl(142, 50%, 40%)"; // strong — green
-  if (score >= 0.4) return "hsl(45, 93%, 47%)";  // medium — amber
-  if (score > 0)    return "hsl(0, 84%, 60%)";   // weak — red
-  return "#64748b";                                // undiscovered — slate-500
+  if (score >= 0.9) return "var(--color-mastered)";
+  if (score >= 0.7) return "var(--color-strong)";
+  if (score >= 0.4) return "var(--color-medium)";
+  if (score > 0)    return "var(--color-weak)";
+  return "var(--color-undiscovered)";
 }
 
 function masteryBg(score: number): string {
-  if (score >= 0.9) return "hsla(142, 71%, 45%, 0.15)";
-  if (score >= 0.7) return "hsla(142, 50%, 40%, 0.12)";
-  if (score >= 0.4) return "hsla(45, 93%, 47%, 0.12)";
-  if (score > 0)    return "hsla(0, 84%, 60%, 0.12)";
+  if (score >= 0.9) return "color-mix(in srgb, var(--color-mastered) 15%, transparent)";
+  if (score >= 0.7) return "color-mix(in srgb, var(--color-strong) 12%, transparent)";
+  if (score >= 0.4) return "color-mix(in srgb, var(--color-medium) 12%, transparent)";
+  if (score > 0)    return "color-mix(in srgb, var(--color-weak) 12%, transparent)";
   return "var(--graph-node-bg)";
 }
 
@@ -54,9 +54,9 @@ function MasteryRing({ score }: { score: number }) {
 }
 
 const TrendIcon = ({ trend }: { trend: string }) => {
-  if (trend === "improving") return <GraphNewUpBoldDuotone size={12} className="text-chart-1" />;
-  if (trend === "declining") return <GraphDownNewBoldDuotone size={12} className="text-destructive" />;
-  return <MinusCircleBoldDuotone size={12} className="text-muted-foreground" />;
+  if (trend === "improving") return <TrendingUp size={12} className="text-chart-1" />;
+  if (trend === "declining") return <TrendingDown size={12} className="text-destructive" />;
+  return <CircleMinus size={12} className="text-muted-foreground" />;
 };
 
 export function ConceptNode({ data, selected }: NodeProps) {
@@ -68,14 +68,13 @@ export function ConceptNode({ data, selected }: NodeProps) {
   return (
     <div
       className={cn(
-        "rounded-lg px-4 py-3 min-w-[180px] max-w-[240px] cursor-pointer transition-all",
+        "rounded-md px-4 py-3 min-w-[180px] max-w-[240px] cursor-pointer transition-all shadow-sm",
         selected && "ring-2 ring-primary/50",
       )}
       style={{
         opacity: confidence < 0.5 ? 0.5 : confidence < 0.8 ? 0.75 : 1,
         border: `2px solid ${color}`,
         background: masteryBg(score),
-        backdropFilter: "blur(8px)",
         boxShadow: "var(--graph-node-shadow)",
       }}
     >

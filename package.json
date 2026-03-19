@@ -1,4 +1,10 @@
 {
+	"scripts": {
+		"install:local": "sh ./install.sh",
+		"build:local": "sh ./build-local.sh",
+		"run:local": "sh ./run-local.sh",
+		"package:release": "sh ./scripts/package-release.sh"
+	},
 	"dependencies": {
 		"@xyflow/react": "^12.10.1"
 	}

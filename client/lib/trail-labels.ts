@@ -11,6 +11,7 @@ const statusLabels: Record<string, string> = {
 
 const toolCallLabels: Record<string, string> = {
   recall_memory: "Rummaging...",
+  recall_memory_agentic: "Deep-searching memories...",
   store_memory: "Jotting down...",
   create_plan: "Sketching a roadmap...",
   read_plan: "Checking the map...",
@@ -23,6 +24,7 @@ const toolCallLabels: Record<string, string> = {
 
 const toolCallDoneLabels: Record<string, string> = {
   recall_memory: "Memory recalled",
+  recall_memory_agentic: "Memories retrieved",
   store_memory: "Memory stored",
   create_plan: "Plan created",
   read_plan: "Plan read",

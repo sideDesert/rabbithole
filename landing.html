@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>rabbithole — Memory-Native Learning OS</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['DM Sans', 'system-ui', 'sans-serif'],
+            heading: ['Space Grotesk', 'system-ui', 'sans-serif'],
+            mono: ['Space Mono', 'Courier New', 'monospace'],
+          },
+          colors: {
+            background: 'var(--background)',
+            foreground: 'var(--foreground)',
+            primary: { DEFAULT: 'var(--primary)', foreground: 'var(--primary-foreground)' },
+            secondary: { DEFAULT: 'var(--secondary)', foreground: 'var(--secondary-foreground)' },
+            accent: { DEFAULT: 'var(--accent)', foreground: 'var(--accent-foreground)' },
+            muted: { DEFAULT: 'var(--muted)', foreground: 'var(--muted-foreground)' },
+            card: { DEFAULT: 'var(--card)', foreground: 'var(--card-foreground)' },
+            destructive: { DEFAULT: 'var(--destructive)', foreground: 'var(--destructive-foreground)' },
+            border: 'var(--border)',
+            input: 'var(--input)',
+            ring: 'var(--ring)',
+          },
+          borderRadius: { base: 'var(--radius)' },
+          boxShadow: {
+            'brutal': 'var(--shadow)',
+            'brutal-sm': 'var(--shadow-sm)',
+            'brutal-lg': 'var(--shadow-lg)',
+            'brutal-xl': 'var(--shadow-xl)',
+          },
+        },
+      },
+    }
+  </script>
+  <style>
+    :root {
+      --background: #fffef5;
+      --foreground: #1a1a1a;
+      --card: #ffffff;
+      --card-foreground: #1a1a1a;
+      --primary: #e85d3a;
+      --primary-foreground: #000000;
+      --secondary: #ffe156;
+      --secondary-foreground: #1a1a1a;
+      --accent: #88e5d6;
+      --accent-foreground: #1a1a1a;
+      --muted: #f5f5f0;
+      --muted-foreground: #6b6b6b;
+      --destructive: #dc2626;
+      --destructive-foreground: #ffffff;
+      --border: #1a1a1a;
+      --input: #1a1a1a;
+      --ring: #e85d3a;
+      --radius: 6px;
+      --shadow-color: #1a1a1a;
+      --shadow-sm: 2px 2px 0px 0px var(--shadow-color);
+      --shadow: 4px 4px 0px 0px var(--shadow-color);
+      --shadow-lg: 6px 6px 0px 0px var(--shadow-color);
+      --shadow-xl: 8px 8px 0px 0px var(--shadow-color);
+    }
+    .dark {
+      --background: #0d0b0a;
+      --foreground: #eeeeee;
+      --card: #1e1c1a;
+      --card-foreground: #eeeeee;
+      --primary: #c24a2e;
+      --primary-foreground: #ffffff;
+      --primary-text: #e85d3a;
+      --secondary: #c49322;
+      --secondary-foreground: #ffffff;
+      --accent: #2f9e89;
+      --accent-foreground: #ffffff;
+      --muted: #252220;
+      --muted-foreground: #999999;
+      --destructive: #dc2626;
+      --destructive-foreground: #ffffff;
+      --border: #444444;
+      --input: #444444;
+      --ring: #e85d3a;
+      --shadow-color: rgba(0, 0, 0, 0.6);
+      --shadow-sm: 2px 2px 0px 0px var(--shadow-color);
+      --shadow: 4px 4px 0px 0px var(--shadow-color);
+      --shadow-lg: 6px 6px 0px 0px var(--shadow-color);
+      --shadow-xl: 8px 8px 0px 0px var(--shadow-color);
+    }
+    body { font-family: 'DM Sans', system-ui, sans-serif; background: var(--background); color: var(--foreground); transition: background-color 0.3s, color 0.3s; }
+    h1,h2,h3,h4,h5,h6 { font-family: 'Space Grotesk', system-ui, sans-serif; }
+    code, pre { font-family: 'Space Mono', 'Courier New', monospace; }
+    .neo-hover { transition: transform 0.15s cubic-bezier(0.2,0,0,1), box-shadow 0.15s cubic-bezier(0.2,0,0,1); }
+    .neo-hover:hover { transform: translate(-1px,-1px); box-shadow: 5px 5px 0px 0px var(--shadow-color); }
+    .neo-hover:active { transform: translate(2px,2px); box-shadow: 1px 1px 0px 0px var(--shadow-color); }
+    .card-hover { transition: transform 0.15s cubic-bezier(0.2,0,0,1), box-shadow 0.15s cubic-bezier(0.2,0,0,1); }
+    .card-hover:hover { transform: translate(-2px,-2px); box-shadow: 6px 6px 0px 0px var(--shadow-color); }
+    *:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+    @media (prefers-reduced-motion: reduce) { .neo-hover,.card-hover { transition:none!important; transform:none!important; } }
+    .dark .text-primary-bright { color: #e85d3a !important; }
+    .icon-sm { width: 16px; height: 16px; }
+    .icon-md { width: 20px; height: 20px; }
+    .icon-lg { width: 24px; height: 24px; }
+    .icon-xl { width: 28px; height: 28px; }
+    .screenshot { border: 2px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-lg); }
+    .screenshot img { width: 100%; display: block; border-radius: calc(var(--radius) - 2px); }
+    .install-command { font-family: 'Space Mono', 'Courier New', monospace; word-break: break-all; }
+    html { scroll-behavior: smooth; }
+
+    /* Scroll-triggered fade-in */
+    .fade-in { opacity: 0; transform: translateY(24px); transition: opacity 0.6s ease, transform 0.6s ease; }
+    .fade-in.visible { opacity: 1; transform: translateY(0); }
+  </style>
+</head>
+
+<body class="min-h-screen">
+
+  <!-- ========== THEME TOGGLE ========== -->
+  <div class="fixed top-4 right-4 z-50">
+    <button onclick="toggleTheme()" id="theme-btn"
+            class="neo-hover border-2 border-[var(--border)] bg-[var(--card)] px-3 py-2 text-sm font-bold flex items-center gap-2"
+            style="border-radius:var(--radius); box-shadow:var(--shadow);">
+      <i data-lucide="moon" class="icon-sm"></i>
+    </button>
+  </div>
+
+  <!-- ========== NAV ========== -->
+  <nav class="sticky top-0 z-40 border-b-2 border-[var(--border)] bg-[var(--background)]">
+    <div class="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <i data-lucide="rabbit" class="icon-lg text-[var(--primary)]"></i>
+        <span class="font-heading font-bold text-xl">rabbithole</span>
+      </div>
+      <div class="hidden md:flex items-center gap-6">
+        <a href="#features" class="text-sm font-medium hover:underline underline-offset-4">Features</a>
+        <a href="#how-it-works" class="text-sm font-medium hover:underline underline-offset-4">How It Works</a>
+        <a href="#architecture" class="text-sm font-medium hover:underline underline-offset-4">Architecture</a>
+        <a href="https://github.com/sideDesert/rabbithole" target="_blank"
+           class="neo-hover border-2 border-[var(--border)] bg-[var(--card)] px-4 py-2 text-sm font-bold flex items-center gap-2"
+           style="border-radius:var(--radius); box-shadow:var(--shadow);">
+          <i data-lucide="github" class="icon-sm"></i> GitHub
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="max-w-6xl mx-auto px-6">
+
+    <section class="pt-8">
+      <div class="border-2 border-[var(--border)] bg-[var(--secondary)] p-4 md:p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-3"
+           style="border-radius:var(--radius); box-shadow:var(--shadow);">
+        <div class="flex items-start gap-3">
+          <div class="w-10 h-10 border-2 border-[var(--border)] bg-[var(--primary)] flex items-center justify-center flex-shrink-0"
+               style="border-radius:var(--radius);">
+            <i data-lucide="triangle-alert" class="icon-md"></i>
+          </div>
+          <div class="space-y-1">
+            <p class="font-heading font-bold text-base md:text-lg">Under Active Development</p>
+            <p class="text-sm text-[var(--muted-foreground)]">
+              Rabbithole is an in-progress EverMemOS Hackathon project. Parts of the product are still broken, workflows may change, and the installer is currently aimed at technical early testers.
+            </p>
+          </div>
+        </div>
+        <div class="border-2 border-[var(--border)] bg-[var(--card)] px-3 py-1.5 text-xs font-bold uppercase tracking-wider self-start md:self-center"
+             style="border-radius:var(--radius); box-shadow:var(--shadow-sm);">
+          EverMemOS Hackathon 2026
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== HERO ========== -->
+    <section class="py-20 md:py-28 text-center space-y-8">
+      <div class="inline-flex items-center gap-2 border-2 border-[var(--border)] bg-[var(--secondary)] px-4 py-1.5 text-xs font-bold uppercase tracking-wider"
+           style="border-radius:var(--radius); box-shadow:var(--shadow-sm);">
+        <i data-lucide="brain" class="icon-sm"></i> Memory-Native Learning OS
+      </div>
+      <h1 class="text-5xl md:text-7xl font-heading font-bold leading-[1.1] tracking-tight">
+        ChatGPT taught you<br>something last week.<br>
+        <span class="text-[var(--primary)] text-primary-bright">Do you remember?</span>
+      </h1>
+      <p class="text-lg md:text-xl text-[var(--muted-foreground)] max-w-2xl mx-auto leading-relaxed">
+        Neither does it. Rabbithole is an AI learning companion that actually remembers you &mdash; what you know, where you struggle, and when you're about to forget.
+      </p>
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
+        <a href="#install"
+           class="neo-hover border-2 border-[var(--border)] bg-[var(--primary)] px-6 py-3 text-base font-bold flex items-center gap-2"
+           style="border-radius:var(--radius); box-shadow:var(--shadow);">
+          <i data-lucide="terminal" class="icon-md"></i> Install with One Command
+        </a>
+        <a href="#features"
+           class="neo-hover border-2 border-[var(--border)] bg-[var(--card)] px-6 py-3 text-base font-bold flex items-center gap-2"
+           style="border-radius:var(--radius); box-shadow:var(--shadow);">
+          <i data-lucide="arrow-down" class="icon-md"></i> See Features
+        </a>
+      </div>
+
+      <!-- Hero screenshot -->
+      <div class="pt-8">
+        <div class="screenshot mx-auto max-w-5xl">
+          <img src="docs/screenshots/dashboard.png" alt="Rabbithole dashboard showing active topics, tests, and learning progress">
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== MEET YOUR TEACHERS ========== -->
+    <section class="py-16 space-y-8 fade-in">
+      <div class="text-center space-y-4">
+        <h2 class="text-3xl md:text-4xl font-heading font-bold">Meet Your Teachers</h2>
+        <p class="text-[var(--muted-foreground)] max-w-xl mx-auto">Two AI characters, each inspired by a foundational learning science principle.</p>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+        <!-- Mr. Feynman -->
+        <div class="card-hover border-2 border-[var(--border)] bg-[var(--card)] p-8" style="border-radius:var(--radius);">
+          <div class="w-14 h-14 border-2 border-[var(--border)] bg-[var(--primary)] flex items-center justify-center mb-5" style="border-radius:var(--radius);">
+            <i data-lucide="graduation-cap" class="icon-lg"></i>
+          </div>
+          <h3 class="font-heading font-bold text-xl mb-2">Mr. Feynman</h3>
+          <span class="border-2 border-[var(--border)] bg-[var(--secondary)] px-2 py-0.5 text-xs font-bold inline-flex items-center gap-1 mb-4" style="border-radius:var(--radius);">
+            The Teacher
+          </span>
+          <p class="text-sm text-[var(--muted-foreground)] leading-relaxed">
+            Named after Richard Feynman and the <strong>Feynman Technique</strong>. He believes that if you can't explain something simply, you don't understand it yet. He interviews you, builds personalized study plans, teaches you concept by concept, and then asks you to teach it back.
+          </p>
+        </div>
+        <!-- Ms. Ebbinghaus -->
+        <div class="card-hover border-2 border-[var(--border)] bg-[var(--card)] p-8" style="border-radius:var(--radius);">
+          <div class="w-14 h-14 border-2 border-[var(--border)] bg-[var(--accent)] flex items-center justify-center mb-5" style="border-radius:var(--radius);">
+            <i data-lucide="bell-ring" class="icon-lg"></i>
+          </div>
+          <h3 class="font-heading font-bold text-xl mb-2">Ms. Ebbinghaus</h3>
+          <span class="border-2 border-[var(--border)] bg-[var(--accent)] px-2 py-0.5 text-xs font-bold inline-flex items-center gap-1 mb-4" style="border-radius:var(--radius);">
+            The Reminder
+          </span>
+          <p class="text-sm text-[var(--muted-foreground)] leading-relaxed">
+            Named after Hermann Ebbinghaus and the <strong>forgetting curve</strong>. She tracks every concept you've learned and knows exactly when you're about to forget it. She schedules reviews at scientifically optimal intervals and makes sure nothing falls through the cracks.
+          </p>
+        </div>
+      </div>
+      <p class="text-center text-[var(--muted-foreground)] text-sm">Together: <strong>learn deeply, then retain permanently.</strong></p>
+    </section>
+
+    <!-- ========== FEATURES ========== -->
+    <div id="features" class="py-4"></div>
+
+    <!-- Feature 1: Rabbit Holes -->
+    <section class="py-16 space-y-8 fade-in">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
+        <div class="space-y-5">
+          <div class="inline-flex items-center gap-2 border-2 border-[var(--border)] bg-[var(--primary)] px-3 py-1 text-xs font-bold uppercase tracking-wider"
+               style="border-radius:var(--radius); box-shadow:var(--shadow-sm);">
+            <i data-lucide="git-branch" class="icon-sm"></i> Core Feature
+          </div>
+          <h2 class="text-3xl md:text-4xl font-heading font-bold leading-tight">Rabbit Holes &mdash;<br>Branch Anywhere,<br>Lose Nothing</h2>
+          <p class="text-[var(--muted-foreground)] leading-relaxed">
+            When you're learning about number theory and hit the phrase "optimization problems" &mdash; you don't have to ignore it, abandon your thread, or waste context.
+          </p>
+          <p class="text-[var(--muted-foreground)] leading-relaxed">
+            You <strong>branch</strong>. Right there. Mid-conversation. A new thread opens, focused entirely on that concept. Go as deep as you want. When you're done, jump back to the parent thread, right where you left off.
+          </p>
+          <div class="border-2 border-[var(--border)] bg-[var(--muted)] p-4 space-y-2" style="border-radius:var(--radius);">
+            <p class="text-sm font-bold">No more:</p>
+            <ul class="text-sm text-[var(--muted-foreground)] space-y-1">
+              <li class="flex items-start gap-2"><i data-lucide="x" class="icon-sm text-[var(--destructive)] flex-shrink-0 mt-0.5"></i> Reading five paragraphs just to get confused by one term</li>
+              <li class="flex items-start gap-2"><i data-lucide="x" class="icon-sm text-[var(--destructive)] flex-shrink-0 mt-0.5"></i> Losing your conversation context to ask "wait, what's that?"</li>
+              <li class="flex items-start gap-2"><i data-lucide="x" class="icon-sm text-[var(--destructive)] flex-shrink-0 mt-0.5"></i> Ignoring things you don't understand and moving on</li>
+            </ul>
+          </div>
+        </div>
+        <div class="space-y-4">
+          <div class="screenshot">
+            <img src="docs/screenshots/branching.png" alt="Branching into a rabbit hole mid-conversation">
+          </div>
+        </div>
+      </div>
+      <!-- Thread tree screenshot -->
+      <div class="screenshot max-w-3xl mx-auto">
+          <img src="docs/screenshots/chat-tree.png" alt="The conversation tree showing all branches explored">
+      </div>
+      <p class="text-center text-sm text-[var(--muted-foreground)]">Every branch is a rabbit hole you explored. Jump back to any parent at any time.</p>
+    </section>
+
+    <!-- Feature 2: Study Plans -->
+    <section class="py-16 space-y-8 fade-in">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
+        <div class="order-2 lg:order-1">
+          <div class="screenshot">
+            <img src="docs/screenshots/study-plan.png" alt="Structured study plan with phases, concepts, and progress">
+          </div>
+        </div>
+        <div class="order-1 lg:order-2 space-y-5">
+          <div class="inline-flex items-center gap-2 border-2 border-[var(--border)] bg-[var(--secondary)] px-3 py-1 text-xs font-bold uppercase tracking-wider"
+               style="border-radius:var(--radius); box-shadow:var(--shadow-sm);">
+            <i data-lucide="clipboard-list" class="icon-sm"></i> Personalized Plans
+          </div>
+          <h2 class="text-3xl md:text-4xl font-heading font-bold leading-tight">Study Plans &mdash;<br>Mr. Feynman Plans<br>Your Journey</h2>
+          <p class="text-[var(--muted-foreground)] leading-relaxed">
+            You don't just start chatting. Mr. Feynman conducts an <strong>interactive interview</strong> first &mdash; what do you already know? How deep do you want to go? What's your goal?
+          </p>
+          <p class="text-[var(--muted-foreground)] leading-relaxed">
+            Based on your answers, he generates a structured study plan: phases, concepts, dependencies, all laid out. Review it, adjust it, approve it. Then he teaches you through it, one concept at a time.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Feature 3: Feynman Mode -->
+    <section class="py-16 space-y-8 fade-in">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
+        <div class="space-y-5">
+          <div class="inline-flex items-center gap-2 border-2 border-[var(--border)] bg-[var(--accent)] px-3 py-1 text-xs font-bold uppercase tracking-wider"
+               style="border-radius:var(--radius); box-shadow:var(--shadow-sm);">
+            <i data-lucide="pencil" class="icon-sm"></i> Active Recall
+          </div>
+          <h2 class="text-3xl md:text-4xl font-heading font-bold leading-tight">Feynman Mode &mdash;<br>Prove You<br>Understand</h2>
+          <p class="text-[var(--muted-foreground)] leading-relaxed">
+            After each phase of your study plan, Mr. Feynman flips the script. Instead of teaching you, he asks <em>you</em> to teach <em>him</em>.
+          </p>
+          <p class="text-[var(--muted-foreground)] leading-relaxed">
+            Write down what you just learned in your own words &mdash; in a rich text editor with auto-saving drafts and hints if you're stuck. If you can explain it simply, you understand it. If you can't, you know exactly where your gaps are.
+          </p>
+          <div class="border-l-4 border-[var(--primary)] bg-[var(--muted)] px-4 py-3" style="border-radius:0 var(--radius) var(--radius) 0;">
+            <p class="text-sm italic text-[var(--muted-foreground)]">"If you can't explain it simply, you don't understand it well enough." &mdash; Richard Feynman</p>
+          </div>
+        </div>
+        <div>
+          <div class="screenshot">
+            <img src="docs/screenshots/feynman-notes.png" alt="Feynman notes editor">
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Feature 4: Evaluations -->
+    <section class="py-16 space-y-8 fade-in">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
+        <div class="order-2 lg:order-1">
+          <div class="screenshot">
+            <img src="docs/screenshots/evaluations.png" alt="Four-dimensional evaluation results">
+          </div>
+        </div>
+        <div class="order-1 lg:order-2 space-y-5">
+          <div class="inline-flex items-center gap-2 border-2 border-[var(--border)] bg-[var(--primary)] px-3 py-1 text-xs font-bold uppercase tracking-wider"
+               style="border-radius:var(--radius); box-shadow:var(--shadow-sm);">
+            <i data-lucide="bar-chart-2" class="icon-sm"></i> Multi-Dimensional
+          </div>
+          <h2 class="text-3xl md:text-4xl font-heading font-bold leading-tight">Evaluations &mdash;<br>Four-Dimensional<br>Scoring</h2>
+          <p class="text-[var(--muted-foreground)] leading-relaxed">
+            Your Feynman explanations are scored across four dimensions. This isn't binary pass/fail &mdash; it pinpoints <em>exactly</em> where your understanding breaks down.
+          </p>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="border-2 border-[var(--border)] bg-[var(--card)] p-3 flex items-center gap-2" style="border-radius:var(--radius);">
+              <div class="w-8 h-8 border-2 border-[var(--border)] bg-[var(--secondary)] flex items-center justify-center flex-shrink-0" style="border-radius:var(--radius);">
+                <i data-lucide="eye" class="icon-sm"></i>
+              </div>
+              <div><p class="text-xs font-bold">Clarity</p><p class="text-xs text-[var(--muted-foreground)]">Explain simply?</p></div>
+            </div>
+            <div class="border-2 border-[var(--border)] bg-[var(--card)] p-3 flex items-center gap-2" style="border-radius:var(--radius);">
+              <div class="w-8 h-8 border-2 border-[var(--border)] bg-[var(--accent)] flex items-center justify-center flex-shrink-0" style="border-radius:var(--radius);">
+                <i data-lucide="check-circle" class="icon-sm"></i>
+              </div>
+              <div><p class="text-xs font-bold">Accuracy</p><p class="text-xs text-[var(--muted-foreground)]">Factually correct?</p></div>
+            </div>
+            <div class="border-2 border-[var(--border)] bg-[var(--card)] p-3 flex items-center gap-2" style="border-radius:var(--radius);">
+              <div class="w-8 h-8 border-2 border-[var(--border)] bg-[var(--primary)] flex items-center justify-center flex-shrink-0" style="border-radius:var(--radius);">
+                <i data-lucide="layers" class="icon-sm"></i>
+              </div>
+              <div><p class="text-xs font-bold">Depth</p><p class="text-xs text-[var(--muted-foreground)]">How thorough?</p></div>
+            </div>
+            <div class="border-2 border-[var(--border)] bg-[var(--card)] p-3 flex items-center gap-2" style="border-radius:var(--radius);">
+              <div class="w-8 h-8 border-2 border-[var(--border)] bg-[var(--muted)] flex items-center justify-center flex-shrink-0" style="border-radius:var(--radius);">
+                <i data-lucide="shuffle" class="icon-sm"></i>
+              </div>
+              <div><p class="text-xs font-bold">Transferability</p><p class="text-xs text-[var(--muted-foreground)]">Apply elsewhere?</p></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Feature 5: Tests & Spaced Repetition -->
+    <section class="py-16 space-y-8 fade-in">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
+        <div class="space-y-5">
+          <div class="inline-flex items-center gap-2 border-2 border-[var(--border)] bg-[var(--accent)] px-3 py-1 text-xs font-bold uppercase tracking-wider"
+               style="border-radius:var(--radius); box-shadow:var(--shadow-sm);">
+            <i data-lucide="bell-ring" class="icon-sm"></i> Spaced Repetition
+          </div>
+          <h2 class="text-3xl md:text-4xl font-heading font-bold leading-tight">Tests & Reminders &mdash;<br>Ms. Ebbinghaus<br>Keeps You Sharp</h2>
+          <p class="text-[var(--muted-foreground)] leading-relaxed">
+            Ms. Ebbinghaus tracks every concept and generates targeted practice tests &mdash; multiple choice, fill-in-the-blank, and open-ended questions tailored to your mastery level.
+          </p>
+          <p class="text-[var(--muted-foreground)] leading-relaxed">
+            Stopped caring about a topic? She notices. And she reminds you. Reviews are scheduled at scientifically optimal intervals &mdash; no discipline required.
+          </p>
+          <!-- Mastery tiers -->
+          <div class="border-2 border-[var(--border)] bg-[var(--card)] p-4 space-y-2" style="border-radius:var(--radius);">
+            <p class="text-sm font-bold mb-3">Review Schedule</p>
+            <div class="flex items-center justify-between text-sm">
+              <span class="flex items-center gap-2">
+                <span class="border-2 border-[var(--border)] bg-red-100 dark:bg-red-900 px-2 py-0.5 text-xs font-bold" style="border-radius:var(--radius);">Weak</span>
+                0.0 &ndash; 0.4
+              </span>
+              <span class="font-mono text-xs">1&ndash;2 days</span>
+            </div>
+            <div class="flex items-center justify-between text-sm">
+              <span class="flex items-center gap-2">
+                <span class="border-2 border-[var(--border)] bg-yellow-100 dark:bg-yellow-900 px-2 py-0.5 text-xs font-bold" style="border-radius:var(--radius);">Medium</span>
+                0.4 &ndash; 0.7
+              </span>
+              <span class="font-mono text-xs">5&ndash;7 days</span>
+            </div>
+            <div class="flex items-center justify-between text-sm">
+              <span class="flex items-center gap-2">
+                <span class="border-2 border-[var(--border)] bg-blue-100 dark:bg-blue-900 px-2 py-0.5 text-xs font-bold" style="border-radius:var(--radius);">Strong</span>
+                0.7 &ndash; 0.9
+              </span>
+              <span class="font-mono text-xs">2&ndash;3 weeks</span>
+            </div>
+            <div class="flex items-center justify-between text-sm">
+              <span class="flex items-center gap-2">
+                <span class="border-2 border-[var(--border)] bg-green-100 dark:bg-green-900 px-2 py-0.5 text-xs font-bold" style="border-radius:var(--radius);">Mastered</span>
+                0.9 &ndash; 1.0
+              </span>
+              <span class="font-mono text-xs">Occasional</span>
+            </div>
+          </div>
+        </div>
+        <div class="space-y-4">
+          <div class="screenshot">
+            <img src="docs/screenshots/practice-tests.png" alt="Practice page with scheduled reviews">
+          </div>
+          <div class="screenshot">
+            <img src="docs/screenshots/ebbinghaus.png" alt="Ms. Ebbinghaus review reminders">
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Feature 6: Practice Tests -->
+    <section class="py-16 space-y-8 fade-in">
+      <div class="text-center space-y-4 max-w-2xl mx-auto">
+        <h2 class="text-3xl md:text-4xl font-heading font-bold">Targeted Practice Tests</h2>
+        <p class="text-[var(--muted-foreground)]">Multiple choice, fill-in-the-blank, and open-ended questions &mdash; all generated based on your mastery level. Harder questions for stronger concepts. More fundamentals for weaker ones.</p>
+      </div>
+      <div class="screenshot max-w-3xl mx-auto">
+        <img src="docs/screenshots/practice-test.png" alt="A practice test with multiple question types">
+      </div>
+    </section>
+
+    <!-- Feature 7: Long-Term Memory -->
+    <section class="py-16 space-y-8 fade-in">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
+        <div class="space-y-5">
+          <div class="inline-flex items-center gap-2 border-2 border-[var(--border)] bg-[var(--secondary)] px-3 py-1 text-xs font-bold uppercase tracking-wider"
+               style="border-radius:var(--radius); box-shadow:var(--shadow-sm);">
+            <i data-lucide="database" class="icon-sm"></i> Persistent Memory
+          </div>
+          <h2 class="text-3xl md:text-4xl font-heading font-bold leading-tight">Long-Term Memory &mdash;<br>Powered by<br>EverMemOS</h2>
+          <p class="text-[var(--muted-foreground)] leading-relaxed">
+            Rabbithole doesn't start from zero. Ever. Built on <strong>EverMemOS</strong>, the system maintains a constantly evolving learner profile &mdash; your preferences, strengths, struggles, and facts about how you learn best.
+          </p>
+          <p class="text-[var(--muted-foreground)] leading-relaxed">
+            Every conversation extracts memories. Every session refines the model. Mr. Feynman remembers that you're a visual learner who struggles with abstract math but thrives with concrete examples. He adapts. Across sessions. Across weeks. Across months.
+          </p>
+          <div class="border-2 border-[var(--border)] bg-[var(--primary)] p-4" style="border-radius:var(--radius);">
+            <p class="text-sm font-bold">This is what makes Rabbithole fundamentally different from ChatGPT: your knowledge compounds.</p>
+          </div>
+        </div>
+        <div>
+          <div class="screenshot">
+            <img src="docs/screenshots/feynman-1.png" alt="Mr. Feynman greeting with personalized topic suggestions">
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Feature 8: Knowledge Graph -->
+    <section class="py-16 space-y-8 fade-in">
+      <div class="text-center space-y-4 max-w-2xl mx-auto">
+        <div class="inline-flex items-center gap-2 border-2 border-[var(--border)] bg-[var(--accent)] px-3 py-1 text-xs font-bold uppercase tracking-wider mx-auto"
+             style="border-radius:var(--radius); box-shadow:var(--shadow-sm);">
+          <i data-lucide="share-2" class="icon-sm"></i> Visualization
+        </div>
+        <h2 class="text-3xl md:text-4xl font-heading font-bold">Knowledge Graph</h2>
+        <p class="text-[var(--muted-foreground)]">Every concept you've learned, every connection between them, every mastery score &mdash; visualized as an interactive graph. Topics are clusters. Concepts are nodes colored by mastery tier. Click any concept to see details.</p>
+      </div>
+      <div class="screenshot max-w-5xl mx-auto">
+        <img src="docs/screenshots/knowledge-graph.png" alt="Interactive knowledge graph showing concepts and connections">
+      </div>
+    </section>
+
+    <!-- Feature 9: Memory Graph -->
+    <section class="py-16 space-y-8 fade-in">
+      <div class="text-center space-y-4 max-w-2xl mx-auto">
+        <div class="inline-flex items-center gap-2 border-2 border-[var(--border)] bg-[var(--secondary)] px-3 py-1 text-xs font-bold uppercase tracking-wider mx-auto"
+             style="border-radius:var(--radius); box-shadow:var(--shadow-sm);">
+          <i data-lucide="atom" class="icon-sm"></i> Cognitive Model
+        </div>
+        <h2 class="text-3xl md:text-4xl font-heading font-bold">Memory Graph</h2>
+        <p class="text-[var(--muted-foreground)]">A separate graph powered by EverMemOS showing the memories extracted about you as a learner &mdash; your profile, facts, learning events, and how they connect. This is the cognitive model, made visible.</p>
+      </div>
+      <div class="screenshot max-w-5xl mx-auto">
+        <img src="docs/screenshots/memory-graph.png" alt="Memory graph showing learner profile and extracted memories">
+      </div>
+    </section>
+
+    <!-- ========== INSTALL ========== -->
+    <section id="install" class="py-16 space-y-8 fade-in">
+      <div class="text-center space-y-4 max-w-3xl mx-auto">
+        <div class="inline-flex items-center gap-2 border-2 border-[var(--border)] bg-[var(--primary)] px-3 py-1 text-xs font-bold uppercase tracking-wider mx-auto"
+             style="border-radius:var(--radius); box-shadow:var(--shadow-sm);">
+          <i data-lucide="download" class="icon-sm"></i> Local Install
+        </div>
+        <h2 class="text-3xl md:text-4xl font-heading font-bold">Install Rabbithole on Your Machine</h2>
+        <p class="text-[var(--muted-foreground)]">Rabbithole runs locally on your machine, with your frontend and backend hosted on localhost. The current install still requires cloud credentials for OpenRouter, EverMemOS, and MongoDB Atlas during setup.</p>
+      </div>
+      <div class="border-2 border-[var(--border)] bg-[var(--card)] p-6 md:p-8 max-w-4xl mx-auto space-y-5" style="border-radius:var(--radius); box-shadow:var(--shadow-lg);">
+        <div class="space-y-3">
+          <p class="text-sm font-bold uppercase tracking-wider text-[var(--muted-foreground)]">One-command install</p>
+          <div class="border-2 border-[var(--border)] bg-[#111111] text-[#f8f4e8] px-4 py-4 install-command text-sm md:text-base" style="border-radius:var(--radius); box-shadow:var(--shadow);">
+            curl -fsSL https://www.rabbitholeai.xyz/install.sh | sh
+          </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="border-2 border-[var(--border)] bg-[var(--muted)] p-4" style="border-radius:var(--radius);">
+            <p class="font-heading font-bold mb-3">Prerequisites</p>
+            <ul class="space-y-2 text-sm text-[var(--muted-foreground)]">
+              <li class="flex items-start gap-2"><i data-lucide="check" class="icon-sm text-[var(--primary)] flex-shrink-0 mt-0.5"></i> Python 3.12+</li>
+              <li class="flex items-start gap-2"><i data-lucide="check" class="icon-sm text-[var(--primary)] flex-shrink-0 mt-0.5"></i> Node.js 20+</li>
+              <li class="flex items-start gap-2"><i data-lucide="check" class="icon-sm text-[var(--primary)] flex-shrink-0 mt-0.5"></i> <code>uv</code> and <code>pnpm</code></li>
+              <li class="flex items-start gap-2"><i data-lucide="check" class="icon-sm text-[var(--primary)] flex-shrink-0 mt-0.5"></i> OpenRouter, EverMemOS, and MongoDB Atlas credentials</li>
+            </ul>
+          </div>
+          <div class="border-2 border-[var(--border)] bg-[var(--accent)] p-4" style="border-radius:var(--radius);">
+            <p class="font-heading font-bold mb-3">What setup does</p>
+            <ul class="space-y-2 text-sm">
+              <li class="flex items-start gap-2"><i data-lucide="arrow-right" class="icon-sm flex-shrink-0 mt-0.5"></i> Downloads the latest release</li>
+              <li class="flex items-start gap-2"><i data-lucide="arrow-right" class="icon-sm flex-shrink-0 mt-0.5"></i> Prompts for your config once</li>
+              <li class="flex items-start gap-2"><i data-lucide="arrow-right" class="icon-sm flex-shrink-0 mt-0.5"></i> Installs a local <code>rabbithole</code> launcher</li>
+              <li class="flex items-start gap-2"><i data-lucide="arrow-right" class="icon-sm flex-shrink-0 mt-0.5"></i> Starts the app locally in your browser</li>
+            </ul>
+          </div>
+        </div>
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
+          <a href="https://github.com/sideDesert/rabbithole" target="_blank"
+             class="neo-hover border-2 border-[var(--border)] bg-[var(--card)] px-5 py-3 text-sm font-bold flex items-center gap-2"
+             style="border-radius:var(--radius); box-shadow:var(--shadow);">
+            <i data-lucide="github" class="icon-md"></i> View Source
+          </a>
+          <a href="https://github.com/sideDesert/rabbithole/releases" target="_blank"
+             class="neo-hover border-2 border-[var(--border)] bg-[var(--secondary)] px-5 py-3 text-sm font-bold flex items-center gap-2"
+             style="border-radius:var(--radius); box-shadow:var(--shadow);">
+            <i data-lucide="package" class="icon-md"></i> Browse Releases
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== HOW IT WORKS ========== -->
+    <section id="how-it-works" class="py-16 space-y-8 fade-in">
+      <div class="text-center space-y-4">
+        <h2 class="text-3xl md:text-4xl font-heading font-bold">How It Works</h2>
+        <p class="text-[var(--muted-foreground)] max-w-xl mx-auto">From "I want to learn X" to lasting understanding in 10 steps.</p>
+      </div>
+      <div class="max-w-2xl mx-auto space-y-0">
+        <!-- Steps -->
+        <div class="flex gap-4 items-start py-4">
+          <div class="w-10 h-10 border-2 border-[var(--border)] bg-[var(--primary)] flex items-center justify-center flex-shrink-0 font-heading font-bold text-sm" style="border-radius:var(--radius);">1</div>
+          <div>
+            <p class="font-bold">Mr. Feynman interviews you</p>
+            <p class="text-sm text-[var(--muted-foreground)]">What do you already know? How deep do you want to go?</p>
+          </div>
+        </div>
+        <div class="flex gap-4 items-start py-4">
+          <div class="w-10 h-10 border-2 border-[var(--border)] bg-[var(--secondary)] flex items-center justify-center flex-shrink-0 font-heading font-bold text-sm" style="border-radius:var(--radius);">2</div>
+          <div>
+            <p class="font-bold">Generates a structured study plan</p>
+            <p class="text-sm text-[var(--muted-foreground)]">Phases, concepts, dependencies &mdash; tailored to your level.</p>
+          </div>
+        </div>
+        <div class="flex gap-4 items-start py-4">
+          <div class="w-10 h-10 border-2 border-[var(--border)] bg-[var(--accent)] flex items-center justify-center flex-shrink-0 font-heading font-bold text-sm" style="border-radius:var(--radius);">3</div>
+          <div>
+            <p class="font-bold">You approve (or adjust) the plan</p>
+            <p class="text-sm text-[var(--muted-foreground)]">Full control over what you learn and in what order.</p>
+          </div>
+        </div>
+        <div class="flex gap-4 items-start py-4">
+          <div class="w-10 h-10 border-2 border-[var(--border)] bg-[var(--card)] flex items-center justify-center flex-shrink-0 font-heading font-bold text-sm border-2 border-[var(--border)]" style="border-radius:var(--radius);">4</div>
+          <div>
+            <p class="font-bold">Teaches you concept by concept</p>
+            <p class="text-sm text-[var(--muted-foreground)]">Conversationally, not walls of text. Checks your understanding along the way.</p>
+          </div>
+        </div>
+        <div class="flex gap-4 items-start py-4">
+          <div class="w-10 h-10 border-2 border-[var(--border)] bg-[var(--primary)] flex items-center justify-center flex-shrink-0 font-heading font-bold text-sm" style="border-radius:var(--radius);">5</div>
+          <div>
+            <p class="font-bold">Hit a confusing term? Branch.</p>
+            <p class="text-sm text-[var(--muted-foreground)]">Dive into a rabbit hole. Go deep. Come back where you left off.</p>
+          </div>
+        </div>
+        <div class="flex gap-4 items-start py-4">
+          <div class="w-10 h-10 border-2 border-[var(--border)] bg-[var(--secondary)] flex items-center justify-center flex-shrink-0 font-heading font-bold text-sm" style="border-radius:var(--radius);">6</div>
+          <div>
+            <p class="font-bold">Feynman Mode: explain what you learned</p>
+            <p class="text-sm text-[var(--muted-foreground)]">After each phase, write it down in your own words.</p>
+          </div>
+        </div>
+        <div class="flex gap-4 items-start py-4">
+          <div class="w-10 h-10 border-2 border-[var(--border)] bg-[var(--accent)] flex items-center justify-center flex-shrink-0 font-heading font-bold text-sm" style="border-radius:var(--radius);">7</div>
+          <div>
+            <p class="font-bold">Scored on 4 dimensions</p>
+            <p class="text-sm text-[var(--muted-foreground)]">Clarity, accuracy, depth, transferability &mdash; with specific feedback.</p>
+          </div>
+        </div>
+        <div class="flex gap-4 items-start py-4">
+          <div class="w-10 h-10 border-2 border-[var(--border)] bg-[var(--card)] flex items-center justify-center flex-shrink-0 font-heading font-bold text-sm border-2 border-[var(--border)]" style="border-radius:var(--radius);">8</div>
+          <div>
+            <p class="font-bold">Weak concepts scheduled for review</p>
+            <p class="text-sm text-[var(--muted-foreground)]">Spaced repetition kicks in automatically. No discipline required.</p>
+          </div>
+        </div>
+        <div class="flex gap-4 items-start py-4">
+          <div class="w-10 h-10 border-2 border-[var(--border)] bg-[var(--primary)] flex items-center justify-center flex-shrink-0 font-heading font-bold text-sm" style="border-radius:var(--radius);">9</div>
+          <div>
+            <p class="font-bold">Ms. Ebbinghaus reminds you</p>
+            <p class="text-sm text-[var(--muted-foreground)]">"You learned X 3 days ago. Quick review?" She shows up at the right time.</p>
+          </div>
+        </div>
+        <div class="flex gap-4 items-start py-4">
+          <div class="w-10 h-10 border-2 border-[var(--border)] bg-[var(--secondary)] flex items-center justify-center flex-shrink-0 font-heading font-bold text-sm" style="border-radius:var(--radius);">10</div>
+          <div>
+            <p class="font-bold">Your knowledge compounds</p>
+            <p class="text-sm text-[var(--muted-foreground)]">Gaps get filled. Nothing is forgotten. Learning that actually sticks.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== ARCHITECTURE ========== -->
+    <section id="architecture" class="py-16 space-y-8 fade-in">
+      <div class="text-center space-y-4">
+        <h2 class="text-3xl md:text-4xl font-heading font-bold">Architecture</h2>
+      </div>
+
+      <div class="border-2 border-[var(--border)] bg-[var(--card)] p-8 max-w-3xl mx-auto" style="border-radius:var(--radius); box-shadow:var(--shadow-lg);">
+        <pre class="text-sm leading-relaxed overflow-x-auto"><code>Next.js Frontend  ───SSE/REST───►  FastAPI Backend  ───HTTP───►  EverMemOS Cloud
+   (Chat + Trees)                    (Agent Loop)                 (Long-term Memory)
+                                         │
+                                         ├── Mr. Feynman (teaching agent)
+                                         ├── Ms. Ebbinghaus (review agent)
+                                         ├── MongoDB Atlas (app data)
+                                         └── OpenRouter (LLM provider)</code></pre>
+      </div>
+
+      <!-- Tech stack cards -->
+      <div class="grid grid-cols-2 md:grid-cols-3 gap-4 max-w-3xl mx-auto">
+        <div class="border-2 border-[var(--border)] bg-[var(--card)] p-4 flex items-center gap-3" style="border-radius:var(--radius);">
+          <div class="w-10 h-10 border-2 border-[var(--border)] bg-[var(--muted)] flex items-center justify-center flex-shrink-0" style="border-radius:var(--radius);">
+            <i data-lucide="layout-template" class="icon-md"></i>
+          </div>
+          <div>
+            <p class="text-sm font-bold">Frontend</p>
+            <p class="text-xs text-[var(--muted-foreground)]">Next.js, TypeScript, Tailwind</p>
+          </div>
+        </div>
+        <div class="border-2 border-[var(--border)] bg-[var(--card)] p-4 flex items-center gap-3" style="border-radius:var(--radius);">
+          <div class="w-10 h-10 border-2 border-[var(--border)] bg-[var(--muted)] flex items-center justify-center flex-shrink-0" style="border-radius:var(--radius);">
+            <i data-lucide="server" class="icon-md"></i>
+          </div>
+          <div>
+            <p class="text-sm font-bold">Backend</p>
+            <p class="text-xs text-[var(--muted-foreground)]">FastAPI, OpenAI Agents SDK</p>
+          </div>
+        </div>
+        <div class="border-2 border-[var(--border)] bg-[var(--card)] p-4 flex items-center gap-3" style="border-radius:var(--radius);">
+          <div class="w-10 h-10 border-2 border-[var(--border)] bg-[var(--muted)] flex items-center justify-center flex-shrink-0" style="border-radius:var(--radius);">
+            <i data-lucide="database" class="icon-md"></i>
+          </div>
+          <div>
+            <p class="text-sm font-bold">Database</p>
+            <p class="text-xs text-[var(--muted-foreground)]">MongoDB Atlas</p>
+          </div>
+        </div>
+        <div class="border-2 border-[var(--border)] bg-[var(--card)] p-4 flex items-center gap-3" style="border-radius:var(--radius);">
+          <div class="w-10 h-10 border-2 border-[var(--border)] bg-[var(--muted)] flex items-center justify-center flex-shrink-0" style="border-radius:var(--radius);">
+            <i data-lucide="brain" class="icon-md"></i>
+          </div>
+          <div>
+            <p class="text-sm font-bold">Memory</p>
+            <p class="text-xs text-[var(--muted-foreground)]">EverMemOS Cloud</p>
+          </div>
+        </div>
+        <div class="border-2 border-[var(--border)] bg-[var(--card)] p-4 flex items-center gap-3" style="border-radius:var(--radius);">
+          <div class="w-10 h-10 border-2 border-[var(--border)] bg-[var(--muted)] flex items-center justify-center flex-shrink-0" style="border-radius:var(--radius);">
+            <i data-lucide="sparkles" class="icon-md"></i>
+          </div>
+          <div>
+            <p class="text-sm font-bold">LLM</p>
+            <p class="text-xs text-[var(--muted-foreground)]">OpenRouter</p>
+          </div>
+        </div>
+        <div class="border-2 border-[var(--border)] bg-[var(--card)] p-4 flex items-center gap-3" style="border-radius:var(--radius);">
+          <div class="w-10 h-10 border-2 border-[var(--border)] bg-[var(--muted)] flex items-center justify-center flex-shrink-0" style="border-radius:var(--radius);">
+            <i data-lucide="share-2" class="icon-md"></i>
+          </div>
+          <div>
+            <p class="text-sm font-bold">Graphs</p>
+            <p class="text-xs text-[var(--muted-foreground)]">React Flow, D3</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== CTA ========== -->
+    <section class="py-20 text-center space-y-6 fade-in">
+      <div class="border-2 border-[var(--border)] bg-[var(--card)] p-12 max-w-3xl mx-auto" style="border-radius:var(--radius); box-shadow:var(--shadow-xl);">
+        <h2 class="text-3xl md:text-4xl font-heading font-bold mb-4">Go down the rabbit hole.</h2>
+        <p class="text-lg text-[var(--muted-foreground)] mb-8">Come back smarter.</p>
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <a href="#install"
+             class="neo-hover border-2 border-[var(--border)] bg-[var(--primary)] px-8 py-4 text-lg font-bold flex items-center gap-2"
+             style="border-radius:var(--radius); box-shadow:var(--shadow);">
+            <i data-lucide="terminal" class="icon-lg"></i> Install with One Command
+          </a>
+          <a href="https://github.com/sideDesert/rabbithole" target="_blank"
+             class="neo-hover border-2 border-[var(--border)] bg-[var(--primary)] px-8 py-4 text-lg font-bold flex items-center gap-2"
+             style="border-radius:var(--radius); box-shadow:var(--shadow);">
+            <i data-lucide="github" class="icon-lg"></i> View on GitHub
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== FOOTER ========== -->
+    <footer class="border-t-2 border-[var(--border)] py-8 mt-8">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <i data-lucide="rabbit" class="icon-md text-[var(--primary)]"></i>
+          <span class="font-heading font-bold text-sm">rabbithole</span>
+        </div>
+        <p class="text-xs text-[var(--muted-foreground)]">Built with EverMemOS &middot; Hackathon 2026</p>
+      </div>
+    </footer>
+
+  </div>
+
+  <script>
+    // Theme toggle
+    function toggleTheme() {
+      const html = document.documentElement;
+      if (html.classList.contains('dark')) {
+        html.classList.remove('dark');
+        html.classList.add('light');
+      } else {
+        html.classList.remove('light');
+        html.classList.add('dark');
+      }
+      syncThemeButton();
+    }
+
+    function syncThemeButton() {
+      const html = document.documentElement;
+      const btn = document.getElementById('theme-btn');
+      if (!btn) return;
+      const icon = html.classList.contains('dark') ? 'sun' : 'moon';
+      btn.innerHTML = '<i data-lucide="' + icon + '" class="icon-sm"></i>';
+      lucide.createIcons();
+    }
+
+    // Initialize Lucide icons
+    syncThemeButton();
+
+    // Scroll-triggered fade-in
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+  </script>
+</body>
+</html>

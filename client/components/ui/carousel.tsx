@@ -7,7 +7,7 @@ import useEmblaCarousel, {
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { AltArrowLeftBoldDuotone, AltArrowRightBoldDuotone } from "solar-icon-set"
+import { ChevronLeft, ChevronRight } from "lucide-react"
 
 type CarouselApi = UseEmblaCarouselType[1]
 type UseCarouselParameters = Parameters<typeof useEmblaCarousel>
@@ -181,7 +181,7 @@ function CarouselPrevious({
     <button
       data-slot="carousel-previous"
       className={cn(
-        "absolute touch-manipulation rounded-full size-8 flex items-center justify-center border border-border bg-background text-foreground hover:bg-muted disabled:opacity-50 disabled:pointer-events-none",
+        "absolute touch-manipulation rounded-md size-8 flex items-center justify-center border-2 border-border bg-background text-foreground shadow-sm hover:bg-muted disabled:opacity-50 disabled:pointer-events-none",
         orientation === "horizontal"
           ? "top-1/2 -left-12 -translate-y-1/2"
           : "-top-12 left-1/2 -translate-x-1/2 rotate-90",
@@ -191,7 +191,7 @@ function CarouselPrevious({
       onClick={scrollPrev}
       {...props}
     >
-      <AltArrowLeftBoldDuotone className="size-4" />
+      <ChevronLeft className="size-4" />
       <span className="sr-only">Previous slide</span>
     </button>
   )
@@ -207,7 +207,7 @@ function CarouselNext({
     <button
       data-slot="carousel-next"
       className={cn(
-        "absolute touch-manipulation rounded-full size-8 flex items-center justify-center border border-border bg-background text-foreground hover:bg-muted disabled:opacity-50 disabled:pointer-events-none",
+        "absolute touch-manipulation rounded-md size-8 flex items-center justify-center border-2 border-border bg-background text-foreground shadow-sm hover:bg-muted disabled:opacity-50 disabled:pointer-events-none",
         orientation === "horizontal"
           ? "top-1/2 -right-12 -translate-y-1/2"
           : "-bottom-12 left-1/2 -translate-x-1/2 rotate-90",
@@ -217,7 +217,7 @@ function CarouselNext({
       onClick={scrollNext}
       {...props}
     >
-      <AltArrowRightBoldDuotone className="size-4" />
+      <ChevronRight className="size-4" />
       <span className="sr-only">Next slide</span>
     </button>
   )

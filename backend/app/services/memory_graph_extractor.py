@@ -8,16 +8,15 @@ import json
 import logging
 from datetime import datetime, timezone
 
-from openai import AsyncOpenAI
+
 from pymongo import UpdateOne
 
-from app.config import LLM_API_KEY, LLM_BASE_URL, DEFAULT_MODEL
+from app.config import get_config, get_llm
 from app.db import mongo
 from app.memory import evermemos
 
 logger = logging.getLogger(__name__)
 
-_llm = AsyncOpenAI(base_url=LLM_BASE_URL, api_key=LLM_API_KEY)
 
 EXTRACTION_PROMPT = """\
 You are analyzing a learner's memory records to build a knowledge graph of \
@@ -138,8 +137,8 @@ async def _do_extraction(user_id: str) -> None:
 
     memcell_ids = [str(mc.get("id", mc.get("_id", ""))) for mc in memcells if mc.get("id") or mc.get("_id")]
 
-    response = await _llm.chat.completions.create(
-        model=DEFAULT_MODEL,
+    response = await get_llm().chat.completions.create(
+        model=get_config().default_model,
         messages=[
             {"role": "system", "content": EXTRACTION_PROMPT},
             {"role": "user", "content": input_text},

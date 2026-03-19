@@ -29,14 +29,19 @@ export interface ChatMessage {
   id: string;
   role: "user" | "assistant" | "system";
   content: string;
-  type?: "text" | "plan_card" | "phase_divider";
-  metadata?: { topicSlug?: string };
+  type?: "text" | "plan_card" | "phase_divider" | "notification";
+  metadata?: {
+    topicSlug?: string;
+    notificationType?: "overdue_review" | "stale_topic";
+    conceptName?: string;
+  };
   statusMessage?: string;
   toolCalls?: ToolCallEntry[];
 }
 
 interface UseChatOptions {
   threadId?: string | null;
+  agent?: string;
   onThreadCreated?: (threadId: string) => void;
   onPlanCreated?: (topicSlug: string) => void;
 }
@@ -64,6 +69,7 @@ interface UseChatReturn {
 
 export function useChat({
   threadId: initialThreadId = null,
+  agent: agentType,
   onThreadCreated,
   onPlanCreated,
 }: UseChatOptions = {}): UseChatReturn {
@@ -133,6 +139,20 @@ export function useChat({
             type: "text" as const,
           };
         }
+        if (m.type === "notification") {
+          const meta = (m as any).metadata;
+          return {
+            id: m.id,
+            role: m.role as "user" | "assistant",
+            content: m.content,
+            type: "notification" as const,
+            metadata: {
+              notificationType: meta?.notification_type ?? "stale_topic",
+              topicSlug: meta?.topic_slug ?? "",
+              conceptName: meta?.concept_name ?? "",
+            },
+          };
+        }
         return {
           id: m.id,
           role: m.role as "user" | "assistant",
@@ -154,7 +174,7 @@ export function useChat({
   });
 
   const createThreadMutation = useMutation({
-    mutationFn: createThread,
+    mutationFn: (content: string) => createThread(content, agentType),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["thread-tree"] });
     },

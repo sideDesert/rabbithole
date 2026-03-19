@@ -1,5 +1,5 @@
 import { type NodeProps } from "@xyflow/react";
-import { ChatSquareBoldDuotone } from "solar-icon-set";
+import { MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { NodeHandles } from "./node-handles";
 
@@ -10,31 +10,30 @@ interface KgThreadNodeData {
   thread_depth: number;
 }
 
-const phaseColor: Record<string, string> = {
-  interview: "#a78bfa",   // violet
-  planning: "#fbbf24",    // amber
-  teaching: "#34d399",    // emerald
+const PHASE_COLORS: Record<string, string> = {
+  interview: "var(--graph-phase-interview)",
+  planning:  "var(--graph-phase-planning)",
+  teaching:  "var(--primary)",
 };
 
 export function KgThreadNode({ data, selected }: NodeProps) {
   const d = data as unknown as KgThreadNodeData;
-  const color = phaseColor[d.thread_phase] ?? "#64748b";
+  const color = PHASE_COLORS[d.thread_phase] ?? "var(--color-undiscovered)";
 
   return (
     <div
       className={cn(
-        "rounded-md px-3 py-2 min-w-[120px] max-w-[180px] cursor-pointer transition-all bg-card",
+        "rounded-md px-3 py-2 min-w-[120px] max-w-[180px] cursor-pointer transition-all bg-card border-2 border-border shadow-sm",
         selected && "ring-2 ring-primary/50",
       )}
       style={{
-        border: `1.5px solid ${color}`,
         boxShadow: "var(--graph-node-shadow)",
       }}
     >
       <NodeHandles />
 
       <div className="flex items-center gap-1.5">
-        <ChatSquareBoldDuotone size={14} className="shrink-0" color={color} />
+        <MessageSquare size={14} className="shrink-0" color={color} />
         <p className="text-[11px] font-medium text-foreground truncate">{d.display_name}</p>
       </div>
       <p className="text-[9px] text-muted-foreground mt-0.5 capitalize">{d.thread_phase}</p>

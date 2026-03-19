@@ -3,11 +3,11 @@
 import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { useEbbinghaus } from "@/hooks/use-ebbinghaus";
-import { TestQuestion } from "@/components/ebbinghaus/test-question";
+import { usePractice } from "@/hooks/use-practice";
+import { TestQuestion } from "@/components/practice/test-question";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeftBoldDuotone, RefreshBoldDuotone } from "solar-icon-set";
+import { ArrowLeft, RefreshCw } from "lucide-react";
 
 function ScoreBar({
   label,
@@ -22,7 +22,7 @@ function ScoreBar({
         <span className="text-muted-foreground">{label}</span>
         <span className="font-medium">{Math.round(value * 100)}%</span>
       </div>
-      <div className="h-2 w-full rounded-full bg-muted">
+      <div className="h-2 w-full rounded-full bg-muted border border-border">
         <div
           className="h-full rounded-full bg-primary transition-all"
           style={{ width: `${Math.round(value * 100)}%` }}
@@ -37,7 +37,7 @@ export default function TestPage() {
     <Suspense
       fallback={
         <div className="max-w-3xl mx-auto px-6 py-24 text-center">
-          <RefreshBoldDuotone className="h-8 w-8 animate-spin mx-auto text-muted-foreground" />
+          <RefreshCw className="h-8 w-8 animate-spin mx-auto text-muted-foreground" />
         </div>
       }
     >
@@ -60,7 +60,7 @@ function TestPageInner() {
     allAnswered,
     updateAnswer,
     submit,
-  } = useEbbinghaus(conceptName, topicSlug);
+  } = usePractice(conceptName, topicSlug);
 
   if (!conceptName || !topicSlug) {
     return (
@@ -68,9 +68,9 @@ function TestPageInner() {
         <p className="text-muted-foreground">
           Missing concept or topic. Go back and select a concept to test.
         </p>
-        <Link href="/ebbinghaus">
+        <Link href="/practice">
           <Button variant="ghost" className="mt-4">
-            <ArrowLeftBoldDuotone className="mr-2 h-4 w-4" /> Back to Ebbinghaus
+            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Practice
           </Button>
         </Link>
       </div>
@@ -81,7 +81,7 @@ function TestPageInner() {
   if (phase === "loading") {
     return (
       <div className="max-w-3xl mx-auto px-6 py-24 text-center space-y-4">
-        <RefreshBoldDuotone className="h-8 w-8 animate-spin mx-auto text-muted-foreground" />
+        <RefreshCw className="h-8 w-8 animate-spin mx-auto text-muted-foreground" />
         <p className="text-muted-foreground">
           Generating your review test for <strong>{conceptName}</strong>...
         </p>
@@ -94,9 +94,9 @@ function TestPageInner() {
     return (
       <div className="max-w-3xl mx-auto px-6 py-12 text-center space-y-4">
         <p className="text-red-500">{error}</p>
-        <Link href="/ebbinghaus">
+        <Link href="/practice">
           <Button variant="ghost">
-            <ArrowLeftBoldDuotone className="mr-2 h-4 w-4" /> Back to Ebbinghaus
+            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Practice
           </Button>
         </Link>
       </div>
@@ -109,9 +109,9 @@ function TestPageInner() {
     return (
       <div className="max-w-3xl mx-auto px-6 py-8 space-y-8">
         <div>
-          <Link href="/ebbinghaus">
+          <Link href="/practice">
             <Button variant="ghost" size="sm">
-              <ArrowLeftBoldDuotone className="mr-2 h-4 w-4" /> Back
+              <ArrowLeft className="mr-2 h-4 w-4" /> Back
             </Button>
           </Link>
         </div>
@@ -124,7 +124,7 @@ function TestPageInner() {
         </div>
 
         {/* Score dimensions */}
-        <div className="rounded-xl border border-border p-5 space-y-3">
+        <div className="rounded-lg border-2 border-border shadow-md p-5 space-y-3">
           <h3 className="text-sm font-medium">Score Breakdown</h3>
           <ScoreBar label="Accuracy" value={scores.accuracy} />
           <ScoreBar label="Depth" value={scores.depth} />
@@ -133,7 +133,7 @@ function TestPageInner() {
         </div>
 
         {/* Mastery update */}
-        <div className="rounded-xl border border-border p-5 space-y-2">
+        <div className="rounded-lg border-2 border-border shadow-md p-5 space-y-2">
           <h3 className="text-sm font-medium">Mastery Update</h3>
           <div className="flex items-center gap-3 text-sm">
             <span className="text-muted-foreground">
@@ -153,7 +153,7 @@ function TestPageInner() {
 
         {/* Overall feedback */}
         {results.feedback && (
-          <div className="rounded-xl border border-border p-5">
+          <div className="rounded-lg border-2 border-border shadow-md p-5">
             <h3 className="text-sm font-medium mb-2">Feedback</h3>
             <p className="text-sm text-muted-foreground">{results.feedback}</p>
           </div>
@@ -181,8 +181,8 @@ function TestPageInner() {
         </div>
 
         <div className="text-center pb-8">
-          <Link href="/ebbinghaus">
-            <Button>Back to Ebbinghaus</Button>
+          <Link href="/practice">
+            <Button>Back to Practice</Button>
           </Link>
         </div>
       </div>
@@ -194,9 +194,9 @@ function TestPageInner() {
     <div className="max-w-3xl mx-auto px-6 py-8 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <Link href="/ebbinghaus">
+          <Link href="/practice">
             <Button variant="ghost" size="sm">
-              <ArrowLeftBoldDuotone className="mr-2 h-4 w-4" /> Back
+              <ArrowLeft className="mr-2 h-4 w-4" /> Back
             </Button>
           </Link>
         </div>
@@ -215,7 +215,7 @@ function TestPageInner() {
             {test?.questions.length || 0}
           </span>
         </div>
-        <div className="h-1.5 w-full rounded-full bg-muted">
+        <div className="h-1.5 w-full rounded-full bg-muted border border-border">
           <div
             className="h-full rounded-full bg-primary transition-all"
             style={{
@@ -255,7 +255,7 @@ function TestPageInner() {
         >
           {phase === "submitting" ? (
             <>
-              <RefreshBoldDuotone className="mr-2 h-4 w-4 animate-spin" />
+              <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
               Scoring...
             </>
           ) : (

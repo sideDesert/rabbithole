@@ -25,7 +25,7 @@ class Thread(MongoBase):
     root_thread_id: str | None = None  # set to self id if root
     branch_point_id: str | None = None
     branch_source_message_id: str | None = None
-    agent: Literal["feynman", "ebbinghaus"] = "feynman"
+    agent: Literal["feynman", "ebbinghaus", "practice"] = "feynman"
     evermemos_group_id: str
     closed_at: datetime | None = None
     pending_test: str | None = None  # concept name if a test is pending
@@ -35,3 +35,5 @@ class Thread(MongoBase):
     parent_summary: str | None = None   # LLM-compacted summary of parent conversation (populated async)
     branch_text: str | None = None      # highlighted text / branch topic
     token_usage: TokenUsage = TokenUsage()
+    is_notification_thread: bool = False
+    last_notified_at: datetime | None = None

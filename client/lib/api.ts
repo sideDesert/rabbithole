@@ -5,7 +5,7 @@
 
 import { PHASE_TYPE } from "next/dist/shared/lib/constants";
 
-const API_BASE = "http://localhost:8000/api";
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000/api";
 
 // ── Types ────────────────────────────────────────────────────────────────
 
@@ -67,11 +67,12 @@ export interface Message {
 
 export async function createThread(
   content: string,
+  agent?: string,
 ): Promise<{ thread_id: string; phase: string }> {
   const res = await fetch(`${API_BASE}/threads`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ content }),
+    body: JSON.stringify({ content, agent: agent ?? null }),
   });
   return res.json();
 }
@@ -114,10 +115,11 @@ export interface ThreadTreeNode {
   children: ThreadTreeNode[];
 }
 
-export async function fetchThreadTrees(): Promise<{
+export async function fetchThreadTrees(agent?: string): Promise<{
   trees: ThreadTreeNode[];
 }> {
-  const res = await fetch(`${API_BASE}/threads/tree`);
+  const params = agent ? `?agent=${agent}` : "";
+  const res = await fetch(`${API_BASE}/threads/tree${params}`);
   return res.json();
 }
 
@@ -250,6 +252,7 @@ export interface Branch {
   status: string;
   phase: string;
   depth: number;
+  first_message?: string;
 }
 
 export async function listBranches(
@@ -419,6 +422,7 @@ export async function getFeynmanNotes(
 
 export interface Evaluation {
   id: string;
+  test_type: "feynman" | "practice";
   concept_name: string;
   topic_slug: string;
   overall_score: number;
@@ -435,13 +439,19 @@ export interface Evaluation {
     next_review: string;
   } | null;
   created_at: string;
+  // Practice-specific fields
+  questions?: PracticeQuestion[];
+  answers?: { question_id: string; answer: string }[];
+  per_question_results?: QuestionFeedback[];
 }
 
 export async function getEvaluations(
   topicSlug?: string,
+  testType?: "feynman" | "practice",
 ): Promise<{ evaluations: Evaluation[] }> {
   const params = new URLSearchParams();
   if (topicSlug) params.set("topic_slug", topicSlug);
+  if (testType) params.set("test_type", testType);
   const res = await fetch(`${API_BASE}/feynman/evaluations?${params}`);
   if (!res.ok) throw new Error("Failed to get evaluations");
   return res.json();
@@ -476,9 +486,9 @@ export async function createNextPhaseThread(
   return res.json();
 }
 
-// ── Ebbinghaus (Testing Agent) ───────────────────────────────────────────
+// ── Practice (Testing Agent) ───────────────────────────────────────────
 
-export interface EbbinghausQuestion {
+export interface PracticeQuestion {
   id: string;
   type:
     | "mcq_single"
@@ -495,7 +505,7 @@ export interface EbbinghausQuestion {
 export interface GenerateTestResponse {
   test_id: string;
   concept_name: string;
-  questions: EbbinghausQuestion[];
+  questions: PracticeQuestion[];
   error?: string;
   message?: string;
 }
@@ -550,7 +560,7 @@ export interface TestableTopic {
 }
 
 export async function getPendingTests(): Promise<{ tests: PendingTest[] }> {
-  const res = await fetch(`${API_BASE}/ebbinghaus/pending`);
+  const res = await fetch(`${API_BASE}/practice/pending`);
   if (!res.ok) throw new Error("Failed to fetch pending tests");
   return res.json();
 }
@@ -558,7 +568,7 @@ export async function getPendingTests(): Promise<{ tests: PendingTest[] }> {
 export async function getTestableTopics(): Promise<{
   topics: TestableTopic[];
 }> {
-  const res = await fetch(`${API_BASE}/ebbinghaus/topics`);
+  const res = await fetch(`${API_BASE}/practice/topics`);
   if (!res.ok) throw new Error("Failed to fetch testable topics");
   return res.json();
 }
@@ -567,7 +577,7 @@ export async function generateTest(
   conceptName: string,
   topicSlug: string,
 ): Promise<GenerateTestResponse> {
-  const res = await fetch(`${API_BASE}/ebbinghaus/generate`, {
+  const res = await fetch(`${API_BASE}/practice/generate`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -583,7 +593,7 @@ export async function submitTest(
   testId: string,
   answers: { question_id: string; answer: string }[],
 ): Promise<TestSubmitResponse> {
-  const res = await fetch(`${API_BASE}/ebbinghaus/submit`, {
+  const res = await fetch(`${API_BASE}/practice/submit`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ test_id: testId, answers }),
@@ -602,7 +612,7 @@ export async function getTestHistory(): Promise<{
     created_at: string;
   }[];
 }> {
-  const res = await fetch(`${API_BASE}/ebbinghaus/history`);
+  const res = await fetch(`${API_BASE}/practice/history`);
   if (!res.ok) throw new Error("Failed to fetch test history");
   return res.json();
 }

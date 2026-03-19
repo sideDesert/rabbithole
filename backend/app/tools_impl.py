@@ -5,19 +5,21 @@ They receive context via RunContextWrapper[AgentContext].
 """
 
 import json
+import logging
 import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any
 
 from agents import RunContextWrapper, function_tool
-from openai import AsyncOpenAI
 
-from app.config import PLANS_DIR, LLM_API_KEY, LLM_BASE_URL, PLANNING_MODEL
+from app.config import PLANS_DIR, get_config, get_llm
 from app.db import mongo
 from app.memory import evermemos
 from app.models.base import new_object_id
 from app.plan_parser import parse_plan
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -42,6 +44,17 @@ class AgentContext:
 # ── Memory Tools ────────────────────────────────────────────────────────────
 
 
+def _simplify_memory(m: dict[str, Any]) -> dict[str, Any]:
+    """Extract the readable text from an EverMemOS memory record."""
+    text = m.get("episode") or m.get("summary") or m.get("content") or ""
+    return {
+        "text": text,
+        "memory_type": m.get("memory_type", ""),
+        "timestamp": m.get("timestamp", ""),
+        "score": m.get("score", 0),
+    }
+
+
 @function_tool
 async def recall_memory(
     ctx: RunContextWrapper[AgentContext], query: str
@@ -58,22 +71,48 @@ async def recall_memory(
         if not memories:
             return json.dumps({"memories": [], "note": "No memories found for this query."})
 
-        simplified = []
-        for m in memories:
-            entry: dict[str, Any] = {}
-            if "summary" in m:
-                entry["summary"] = m["summary"]
-            if "atomic_fact" in m:
-                entry["fact"] = m["atomic_fact"]
-            if "content" in m:
-                entry["content"] = m["content"]
-            if "episode" in m:
-                entry["episode"] = m["episode"]
-            simplified.append(entry)
-
+        simplified = [_simplify_memory(m) for m in memories if _simplify_memory(m)["text"]]
         return json.dumps({"memories": simplified})
     except Exception as e:
         return json.dumps({"error": f"Memory search failed: {e}", "memories": []})
+
+
+@function_tool
+async def recall_memory_agentic(
+    ctx: RunContextWrapper[AgentContext], query: str
+) -> str:
+    """Search the learner's long-term memory using intelligent agentic retrieval.
+
+    Use this tool when the user asks about something they've learned, studied,
+    or discussed before. Craft a specific, detailed query for best results.
+    Do NOT call this for greetings, thanks, or casual conversation.
+    """
+    try:
+        resp = await evermemos.search_memories(
+            user_id=ctx.context.user_id,
+            query=query,
+            retrieve_method="agentic",
+            top_k=20,
+        )
+        result = resp.get("result", {})
+        memories = result.get("memories", [])
+        profiles = result.get("profiles", [])
+
+        profile_items = [
+            {"label": p.get("category") or p.get("trait_name") or "trait", "description": p.get("description", "")}
+            for p in profiles
+        ]
+        memory_items = [_simplify_memory(m) for m in memories if _simplify_memory(m)["text"]]
+
+        return json.dumps({
+            "profiles": profile_items,
+            "memories": memory_items,
+            "memory_count": len(memory_items),
+            "profile_count": len(profile_items),
+        })
+    except Exception as e:
+        logger.warning("EverMemOS agentic retrieval failed: %s", e)
+        return json.dumps({"error": f"Memory search failed: {e}", "memories": [], "profiles": []})
 
 
 @function_tool
@@ -232,7 +271,7 @@ async def create_plan(
     depth: str = "deep_dive",
 ) -> str:
     """Generate an expert-depth learning plan. Call this when you have enough context from the interview. The plan is saved and the thread transitions to planning phase."""
-    llm = AsyncOpenAI(base_url=LLM_BASE_URL, api_key=LLM_API_KEY)
+    llm = get_llm()
 
     user_message = (
         f"Create a learning plan for: {topic}\n"
@@ -241,7 +280,7 @@ async def create_plan(
     )
 
     response = await llm.chat.completions.create(
-        model=PLANNING_MODEL,
+        model=get_config().planning_model,
         messages=[
             {"role": "system", "content": PLAN_GENERATION_SYSTEM},
             {"role": "user", "content": user_message},
@@ -394,10 +433,10 @@ async def suggest_branches(
     context: str,
 ) -> str:
     """Suggest 2-3 related sub-topics the learner might want to explore as rabbit holes."""
-    llm = AsyncOpenAI(base_url=LLM_BASE_URL, api_key=LLM_API_KEY)
+    llm = get_llm()
 
     response = await llm.chat.completions.create(
-        model=PLANNING_MODEL,
+        model=get_config().planning_model,
         messages=[
             {
                 "role": "system",

@@ -1,12 +1,12 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import {
-  ChecklistBoldDuotone,
-  ArrowRightBoldDuotone,
-  CourseUpBoldDuotone,
-  PlayBoldDuotone,
-} from "solar-icon-set";
+  ListChecks,
+  ArrowRight,
+  GraduationCap,
+  Play,
+} from "lucide-react";
 import { usePlan } from "./plan-context";
 import { useStudyTopics } from "@/hooks/use-study-topics";
 import { useState } from "react";
@@ -23,8 +23,11 @@ function formatTitle(slug: string) {
 export function PlanCreatedCard({ topicSlug, onStart }: PlanCreatedCardProps) {
   const { setActiveTab } = usePlan();
   const { topics } = useStudyTopics();
+  const params = useParams();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const currentThreadId =
+    typeof params?.threadId === "string" ? params.threadId : null;
 
   const topic = topics.find((t) => t.topic_slug === topicSlug);
   // "Started" means child threads exist (user clicked Start Learning),
@@ -48,11 +51,21 @@ export function PlanCreatedCard({ topicSlug, onStart }: PlanCreatedCardProps) {
     }
   };
 
+  const handleViewPlan = () => {
+    const threadId =
+      topic?.latest_thread.id ?? topic?.root_thread_id ?? currentThreadId;
+    if (threadId) {
+      router.push(`/threads/${threadId}?tab=plan-mode`);
+      return;
+    }
+    setActiveTab("plan-mode");
+  };
+
   return (
-    <div className="border border-border rounded-xl p-4 bg-card max-w-sm">
+    <div className="border-2 border-border rounded-lg shadow-md p-4 bg-card max-w-sm card-hover">
       <div className="flex items-start gap-3">
-        <div className="p-2 rounded-lg bg-primary/10">
-          <ChecklistBoldDuotone className="size-5 text-primary" />
+        <div className="p-2 rounded-md bg-primary/10">
+          <ListChecks className="size-5 text-primary" />
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium">
@@ -77,9 +90,9 @@ export function PlanCreatedCard({ topicSlug, onStart }: PlanCreatedCardProps) {
             <span className="text-muted-foreground">Progress</span>
             <span className="font-medium">{percent}%</span>
           </div>
-          <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+          <div className="h-1.5 w-full rounded-sm bg-muted border border-border overflow-hidden">
             <div
-              className="h-full rounded-full bg-primary transition-all duration-500"
+              className="h-full rounded-sm bg-primary transition-all duration-500"
               style={{ width: `${percent}%` }}
             />
           </div>
@@ -90,32 +103,33 @@ export function PlanCreatedCard({ topicSlug, onStart }: PlanCreatedCardProps) {
       )}
       <div className="flex gap-2 mt-3">
         <button
-          onClick={() => setActiveTab("plan-mode")}
-          className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium hover:bg-accent transition-colors cursor-pointer"
+          onClick={handleViewPlan}
+          className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-md border-2 border-border px-3 py-1.5 text-xs font-medium neo-hover transition-colors cursor-pointer"
         >
-          <ChecklistBoldDuotone className="size-3" />
+          <ListChecks className="size-3" />
           View Plan
         </button>
-        {hasStarted ? (
+        {hasStarted && (
           <button
             onClick={() => router.push(`/threads/${topic.latest_thread.id}`)}
-            className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors cursor-pointer"
+            className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-md border-2 border-border bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground neo-hover transition-colors cursor-pointer"
           >
-            <CourseUpBoldDuotone className="size-3" />
+            <GraduationCap className="size-3" />
             Continue Learning
-            <ArrowRightBoldDuotone className="size-3" />
+            <ArrowRight className="size-3" />
           </button>
-        ) : onStart ? (
+        )}
+        {!hasStarted && (
           <button
             onClick={handleStart}
             disabled={loading}
-            className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 cursor-pointer"
+            className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-md border-2 border-border bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground neo-hover transition-colors disabled:opacity-50 cursor-pointer"
           >
-            <PlayBoldDuotone className="size-3" />
+            <Play className="size-3" />
             {loading ? "Starting..." : "Start Learning"}
-            {!loading && <ArrowRightBoldDuotone className="size-3" />}
+            {!loading && <ArrowRight className="size-3" />}
           </button>
-        ) : null}
+        )}
       </div>
     </div>
   );

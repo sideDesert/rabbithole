@@ -16,7 +16,7 @@ import {
 import "@xyflow/react/dist/style.css";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
-import { GraphBoldDuotone } from "solar-icon-set";
+import { Network } from "lucide-react";
 
 import { useThreadMap } from "@/hooks/use-thread-map";
 import { layoutGraph } from "@/lib/graph-layout";
@@ -100,7 +100,7 @@ function ThreadMapInner({ threadId }: { threadId: string }) {
   if (!data?.nodes?.length) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground">
-        <GraphBoldDuotone size={40} style={{ opacity: 0.4 }} />
+        <Network size={40} style={{ opacity: 0.4 }} />
         <p>No thread data available.</p>
       </div>
     );
@@ -188,7 +188,7 @@ function ThreadMapInner({ threadId }: { threadId: string }) {
       </PreviewPanel>
 
       {data.nodes.length === 1 && (
-        <div className="absolute bottom-16 left-1/2 -translate-x-1/2 text-xs text-muted-foreground bg-card/80 backdrop-blur px-3 py-1.5 rounded-full border border-border">
+        <div className="absolute bottom-16 left-1/2 -translate-x-1/2 text-xs text-muted-foreground bg-card px-3 py-1.5 rounded-lg border-2 border-border shadow-sm">
           No branches yet — explore a sub-topic to grow the tree
         </div>
       )}

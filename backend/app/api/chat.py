@@ -17,20 +17,13 @@ from typing import Literal
 from agents import ItemHelpers, Runner
 from fastapi import APIRouter, BackgroundTasks, HTTPException
 from fastapi.responses import StreamingResponse
-from openai import AsyncOpenAI
+
 from openai.types.responses import EasyInputMessageParam, ResponseTextDeltaEvent
 from pydantic import BaseModel
 
 from app.agent.phases import apply_transition, should_transition
-from app.agent_core import build_agent
-from app.config import (
-    COMPACTION_THRESHOLD,
-    DEFAULT_MODEL,
-    LLM_API_KEY,
-    LLM_BASE_URL,
-    PLANS_DIR,
-    get_model_context_window,
-)
+from app.agent_core import build_agent, build_ebbinghaus_agent
+from app.config import PLANS_DIR, get_config, get_llm, get_model_context_window
 from app.db import mongo
 from app.models.base import new_object_id, utcnow
 from app.models.branch_point import BranchPoint, TextPosition
@@ -46,14 +39,13 @@ MessageRole = Literal["user", "assistant", "system"]
 router = APIRouter(prefix="/api", tags=["chat"])
 logger = logging.getLogger(__name__)
 
-llm = AsyncOpenAI(base_url=LLM_BASE_URL, api_key=LLM_API_KEY)
-
 
 # ── Request/Response models ───────────────────────────────────────────────
 
 
 class ChatRequest(BaseModel):
     content: str
+    agent: Literal["feynman", "ebbinghaus"] | None = None
 
 
 class BranchRequest(BaseModel):
@@ -127,11 +119,12 @@ def load_parent_context(thread: dict[str, object]) -> list[EasyInputMessageParam
         else 0
     )
     context_window = get_model_context_window()
-    if parent_input_tokens > context_window * COMPACTION_THRESHOLD:
+    compaction = get_config().compaction_threshold
+    if parent_input_tokens > context_window * compaction:
         logger.info(
             "[chat] parent too large (%d tokens > %d threshold), using summary",
             parent_input_tokens,
-            int(context_window * COMPACTION_THRESHOLD),
+            int(context_window * compaction),
         )
         return []
 
@@ -190,6 +183,7 @@ def save_message(
         "tool_result",
         "plan_card",
         "interview_questions",
+        "notification",
     ],
     group_id: str,
     index: int,
@@ -243,8 +237,8 @@ def clean_title(raw: str) -> str:
 async def generate_thread_title(user_msg: str, assistant_msg: str) -> str:
     """Generate a concise thread title from the first exchange."""
     try:
-        response = await llm.chat.completions.create(
-            model=DEFAULT_MODEL,
+        response = await get_llm().chat.completions.create(
+            model=get_config().default_model,
             messages=[
                 {"role": "system", "content": TITLE_GENERATION_PROMPT},
                 {
@@ -283,8 +277,8 @@ async def compact_parent_context(
             lines.append(f"{speaker}: {content}")
 
     transcript = "\n".join(lines)
-    response = await llm.chat.completions.create(
-        model=DEFAULT_MODEL,
+    response = await get_llm().chat.completions.create(
+        model=get_config().default_model,
         messages=[
             {"role": "system", "content": COMPACTION_PROMPT},
             {
@@ -320,12 +314,14 @@ async def create_thread(req: ChatRequest):
 
     user_id = "user_001"
     group_id = str(uuid.uuid4())
+    agent_type = req.agent or "feynman"
     thread = Thread(
         user_id=user_id,
         title=req.content[:100],
         topic_slug="",
         evermemos_group_id=group_id,
-        phase="interview",
+        phase="interview" if agent_type == "feynman" else "teaching",
+        agent=agent_type,
     )
     thread.root_thread_id = thread.id
     _ = mongo.threads().insert_one(thread.to_doc())
@@ -333,7 +329,7 @@ async def create_thread(req: ChatRequest):
     # Register conversation metadata so EverMemOS knows the scene type
     await evermemos.ensure_conversation_meta(group_id=group_id, user_id=user_id)
 
-    return {"thread_id": thread.id, "phase": "interview"}
+    return {"thread_id": thread.id, "phase": thread.phase}
 
 
 @router.get("/threads")
@@ -347,10 +343,13 @@ def list_threads():
 
 
 @router.get("/threads/tree")
-def get_all_trees():
+def get_all_trees(agent: str | None = None):
     """Return branch trees for all root threads belonging to the user."""
     user_id = "user_001"
-    all_threads = list(mongo.threads().find({"user_id": user_id}))
+    query: dict = {"user_id": user_id, "is_notification_thread": {"$ne": True}}
+    if agent:
+        query["agent"] = agent
+    all_threads = list(mongo.threads().find(query))
 
     by_parent: dict[str, list[str]] = {}
     thread_map: dict[str, dict[str, object]] = {}
@@ -572,7 +571,7 @@ def get_messages(thread_id: str):
             {
                 "thread_id": thread_id,
                 "type": {
-                    "$in": ["text", "markdown", "plan_card", "interview_questions"]
+                    "$in": ["text", "markdown", "plan_card", "interview_questions", "notification"]
                 },
             }
         )
@@ -580,14 +579,15 @@ def get_messages(thread_id: str):
     )
     messages: list[dict[str, object]] = []
     for doc in docs:
-        messages.append(
-            {
-                "id": str(doc.get("_id", "")),
-                "role": str(doc["role"]),
-                "content": str(doc["content"]),
-                "type": str(doc.get("type", "text")),
-            }
-        )
+        entry: dict[str, object] = {
+            "id": str(doc.get("_id", "")),
+            "role": str(doc["role"]),
+            "content": str(doc["content"]),
+            "type": str(doc.get("type", "text")),
+        }
+        if doc.get("metadata"):
+            entry["metadata"] = doc["metadata"]
+        messages.append(entry)
     return {"messages": messages}
 
 
@@ -832,13 +832,24 @@ def list_branches(thread_id: str):
         doc["_id"]: doc for doc in mongo.threads().find({"_id": {"$in": child_ids}})
     }
 
+    # Fetch first user message for each child thread
+    first_messages: dict[str, str] = {}
+    for cid in child_ids:
+        first_msg = mongo.messages().find_one(
+            {"thread_id": cid, "role": "user"},
+            sort=[("created_at", 1)],
+        )
+        if first_msg:
+            first_messages[cid] = str(first_msg.get("content", ""))
+
     branches: list[dict[str, object]] = []
     for bp in bps:
-        child = children.get(bp["child_thread_id"], {})
+        child_id = bp["child_thread_id"]
+        child = children.get(child_id, {})
         branches.append(
             {
                 "branch_point_id": bp["_id"],
-                "thread_id": bp["child_thread_id"],
+                "thread_id": child_id,
                 "message_id": bp["message_id"],
                 "position": bp.get("position"),
                 "type": bp["type"],
@@ -846,6 +857,7 @@ def list_branches(thread_id: str):
                 "status": child.get("status", ""),
                 "phase": child.get("phase", ""),
                 "depth": child.get("depth", 0),
+                "first_message": first_messages.get(child_id, ""),
             }
         )
 
@@ -1030,16 +1042,20 @@ async def chat(thread_id: str, req: ChatRequest):
             logger.warning("[chat] evermemos store failed: %s", e)
         yield _status("store_memory", "Storing in memory...", _ms(t0))
 
-        # 6. Build Agent for this phase
+        # 6. Build Agent for this phase (or Ebbinghaus agent)
         t0 = time.perf_counter()
-        agent = build_agent(
-            phase=phase,
-            plan_context=plan_context,
-            current_concept=current_concept,
-            memory_context=json.dumps(interview_ctx) if interview_ctx else None,
-            parent_summary=thread.get("parent_summary"),
-            branch_text=thread.get("branch_text"),
-        )
+        thread_agent = str(thread.get("agent", "feynman"))
+        if thread_agent == "ebbinghaus":
+            agent = build_ebbinghaus_agent()
+        else:
+            agent = build_agent(
+                phase=phase,
+                plan_context=plan_context,
+                current_concept=current_concept,
+                memory_context=json.dumps(interview_ctx) if interview_ctx else None,
+                parent_summary=thread.get("parent_summary"),
+                branch_text=thread.get("branch_text"),
+            )
 
         agent_ctx = AgentContext(
             user_id=user_id,
@@ -1190,14 +1206,16 @@ async def chat(thread_id: str, req: ChatRequest):
             )
 
             # Store assistant response in EverMemOS
+            sender_id = f"{thread_agent}_bot"
+            sender_label = "Ebbinghaus" if thread_agent == "ebbinghaus" else "Feynman"
             try:
                 _ = await evermemos.store_memory(
                     message_id=new_object_id(),
                     content=full_text,
-                    sender="feynman_bot",
+                    sender=sender_id,
                     group_id=group_id,
                     role="assistant",
-                    sender_name="Feynman",
+                    sender_name=sender_label,
                 )
             except Exception as e:
                 logger.warning("[chat] evermemos store assistant failed: %s", e)

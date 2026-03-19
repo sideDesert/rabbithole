@@ -1,0 +1,15 @@
+{
+  "openrouter_api": "",
+  "evermemos_api": "",
+  "mongo_user": "",
+  "mongo_password": "",
+  "default_model": "qwen/qwen-2.5-72b-instruct",
+  "planning_model": "qwen/qwen-2.5-72b-instruct",
+  "scoring_model": "qwen/qwen-2.5-72b-instruct",
+  "llm_base_url": "https://openrouter.ai/api/v1",
+  "evermemos_base_url": "https://api.evermind.ai",
+  "mongo_db_name": "rabbithole",
+  "frontend_origin": "http://localhost:3000",
+  "max_tool_rounds": 5,
+  "compaction_threshold": 0.4
+}

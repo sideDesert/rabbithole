@@ -25,7 +25,7 @@ function ProgressRing({ progress }: { progress: number }) {
       style={{
         width: 56,
         height: 56,
-        background: `conic-gradient(var(--primary) ${deg}deg, oklch(from var(--primary) l c h / 0.15) ${deg}deg)`,
+        background: `conic-gradient(var(--primary) ${deg}deg, color-mix(in srgb, var(--primary) 15%, transparent) ${deg}deg)`,
         mask: "radial-gradient(farthest-side, transparent calc(50% - 4px), #000 calc(50% - 3px), #000 50%, transparent 51%)",
         WebkitMask:
           "radial-gradient(farthest-side, transparent calc(50% - 4px), #000 calc(50% - 3px), #000 50%, transparent 51%)",
@@ -53,7 +53,7 @@ export function StudyPlanCard({
       onClick={onClick}
     >
       <div
-        className={`relative flex items-end justify-end bg-gradient-to-br ${gradient} p-4 h-28`}
+        className={`relative flex items-end justify-end bg-linear-to-br ${gradient} p-4 h-28`}
       >
         <div className="relative flex items-center justify-center">
           <ProgressRing progress={topic.progress} />
@@ -79,9 +79,7 @@ export function StudyPlanCard({
         </Tooltip>
         {topic.current_concept && (
           <Tooltip>
-            <TooltipTrigger
-              render={<CardDescription className="truncate" />}
-            >
+            <TooltipTrigger render={<CardDescription className="truncate" />}>
               {topic.current_concept}
             </TooltipTrigger>
             <TooltipContent side="right">

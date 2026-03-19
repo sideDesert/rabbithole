@@ -46,7 +46,7 @@ class TestResult(MongoBase):
     user_id: str
     concept_id: str
     thread_id: str = ""
-    test_type: Literal["feynman", "conceptual", "application", "ebbinghaus"]
+    test_type: Literal["feynman", "conceptual", "application", "practice"]
     question: str = ""
     user_response: str = ""
     scores: TestScores = Field(default_factory=TestScores)
@@ -59,7 +59,7 @@ class TestResult(MongoBase):
     missed_topics: list[str] = Field(default_factory=list)
     improvements: list[str] = Field(default_factory=list)
     hint_ids: list[str] = Field(default_factory=list)
-    # Ebbinghaus-specific fields
+    # Practice-specific fields
     topic_slug: str = ""
     questions: list[dict] = Field(default_factory=list)
     answers: list[dict] = Field(default_factory=list)

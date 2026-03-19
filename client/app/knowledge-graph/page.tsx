@@ -26,7 +26,7 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useTheme } from "next-themes";
-import { GraphBoldDuotone, ChatSquareBoldDuotone, ArrowLeftBoldDuotone } from "solar-icon-set";
+import { Network, MessageSquare, ArrowLeft } from "lucide-react";
 
 import { useKnowledgeGraph } from "@/hooks/use-knowledge-graph";
 import { layoutGraph } from "@/lib/graph-layout";
@@ -51,7 +51,7 @@ const edgeTypes: EdgeTypes = { trail: TrailEdge };
 
 function StatsBar({ stats }: { stats: GraphStats }) {
   return (
-    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-4 bg-card/90 backdrop-blur-sm border border-border rounded-xl px-5 py-2.5 shadow-lg">
+    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-4 bg-card border-2 border-border rounded-lg px-5 py-2.5 shadow-md">
       <Stat label="Concepts" value={stats.total_concepts} />
       <Sep />
       <Stat label="Mastered" value={stats.mastered} color="text-chart-1" />
@@ -104,7 +104,7 @@ function Sep() {
 
 function EdgeLegend() {
   return (
-    <div className="group absolute bottom-4 right-4 z-10 bg-card/90 backdrop-blur-sm border border-border rounded-xl shadow-lg overflow-hidden transition-[max-height,opacity] duration-300 ease-in-out max-h-8 hover:max-h-[400px]">
+    <div className="group absolute bottom-4 right-4 z-10 bg-card border-2 border-border rounded-lg shadow-md overflow-hidden transition-[max-height,opacity] duration-300 ease-in-out max-h-8 hover:max-h-[400px]">
       <div className="px-3 py-1.5 cursor-default">
         <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
           Legend
@@ -115,10 +115,18 @@ function EdgeLegend() {
           <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
             Edges
           </p>
-          <LegendItem color="#818cf8" label="Prerequisite" />
-          <LegendItem color="#94a3b8" label="Part of" />
-          <LegendItem color="#fbbf24" label="Explored from" dashed />
-          <LegendItem color="#f87171" label="Confused with" dashed />
+          <LegendItem color="var(--graph-edge-gold)" label="Prerequisite" />
+          <LegendItem color="var(--color-part-of)" label="Part of" />
+          <LegendItem
+            color="var(--graph-edge-yellow)"
+            label="Explored from"
+            dashed
+          />
+          <LegendItem
+            color="var(--color-confused-with)"
+            label="Confused with"
+            dashed
+          />
         </div>
         <div className="border-t border-border pt-2 space-y-2">
           <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
@@ -127,21 +135,21 @@ function EdgeLegend() {
           <div className="flex items-center gap-1.5">
             <div
               className="w-3 h-3 rounded-full"
-              style={{ background: "hsl(0, 84%, 60%)" }}
+              style={{ background: "var(--color-weak)" }}
             />
             <span className="text-[10px] text-muted-foreground">Weak</span>
           </div>
           <div className="flex items-center gap-1.5">
             <div
               className="w-3 h-3 rounded-full"
-              style={{ background: "hsl(45, 93%, 47%)" }}
+              style={{ background: "var(--color-medium)" }}
             />
             <span className="text-[10px] text-muted-foreground">Medium</span>
           </div>
           <div className="flex items-center gap-1.5">
             <div
               className="w-3 h-3 rounded-full"
-              style={{ background: "hsl(142, 71%, 45%)" }}
+              style={{ background: "var(--color-mastered)" }}
             />
             <span className="text-[10px] text-muted-foreground">Mastered</span>
           </div>
@@ -153,19 +161,19 @@ function EdgeLegend() {
           <div className="flex items-center gap-1.5">
             <div
               className="w-3 h-3 rounded-sm border"
-              style={{ borderColor: "#64748b" }}
+              style={{ borderColor: "var(--color-undiscovered)" }}
             />
             <span className="text-[10px] text-muted-foreground">Concept</span>
           </div>
           <div className="flex items-center gap-1.5">
             <div
               className="w-3 h-3 rounded-sm"
-              style={{ background: "hsl(200, 60%, 25%)" }}
+              style={{ background: "var(--color-kg-topic-hub-legend)" }}
             />
             <span className="text-[10px] text-muted-foreground">Topic</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <ChatSquareBoldDuotone className="size-3 text-muted-foreground" />
+            <MessageSquare className="size-3 text-muted-foreground" />
             <span className="text-[10px] text-muted-foreground">Thread</span>
           </div>
         </div>
@@ -222,17 +230,17 @@ function DomainFilter({
         <Button
           size="sm"
           variant="outline"
-          className="h-8 gap-1.5 text-xs bg-card/90 backdrop-blur-sm shadow-lg"
+          className="h-8 gap-1.5 text-xs bg-card border-2 border-border shadow-md"
           onClick={() => onChange(undefined)}
         >
-          <ArrowLeftBoldDuotone className="size-3" />
+          <ArrowLeft className="size-3" />
           Overview
         </Button>
       )}
       <select
         value={selected ?? ""}
         onChange={(e) => onChange(e.target.value || undefined)}
-        className="text-xs bg-card/90 backdrop-blur-sm border border-border rounded-md px-3 py-2 text-foreground shadow-lg capitalize"
+        className="text-xs bg-card border-2 border-border rounded-md px-3 py-2 text-foreground shadow-md capitalize"
       >
         <option value="">All topics</option>
         {domains.map((d) => (
@@ -255,8 +263,12 @@ function KnowledgeGraphInner() {
   const focusParam = searchParams.get("focus");
   const [domainFilter, setDomainFilter] = useState<string | undefined>();
   const { data, isLoading, error, refetch } = useKnowledgeGraph(domainFilter);
-  const [selectedConcept, setSelectedConcept] =
-    useState<KnowledgeConcept | null>(null);
+  const [selectedConceptId, setSelectedConceptId] = useState<string | null>(
+    null,
+  );
+  const [dismissedFocusParam, setDismissedFocusParam] = useState<string | null>(
+    null,
+  );
   const focusHandledRef = useRef(false);
   const [nodes, setNodes, onNodesChange] = useNodesState([] as Node[]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([] as Edge[]);
@@ -309,6 +321,29 @@ function KnowledgeGraphInner() {
     setEdges(layouted.edges);
   }, [layouted, setNodes, setEdges]);
 
+  const focusedConcept = useMemo(() => {
+    if (!focusParam || dismissedFocusParam === focusParam) {
+      return null;
+    }
+
+    return (
+      data?.nodes.find(
+        (concept) => concept.name.toLowerCase() === focusParam.toLowerCase(),
+      ) ?? null
+    );
+  }, [data?.nodes, dismissedFocusParam, focusParam]);
+
+  const selectedConcept = useMemo(() => {
+    if (selectedConceptId) {
+      return (
+        data?.nodes.find((concept) => concept.name === selectedConceptId) ??
+        null
+      );
+    }
+
+    return focusedConcept;
+  }, [data?.nodes, focusedConcept, selectedConceptId]);
+
   useEffect(() => {
     if (
       focusParam &&
@@ -316,23 +351,20 @@ function KnowledgeGraphInner() {
       data?.nodes &&
       nodes.length > 0
     ) {
-      const target = data.nodes.find(
-        (c) => c.name.toLowerCase() === focusParam.toLowerCase(),
+      const node = nodes.find(
+        (n) => n.id.toLowerCase() === focusParam.toLowerCase(),
       );
-      if (target) {
-        setSelectedConcept(target);
-        const node = nodes.find(
-          (n) => n.id.toLowerCase() === focusParam.toLowerCase(),
-        );
-        if (node) {
-          requestAnimationFrame(() => {
-            reactFlowInstance.setCenter(
-              node.position.x + 125,
-              node.position.y + 40,
-              { zoom: 1.2, duration: 500 },
-            );
-          });
-        }
+      if (node) {
+        requestAnimationFrame(() => {
+          reactFlowInstance.setCenter(
+            node.position.x + 125,
+            node.position.y + 40,
+            {
+              zoom: 1.2,
+              duration: 500,
+            },
+          );
+        });
       }
       focusHandledRef.current = true;
     }
@@ -340,13 +372,16 @@ function KnowledgeGraphInner() {
 
   const onNodeClick = useCallback(
     (_: React.MouseEvent, node: Node) => {
-      const concept = data?.nodes.find((c) => c.name === node.id);
-      setSelectedConcept(concept ?? null);
+      setSelectedConceptId(node.id);
+      setDismissedFocusParam(focusParam);
     },
-    [data],
+    [focusParam],
   );
 
-  const closePanel = useCallback(() => setSelectedConcept(null), []);
+  const closePanel = useCallback(() => {
+    setSelectedConceptId(null);
+    setDismissedFocusParam(focusParam);
+  }, [focusParam]);
 
   if (isLoading) {
     return (
@@ -370,7 +405,7 @@ function KnowledgeGraphInner() {
   if (!data?.nodes?.length) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground">
-        <GraphBoldDuotone className="size-10 opacity-40" />
+        <Network className="size-10 opacity-40" />
         <p>Start a learning thread to build your knowledge map.</p>
       </div>
     );
@@ -410,12 +445,16 @@ function KnowledgeGraphInner() {
           zoomable
           style={{ width: 140, height: 100 }}
           className="bg-card/80! border-border! rounded-lg! shadow-lg!"
-          maskColor={resolvedTheme === "dark" ? "rgba(0, 0, 0, 0.3)" : "rgba(0, 0, 0, 0.08)"}
+          maskColor={
+            resolvedTheme === "dark"
+              ? "rgba(0, 0, 0, 0.3)"
+              : "rgba(0, 0, 0, 0.08)"
+          }
           nodeColor={(node) => {
-            if (node.type === "memory_hub") return "hsl(260, 60%, 55%)";
-            if (node.type === "topic_hub") return "hsl(200, 60%, 50%)";
-            if (node.type === "thread") return "hsl(142, 50%, 40%)";
-            return "hsl(220, 20%, 50%)";
+            if (node.type === "memory_hub") return "var(--color-kg-memory-hub)";
+            if (node.type === "topic_hub") return "var(--color-kg-topic-hub)";
+            if (node.type === "thread") return "var(--color-kg-thread)";
+            return "var(--color-kg-default)";
           }}
         />
         <Controls showInteractive={false} />

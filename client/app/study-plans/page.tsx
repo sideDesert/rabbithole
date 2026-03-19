@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { MagniferBoldDuotone } from "solar-icon-set";
+import { Search } from "lucide-react";
 import { useStudyTopics } from "@/hooks/use-study-topics";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -38,7 +38,7 @@ export default function StudyPlansPage() {
 
       {/* Search */}
       <div className="relative mb-6">
-        <MagniferBoldDuotone className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
         <Input
           placeholder="Search topics..."
           value={query}
@@ -51,7 +51,7 @@ export default function StudyPlansPage() {
       {isLoading && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="rounded-xl border border-border overflow-hidden">
+            <div key={i} className="rounded-lg border-2 border-border overflow-hidden">
               <Skeleton className="h-28 w-full" />
               <div className="p-4 space-y-2">
                 <Skeleton className="h-5 w-3/4" />
@@ -64,9 +64,11 @@ export default function StudyPlansPage() {
 
       {/* Empty states */}
       {!isLoading && topics.length === 0 && (
-        <p className="text-sm text-muted-foreground">
-          No study plans yet. Start a conversation to create one.
-        </p>
+        <div className="border-2 border-dashed border-border rounded-lg p-6">
+          <p className="text-sm text-muted-foreground">
+            No study plans yet. Start a conversation to create one.
+          </p>
+        </div>
       )}
 
       {!isLoading && topics.length > 0 && filtered.length === 0 && (

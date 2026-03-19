@@ -2,10 +2,10 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { getProgress, type PlanPhase } from "@/lib/api";
-import { usePlan } from "./plan-context";
 import { useRef, useState, useCallback, useEffect } from "react";
-import { CheckCircleBoldDuotone, RecordCircleBoldDuotone } from "solar-icon-set";
+import { CircleCheck, Circle } from "lucide-react";
 import { Button } from "./ui/button";
+import { useParams } from "next/navigation";
 
 function ProgressRing({
   progress,
@@ -24,7 +24,7 @@ function ProgressRing({
       style={{
         width: size,
         height: size,
-        background: `conic-gradient(var(--primary) ${deg}deg, oklch(from var(--primary) l c h / 0.6) ${deg}deg)`,
+        background: `conic-gradient(var(--primary) ${deg}deg, color-mix(in srgb, var(--primary) 60%, transparent) ${deg}deg)`,
         mask: `radial-gradient(farthest-side, transparent calc(50% - ${strokeWidth}px), #000 calc(50% - ${strokeWidth - 1}px), #000 50%, transparent 51%)`,
         WebkitMask: `radial-gradient(farthest-side, transparent calc(50% - ${strokeWidth}px), #000 calc(50% - ${strokeWidth - 1}px), #000 50%, transparent 51%)`,
       }}
@@ -66,9 +66,9 @@ function PhaseGroup({
               }`}
             >
               {concept.completed ? (
-                <CheckCircleBoldDuotone className="size-3 shrink-0 text-primary" />
+                <CircleCheck className="size-3 shrink-0 text-primary" />
               ) : (
-                <RecordCircleBoldDuotone
+                <Circle
                   className={`size-3 shrink-0 ${isCurrent ? "text-primary" : "text-muted-foreground/50"}`}
                 />
               )}
@@ -84,7 +84,8 @@ function PhaseGroup({
 }
 
 export function TopicProgress() {
-  const { threadId } = usePlan();
+  const params = useParams();
+  const threadId = typeof params?.threadId === "string" ? params.threadId : null;
   const [isPinned, setIsPinned] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const enterTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -185,8 +186,8 @@ export function TopicProgress() {
       </Button>
 
       {isOpen && (
-        <div className="absolute top-full left-0 mt-2 w-72 bg-popover border border-border rounded-xl shadow-lg p-3 z-30 animate-in fade-in slide-in-from-top-1 duration-150 max-h-80 overflow-y-auto">
-          <div className="flex items-center justify-between mb-3 pb-2 border-b border-border">
+        <div className="absolute top-full left-0 mt-2 w-72 bg-popover border-2 border-border rounded-lg shadow-md p-3 z-30 animate-in fade-in slide-in-from-top-1 duration-150 max-h-80 overflow-y-auto">
+          <div className="flex items-center justify-between mb-3 pb-2 border-b-2 border-border">
             <span className="text-xs font-medium text-muted-foreground">
               Progress
             </span>

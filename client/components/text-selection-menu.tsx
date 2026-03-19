@@ -1,6 +1,6 @@
 "use client";
 
-import { ChatSquareBoldDuotone, BranchingPathsDownBoldDuotone } from "solar-icon-set";
+import { MessageSquare, GitBranch } from "lucide-react";
 
 interface TextSelectionMenuProps {
   visible: boolean;
@@ -35,7 +35,7 @@ export function TextSelectionMenu({
 
   return (
     <div
-      className="fixed z-100 flex items-center gap-0.5 rounded-lg border border-border bg-popover px-1 py-1 shadow-lg"
+      className="fixed z-100 flex items-center gap-0.5 rounded-md border-2 border-border bg-popover px-1 py-1 shadow-md"
       style={{
         left: position.x,
         top: position.y,
@@ -44,17 +44,17 @@ export function TextSelectionMenu({
     >
       <button
         onClick={handleQuote}
-        className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm text-popover-foreground hover:bg-accent transition-colors cursor-pointer"
+        className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm text-popover-foreground hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer"
       >
-        <ChatSquareBoldDuotone className="h-3.5 w-3.5" />
+        <MessageSquare className="h-3.5 w-3.5" />
         Quote
       </button>
       <div className="h-4 w-px bg-border" />
       <button
         onClick={handleBranch}
-        className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm text-popover-foreground hover:bg-accent transition-colors cursor-pointer"
+        className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm text-popover-foreground hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer"
       >
-        <BranchingPathsDownBoldDuotone className="h-3.5 w-3.5" />
+        <GitBranch className="h-3.5 w-3.5" />
         Branch Out
       </button>
     </div>

@@ -12,10 +12,10 @@ interface ThreadNodeData {
   first_question: string | null;
 }
 
-const phaseBadgeColors: Record<string, string> = {
-  interview: "bg-chart-1/20 text-chart-1",
-  planning: "bg-chart-3/20 text-chart-3",
-  teaching: "bg-primary/20 text-primary",
+const phaseDotColors: Record<string, string> = {
+  interview: "bg-accent",
+  planning: "bg-secondary",
+  teaching: "bg-primary",
 };
 
 export function ThreadNode({ data, selected }: NodeProps) {
@@ -25,19 +25,20 @@ export function ThreadNode({ data, selected }: NodeProps) {
   return (
     <div
       className={cn(
-        "bg-card border rounded-lg px-4 py-3 min-w-[200px] max-w-[280px] cursor-pointer transition-shadow",
-        isRoot ? "border-primary border-2 shadow-md" : "border-border",
+        "bg-card border-2 border-border rounded-md px-4 py-3 min-w-[200px] max-w-[280px] cursor-pointer transition-shadow shadow-sm",
+        isRoot && "border-primary shadow-md",
         selected && "ring-2 ring-primary/50",
       )}
     >
       <NodeHandles />
 
-      <span
-        className={cn(
-          "text-[10px] font-medium px-1.5 py-0.5 rounded-full mb-1 inline-block",
-          phaseBadgeColors[d.phase] ?? "bg-muted text-muted-foreground",
-        )}
-      >
+      <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full mb-1 inline-flex items-center gap-1 bg-background text-foreground dark:bg-black dark:text-white dark:border dark:border-border">
+        <span
+          className={cn(
+            "w-1.5 h-1.5 rounded-full",
+            phaseDotColors[d.phase] ?? "bg-muted-foreground",
+          )}
+        />
         {d.phase}
       </span>
 

@@ -4,15 +4,14 @@ import asyncio
 import json
 import logging
 from datetime import datetime, timezone
+from typing import Literal
 
 from bson import ObjectId
 from fastapi import APIRouter, HTTPException
-from openai import AsyncOpenAI
+
 from pydantic import BaseModel
 
-import logging
-
-from app.config import LLM_API_KEY, LLM_BASE_URL, DEFAULT_MODEL
+from app.config import get_config, get_llm
 from app.db import mongo
 from app.db.mongo import feynman_notes
 from app.memory import evermemos
@@ -21,8 +20,6 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/feynman", tags=["feynman"])
 
-_oai = AsyncOpenAI(base_url=LLM_BASE_URL, api_key=LLM_API_KEY)
-MODEL = DEFAULT_MODEL
 
 
 # ── Request / Response schemas ──────────────────────────────────────
@@ -87,8 +84,8 @@ async def get_hint(req: HintRequest) -> HintResponse:
         f"{draft_context}"
     )
 
-    response = await _oai.chat.completions.create(
-        model=MODEL,
+    response = await get_llm().chat.completions.create(
+        model=get_config().default_model,
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt},
@@ -157,8 +154,8 @@ async def _score_feynman_submission(submission_id: str, req: SubmitRequest) -> N
             f"Learner's explanation:\n{req.markdown}"
         )
 
-        response = await _oai.chat.completions.create(
-            model=MODEL,
+        response = await get_llm().chat.completions.create(
+            model=get_config().default_model,
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt},
@@ -370,29 +367,52 @@ async def get_notes(topic_slug: str, concept_name: str | None = None):
 
 
 @router.get("/evaluations")
-async def get_evaluations(topic_slug: str | None = None):
-    """Get all scored evaluations, optionally filtered by topic."""
-    query: dict[str, object] = {"status": "scored", "test_type": "feynman"}
+async def get_evaluations(
+    topic_slug: str | None = None,
+    test_type: Literal["feynman", "practice"] | None = None,
+):
+    """Get all scored evaluations, optionally filtered by topic and/or type."""
+    query: dict[str, object] = {"status": "scored"}
+    if test_type:
+        query["test_type"] = test_type
+
     if topic_slug:
-        # Find all thread_ids for this topic
+        # Practice results store topic_slug directly; feynman results need thread lookup
         thread_ids = [
             t["_id"] for t in mongo.threads().find(
                 {"topic_slug": topic_slug},
                 {"_id": 1},
             )
         ]
-        query["thread_id"] = {"$in": thread_ids}
+        query["$or"] = [
+            {"topic_slug": topic_slug},
+            {"thread_id": {"$in": thread_ids}},
+        ]
 
     docs = list(mongo.test_results().find(query, sort=[("created_at", -1)]))
 
+    # Batch-fetch threads for docs that need topic_slug resolution
+    thread_ids_to_resolve = [
+        doc["thread_id"] for doc in docs
+        if not doc.get("topic_slug") and doc.get("thread_id")
+    ]
+    thread_topic_map: dict[str, str] = {}
+    if thread_ids_to_resolve:
+        for t in mongo.threads().find(
+            {"_id": {"$in": thread_ids_to_resolve}},
+            {"_id": 1, "topic_slug": 1},
+        ):
+            thread_topic_map[t["_id"]] = str(t.get("topic_slug", ""))
+
     evaluations = []
     for doc in docs:
-        # Look up topic_slug from thread
-        thread = mongo.threads().find_one({"_id": doc.get("thread_id")})
-        evaluations.append({
+        doc_topic = doc.get("topic_slug", "") or thread_topic_map.get(doc.get("thread_id", ""), "")
+
+        eval_item: dict[str, object] = {
             "id": str(doc["_id"]),
+            "test_type": doc.get("test_type", "feynman"),
             "concept_name": doc.get("concept_id", ""),
-            "topic_slug": str(thread.get("topic_slug", "")) if thread else "",
+            "topic_slug": doc_topic,
             "overall_score": doc.get("overall_score", 0.0),
             "scores": doc.get("scores"),
             "feedback": doc.get("feedback", ""),
@@ -402,6 +422,14 @@ async def get_evaluations(topic_slug: str | None = None):
             "improvements": doc.get("improvements", []),
             "mastery_update": doc.get("mastery_update"),
             "created_at": doc["created_at"].isoformat() if doc.get("created_at") else "",
-        })
+        }
+
+        # Include practice-specific fields when present
+        if doc.get("test_type") == "practice":
+            eval_item["questions"] = doc.get("questions", [])
+            eval_item["answers"] = doc.get("answers", [])
+            eval_item["per_question_results"] = doc.get("per_question_results", [])
+
+        evaluations.append(eval_item)
 
     return {"evaluations": evaluations}

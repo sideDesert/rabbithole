@@ -7,7 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getPendingTests, type PendingTest } from "@/lib/api";
 import { StudyTopicCard } from "@/components/study-topic-card";
 import { Input } from "@/components/ui/input";
-import { MagniferBoldDuotone } from "solar-icon-set";
+import { ThemeIcon } from "@/components/theme-icon";
 import {
   Card,
   CardContent,
@@ -24,7 +24,6 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import { Badge } from "@/components/ui/badge";
-import { AltArrowRightBoldDuotone, AddCircleBoldDuotone } from "solar-icon-set";
 import { Skeleton } from "@/components/ui/skeleton";
 
 function Heading({ children }: { children?: React.ReactNode }) {
@@ -44,12 +43,12 @@ const TIER_VARIANTS: Record<
 function TestCard({ test }: { test: PendingTest }) {
   return (
     <Link
-      href={`/ebbinghaus/test?concept=${encodeURIComponent(test.concept_name)}&topic=${encodeURIComponent(test.topic_slug)}`}
+      href={`/practice/test?concept=${encodeURIComponent(test.concept_name)}&topic=${encodeURIComponent(test.topic_slug)}`}
       className="block h-full"
     >
       <Card
         size="sm"
-        className="hover:ring-foreground/20 transition-shadow cursor-pointer h-full flex flex-col"
+        className="card-hover transition-shadow cursor-pointer h-full flex flex-col"
       >
         <CardHeader>
           <CardTitle className="line-clamp-2 text-base">
@@ -71,7 +70,7 @@ function TestCard({ test }: { test: PendingTest }) {
         </CardContent>
         <CardFooter>
           <Button variant="ghost" size="sm" className="ml-auto">
-            Start Test <AltArrowRightBoldDuotone className="ml-1 size-4" />
+            Start Test <ThemeIcon name="chevronRight" className="ml-1 size-4" />
           </Button>
         </CardFooter>
       </Card>
@@ -81,7 +80,7 @@ function TestCard({ test }: { test: PendingTest }) {
 
 function TestsSection() {
   const { data, isLoading } = useQuery({
-    queryKey: ["ebbinghaus-pending"],
+    queryKey: ["practice-pending"],
     queryFn: getPendingTests,
     refetchInterval: 60_000,
   });
@@ -97,7 +96,7 @@ function TestsSection() {
       {!isLoading && tests.length === 0 && (
         <p className="text-muted-foreground text-sm mt-4">
           No upcoming tests.{" "}
-          <Link href="/ebbinghaus" className="underline">
+          <Link href="/practice" className="underline">
             Test yourself
           </Link>
         </p>
@@ -127,7 +126,7 @@ function SkeletonCards({ count = 4 }: { count?: number }) {
       {Array.from({ length: count }).map((_, i) => (
         <div
           key={i}
-          className="flex flex-col rounded-xl border overflow-hidden"
+          className="flex flex-col rounded-lg border-2 border-border overflow-hidden"
         >
           <Skeleton className="h-28 rounded-none" />
           <div className="p-4 space-y-3">
@@ -148,9 +147,9 @@ function SkeletonCards({ count = 4 }: { count?: number }) {
 function NewTopicCard() {
   return (
     <Link href="/feynman" className="block h-full">
-      <div className="flex flex-col items-center justify-center h-full min-h-[280px] rounded-xl border-2 border-dashed border-muted-foreground/25 hover:border-muted-foreground/50 transition-colors cursor-pointer">
-        <div className="flex items-center justify-center size-12 rounded-full border-2 border-dashed border-muted-foreground/25 mb-3">
-          <AddCircleBoldDuotone className="size-5 text-muted-foreground" />
+      <div className="flex flex-col items-center justify-center h-full min-h-[280px] rounded-lg border-2 border-dashed border-border hover:border-foreground transition-colors cursor-pointer">
+        <div className="flex items-center justify-center size-12 rounded-full border-2 border-dashed border-border mb-3">
+          <ThemeIcon name="circlePlus" className="size-5 text-muted-foreground" />
         </div>
         <p className="text-sm font-medium text-muted-foreground">
           Start a new topic
@@ -182,7 +181,7 @@ function ThreadsSection() {
       {!isLoading && (
         <div className="flex items-center gap-3 mt-4">
           <div className="relative flex-1 max-w-sm">
-            <MagniferBoldDuotone className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
+            <ThemeIcon name="search" className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
             <Input
               placeholder="Search topics..."
               value={search}

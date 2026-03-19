@@ -7,13 +7,17 @@ interface MemoryEdgeData {
   weight?: number;
 }
 
-const EDGE_STYLES: Record<MemoryEdgeType, { stroke: string; dasharray?: string }> = {
-  part_of:       { stroke: "#2dd4bf" },
-  led_to:        { stroke: "#fbbf24", dasharray: "6 4" },
-  confused_with: { stroke: "#f87171", dasharray: "4 4" },
-  contradicts:   { stroke: "#ef4444" },
-  derived_from:  { stroke: "#94a3b8", dasharray: "2 3" },
-  learned_from:  { stroke: "#a78bfa" },
+function getCSSVar(name: string): string {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
+const EDGE_STYLES: Record<MemoryEdgeType, { cssVar: string; dasharray?: string }> = {
+  part_of:       { cssVar: "--chart-5" },
+  led_to:        { cssVar: "--secondary", dasharray: "6 4" },
+  confused_with: { cssVar: "--primary", dasharray: "4 4" },
+  contradicts:   { cssVar: "--destructive" },
+  derived_from:  { cssVar: "--muted-foreground", dasharray: "2 3" },
+  learned_from:  { cssVar: "--chart-4" },
 };
 
 export function MemoryEdge({
@@ -30,7 +34,8 @@ export function MemoryEdge({
   const edgeData = data as MemoryEdgeData | undefined;
   const edgeType = edgeData?.edgeType ?? "part_of";
   const weight = edgeData?.weight ?? 1.0;
-  const style = EDGE_STYLES[edgeType];
+  const config = EDGE_STYLES[edgeType];
+  const stroke = getCSSVar(config.cssVar);
 
   const opacity = 0.3 + weight * 0.7;
   const strokeWidth = 1.5 + weight * 1.5;
@@ -42,12 +47,12 @@ export function MemoryEdge({
         id={id}
         d={edgePath}
         fill="none"
-        stroke={style.stroke}
+        stroke={stroke}
         strokeWidth={strokeWidth}
-        strokeDasharray={style.dasharray}
+        strokeDasharray={config.dasharray}
         strokeOpacity={opacity * 0.5}
       />
-      <circle r={strokeWidth} fill={style.stroke} opacity={opacity}>
+      <circle r={strokeWidth} fill={stroke} opacity={opacity}>
         <animateMotion dur={animationDuration} repeatCount="indefinite" path={edgePath} />
       </circle>
     </g>

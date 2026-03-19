@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, type ReactNode } from "react";
 
-type AgentId = "ebbinghaus" | "feynman";
+export type AgentId = "ebbinghaus" | "feynman";
 
 interface Agent {
   id: AgentId;

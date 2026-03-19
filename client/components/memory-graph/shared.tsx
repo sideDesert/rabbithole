@@ -8,11 +8,11 @@ import { NodeHandles } from "@/components/graph/node-handles";
 export type EntityType = "concept" | "person" | "fact" | "belief" | "resource";
 
 export const ENTITY_COLORS: Record<EntityType, { border: string; bg: string }> = {
-  concept:  { border: "#2dd4bf", bg: "hsla(175, 60%, 40%, 0.12)" },
-  person:   { border: "#a78bfa", bg: "hsla(270, 60%, 50%, 0.12)" },
-  fact:     { border: "#60a5fa", bg: "hsla(210, 70%, 50%, 0.12)" },
-  belief:   { border: "#fbbf24", bg: "hsla(45, 93%, 47%, 0.12)" },
-  resource: { border: "#64748b", bg: "hsla(220, 10%, 40%, 0.12)" },
+  concept:  { border: "var(--border)", bg: "color-mix(in srgb, var(--border) 8%, transparent)" },
+  person:   { border: "var(--color-node-person)", bg: "color-mix(in srgb, var(--color-node-person) 8%, transparent)" },
+  fact:     { border: "var(--color-node-fact)", bg: "color-mix(in srgb, var(--color-node-fact) 8%, transparent)" },
+  belief:   { border: "var(--color-node-belief)", bg: "color-mix(in srgb, var(--color-node-belief) 8%, transparent)" },
+  resource: { border: "var(--color-node-resource)", bg: "color-mix(in srgb, var(--color-node-resource) 8%, transparent)" },
 };
 
 // ── Shared node wrapper ─────────────────────────────────────────────────
@@ -47,13 +47,12 @@ export function MemoryNodeShell({
   return (
     <div
       className={cn(
-        "rounded-lg px-3 py-2.5 cursor-pointer transition-all",
+        "rounded-lg px-3 py-2.5 cursor-pointer transition-all shadow-sm",
         selected && "ring-2 ring-primary/50",
       )}
       style={{
         border: `2px solid ${borderColor ?? colors.border}`,
-        background: bgColor ?? colors.bg,
-        backdropFilter: "blur(8px)",
+        background: bgColor ?? "var(--card)",
         boxShadow: "var(--graph-node-shadow)",
         minWidth,
         maxWidth,

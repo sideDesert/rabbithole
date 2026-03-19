@@ -2,18 +2,20 @@ import clsx from "clsx";
 import React, { useEffect, useRef, useState } from "react";
 import { Streamdown } from "streamdown";
 import { ThinkingOrb } from "./thought-trail";
+import { useThemePersonality } from "@/components/theme-personality-provider";
+import Image from "next/image";
 import type { Branch } from "@/lib/api";
 import type { ToolCallEntry } from "@/hooks/use-chat";
 import { useAnnotations } from "@/hooks/use-annotations";
 import {
-  CheckCircleBoldDuotone,
-  MagniferBoldDuotone,
-  AtomBoldDuotone,
-  FileCheckBoldDuotone,
-  DocumentTextBoldDuotone,
-  ChecklistBoldDuotone,
-  BranchingPathsDownBoldDuotone,
-} from "solar-icon-set";
+  CircleCheck,
+  Search,
+  Atom,
+  FileCheck,
+  FileText,
+  ListChecks,
+  GitBranch,
+} from "lucide-react";
 import {
   Collapsible,
   CollapsibleTrigger,
@@ -34,6 +36,7 @@ interface ChatMessageInterface {
   statusMessage?: string;
   toolCalls?: ToolCallEntry[];
   annotations?: Branch[];
+  agent?: string;
 }
 
 function lastMessageRef(id: string) {
@@ -65,14 +68,17 @@ export function PhaseDivider({ label }: { label: string }) {
   );
 }
 
-const TOOL_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
-  recall_memory: MagniferBoldDuotone,
-  store_memory: AtomBoldDuotone,
-  create_plan: FileCheckBoldDuotone,
-  read_plan: DocumentTextBoldDuotone,
-  update_plan_progress: ChecklistBoldDuotone,
-  suggest_branches: BranchingPathsDownBoldDuotone,
-  offer_branch: BranchingPathsDownBoldDuotone,
+const TOOL_ICONS: Record<
+  string,
+  React.ComponentType<{ className?: string }>
+> = {
+  recall_memory: Search,
+  store_memory: Atom,
+  create_plan: FileCheck,
+  read_plan: FileText,
+  update_plan_progress: ListChecks,
+  suggest_branches: GitBranch,
+  offer_branch: GitBranch,
 };
 
 function pickRandom() {
@@ -96,22 +102,24 @@ function useRotatingWord(active: boolean) {
 
 function ToolCallBlock({ tc }: { tc: ToolCallEntry }) {
   const isDone = tc.status === "done";
-  const Icon = TOOL_ICONS[tc.name] ?? CheckCircleBoldDuotone;
+  const Icon = TOOL_ICONS[tc.name] ?? CircleCheck;
   const rotatingWord = useRotatingWord(!isDone);
 
   return (
     <Collapsible disabled={!tc.result}>
       <CollapsibleTrigger className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors w-full justify-start py-1 cursor-pointer">
         {isDone ? (
-          <Icon className="w-3 h-3 text-emerald-400/50" />
+          <Icon className="w-4 h-4 text-primary/50" />
         ) : (
-          <Icon className="w-3 h-3 text-muted-foreground/50 animate-pulse" />
+          <Icon className="w-4 h-4 text-muted-foreground/50 animate-pulse" />
         )}
-        <span className="text-left">{isDone ? tc.doneLabel : `${rotatingWord}...`}</span>
+        <span className="text-left">
+          {isDone ? tc.doneLabel : `${rotatingWord}...`}
+        </span>
       </CollapsibleTrigger>
       {tc.result && (
         <CollapsibleContent>
-          <pre className="text-xs text-muted-foreground bg-muted/50 rounded p-2 mt-1 mb-2 overflow-x-auto whitespace-pre-wrap">
+          <pre className="text-xs text-muted-foreground bg-muted rounded-md p-2 mt-1 mb-2 overflow-x-auto whitespace-pre-wrap border-2 border-border">
             {(() => {
               try {
                 return JSON.stringify(JSON.parse(tc.result!), null, 2);
@@ -237,7 +245,12 @@ export function ChatMessage({
   statusMessage,
   toolCalls,
   annotations,
+  agent = "feynman",
 }: ChatMessageInterface) {
+  const { activeTheme } = useThemePersonality();
+  const logoClass = activeTheme.id === "classic" ? "rounded-full" : "rounded-none border-2 border-border";
+  const agentLabel = agent === "ebbinghaus" ? "Ms. Ebbinghaus" : "Mr. Feynman";
+  const agentLogo = agent === "ebbinghaus" ? "/ebbinghaus.png" : "/feynman.png";
   const articleRef = useRef<HTMLElement | null>(null);
   useAnnotations(
     articleRef,
@@ -249,7 +262,7 @@ export function ChatMessage({
     return (
       <div
         className={clsx(
-          "chat-message bg-accent py-3 px-3 rounded-xl max-w-[85%]",
+          "chat-message bg-accent dark:bg-accent/70 dark:hover:bg-accent text-accent-foreground dark:font-medium py-3 px-3 rounded-lg max-w-[85%] border-2 border-border shadow-sm",
           className,
         )}
         data-message-id={id}
@@ -275,6 +288,10 @@ export function ChatMessage({
           }
         }}
       >
+        <div className="flex items-center gap-3 mb-3">
+          <Image src={agentLogo} alt={agentLabel} width={36} height={36} className={`h-9 w-9 object-cover object-top ${logoClass}`} />
+          <span className="text-lg font-bold text-foreground">{agentLabel}</span>
+        </div>
         {isLoading && (
           <ThinkingOrb />
         )}

@@ -18,6 +18,7 @@ import {
   PromptInput,
 } from "@/components/prompt-input";
 import { BranchSuggestionCard } from "@/components/branch-suggestion-card";
+import { NotificationActionCard } from "@/components/notification-action-card";
 import { FeynmanModal } from "@/components/feynman-modal";
 import { PhaseActionButton } from "@/components/phase-action-button";
 import { TextSelectionMenu } from "@/components/text-selection-menu";
@@ -39,7 +40,7 @@ import {
   ItemMedia,
   ItemTitle,
 } from "@/components/ui/item";
-import { BranchingPathsDownBoldDuotone } from "solar-icon-set";
+import { GitBranch } from "lucide-react";
 
 export default function Page({
   params,
@@ -49,8 +50,7 @@ export default function Page({
   const { threadId } = use(params);
   const { thread } = useThread(threadId);
   const queryClient = useQueryClient();
-  const { feynmanRequested, setFeynmanRequested, setThreadId, setTopicSlug } =
-    usePlan();
+  const { feynmanRequested, setFeynmanRequested } = usePlan();
   const router = useRouter();
   const [tagged, setTagged] = useState("");
   const [branchMessageId, setBranchMessageId] = useState("");
@@ -67,11 +67,10 @@ export default function Page({
   const scrolledRef = useRef(false);
   const promptRef = useRef<null | HTMLInputElement>(null);
 
-  // Sync route param into PlanContext so PlanView can fetch progress
-  useEffect(() => {
-    setThreadId(threadId);
-    if (thread?.topic_slug) setTopicSlug(thread.topic_slug);
-  }, [threadId, setThreadId, thread?.topic_slug, setTopicSlug]);
+  const displayAgent =
+    thread?.agent === "feynman" || thread?.agent === "ebbinghaus"
+      ? thread.agent
+      : "feynman";
 
   const {
     send,
@@ -92,7 +91,6 @@ export default function Page({
     dismissPhaseComplete,
   } = useChat({
     threadId,
-    onPlanCreated: (slug) => setTopicSlug(slug),
   });
 
   const { startPolling } = useFeynmanPolling();
@@ -206,11 +204,11 @@ export default function Page({
 
   return (
     <div className="px-10 pt-4 h-full max-w-3xl m-auto grid grid-rows-[1fr_auto]">
-      <div className="flex flex-col overflow-auto relative z-0 gap-4 min-h-0 pb-6">
+      <div className="flex flex-col overflow-auto relative px-4 z-0 gap-4 min-h-0 pb-6">
         {thread && thread.depth > 0 && (
           <Item variant="muted" size="sm">
             <ItemMedia>
-              <BranchingPathsDownBoldDuotone className="size-4" />
+              <GitBranch className="size-4" />
             </ItemMedia>
             <ItemContent>
               <ItemTitle>
@@ -226,18 +224,47 @@ export default function Page({
           </Item>
         )}
         {messages.map((msg, index) => {
+          if (msg.type === "notification") {
+            return (
+              <div key={msg.id} className="flex flex-col gap-2">
+                <ChatMessage
+                  id={msg.id}
+                  role={ROLE_AI}
+                  content={msg.content}
+                  isLast={messages.length - 1 === index}
+                  isStreaming={false}
+                  isLoading={false}
+                  agent={displayAgent}
+                />
+                <NotificationActionCard
+                  notificationType={msg.metadata?.notificationType}
+                  topicSlug={msg.metadata?.topicSlug}
+                />
+              </div>
+            );
+          }
           if (msg.type === "plan_card") {
             return (
               <PlanCreatedCard
                 key={msg.id}
                 topicSlug={msg.metadata?.topicSlug ?? ""}
-                onStart={thread?.phase === "planning" ? async () => {
-                  const result = await startPhase(threadId);
-                  queryClient.invalidateQueries({ queryKey: ["threads"] });
-                  queryClient.invalidateQueries({ queryKey: ["thread-tree"] });
-                  const m = `Let's start learning: ${result.phase_title ?? result.title}`;
-                  router.push(`/threads/${result.thread_id}?msg=${encodeURIComponent(m)}`);
-                } : undefined}
+                onStart={
+                  thread?.phase === "planning"
+                    ? async () => {
+                        const result = await startPhase(threadId);
+                        queryClient.invalidateQueries({
+                          queryKey: ["threads"],
+                        });
+                        queryClient.invalidateQueries({
+                          queryKey: ["thread-tree"],
+                        });
+                        const m = `Let's start learning: ${result.phase_title ?? result.title}`;
+                        router.push(
+                          `/threads/${result.thread_id}?msg=${encodeURIComponent(m)}`,
+                        );
+                      }
+                    : undefined
+                }
               />
             );
           }
@@ -267,12 +294,18 @@ export default function Page({
               statusMessage={msg.statusMessage}
               toolCalls={msg.toolCalls}
               annotations={annotationsByMessage.get(msg.id)}
+              agent={displayAgent}
             />
           );
         })}
-        {thread?.depth === 0 && thread?.phase === "teaching" && !isStreaming && thread.topic_slug && !messages.some((m) => m.type === "plan_card") && (
-          <PlanCreatedCard topicSlug={thread.topic_slug} />
-        )}
+        {thread?.depth === 0 &&
+          thread?.phase === "teaching" &&
+          thread.topic_slug !== "__notifications__" &&
+          !isStreaming &&
+          thread.topic_slug &&
+          !messages.some((m) => m.type === "plan_card") && (
+            <PlanCreatedCard topicSlug={thread.topic_slug} />
+          )}
         {branchSuggestion && (
           <BranchSuggestionCard
             topic={branchSuggestion.topic}
@@ -300,7 +333,9 @@ export default function Page({
               queryClient.invalidateQueries({ queryKey: ["threads"] });
               queryClient.invalidateQueries({ queryKey: ["thread-tree"] });
               const msg = `Let's continue: ${result.phase_title}`;
-              router.push(`/threads/${result.thread_id}?msg=${encodeURIComponent(msg)}`);
+              router.push(
+                `/threads/${result.thread_id}?msg=${encodeURIComponent(msg)}`,
+              );
             }}
           />
         )}

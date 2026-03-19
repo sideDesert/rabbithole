@@ -2,14 +2,14 @@
 
 import { useCallback, useRef, useState, type RefCallback } from "react";
 import {
-  AltArrowLeftBoldDuotone,
-  SquareAltArrowUpBold,
-  BranchingPathsDownBoldDuotone,
-  RefreshBoldDuotone,
-  StopCircleBoldDuotone,
-  ChatSquareBoldDuotone,
-  CloseCircleBoldDuotone,
-} from "solar-icon-set";
+  ChevronLeft,
+  SquareArrowUp,
+  GitBranch,
+  RefreshCw,
+  CircleStop,
+  MessageSquare,
+  CircleX,
+} from "lucide-react";
 import { Textarea } from "./ui/textarea";
 import { Button } from "./ui/button";
 import clsx from "clsx";
@@ -98,17 +98,17 @@ export function PromptInput({
           <div className="flex py-2 items-end justify-between">
             {config && config?.goBack && (
               <Button variant={"outline"}>
-                <AltArrowLeftBoldDuotone /> Go Back
+                <ChevronLeft /> Go Back
               </Button>
             )}
             {config && config?.branchout && (
               <Button variant={"outline"}>
-                <BranchingPathsDownBoldDuotone /> Branch Out
+                <GitBranch /> Branch Out
               </Button>
             )}
           </div>
         )}
-        <div className="bg-background pb-6 rounded-lg overflow-hidden">
+        <div className="bg-background pb-6 rounded-lg overflow-hidden ">
           {mode === MODE_INTERVIEW && interviewQuestion && (
             <div className="flex flex-col gap-2">
               {interviewQuestion.options.map((option, i) => (
@@ -141,39 +141,34 @@ export function PromptInput({
             mode === MODE_BRANCH) && (
             <>
               {(mode === MODE_TAGGED || mode === MODE_BRANCH) && (
-                <div className="text-md flex w-full justify-between p-2 border-2 text-foreground/60 rounded-xl relative z-0 mb-2">
+                <div className="text-md flex w-full justify-between p-2 border-2 border-border text-foreground/60 rounded-md relative z-0 mb-2">
                   <div className="flex justify-center items-center pl-2">
-                    {mode === MODE_TAGGED && (
-                      <ChatSquareBoldDuotone size={18} />
-                    )}
-                    {mode === MODE_BRANCH && (
-                      <BranchingPathsDownBoldDuotone size={18} />
-                    )}
+                    {mode === MODE_TAGGED && <MessageSquare size={18} />}
+                    {mode === MODE_BRANCH && <GitBranch size={18} />}
                   </div>
                   <div className="grow pl-2 text-left inline-flex items-center">
                     {tagged.length > 80 ? `${tagged.slice(0, 80)}...` : tagged}
                   </div>
                   <div>
                     <Button onClick={onClose} variant={"ghost"}>
-                      <CloseCircleBoldDuotone />
+                      <CircleX />
                     </Button>
                   </div>
                 </div>
               )}{" "}
               <Button
-                variant={"secondary"}
                 disabled={!value.trim() || loading}
                 onClick={handleSubmit}
-                className="absolute right-1.5 bottom-8 shrink-0 cursor-pointer z-20"
+                className="absolute right-2 bottom-8 shrink-0 cursor-pointer z-20 neo-hover"
               >
                 {loading && (
                   <div className="flex gap-2 justify-center items-center">
-                    <RefreshBoldDuotone className="h-4 w-4 animate-spin" />{" "}
+                    <RefreshCw className="h-4 w-4 animate-spin" />{" "}
                     <div>Creating Branch...</div>
                   </div>
                 )}
                 {!loading && !streaming && <span>Send</span>}
-                {!loading && streaming && <StopCircleBoldDuotone />}
+                {!loading && streaming && <CircleStop />}
               </Button>
               <Textarea
                 ref={textareaCallbackRef}
@@ -183,7 +178,7 @@ export function PromptInput({
                 placeholder="Type your message..."
                 disabled={loading}
                 rows={3}
-                className="field-sizing-fixed max-h-48 w-full relative resize-none overflow-y-auto pr-20 py-3"
+                className="field-sizing-fixed shadow-none max-h-48 w-full relative resize-none overflow-y-auto pr-20 py-3"
               />
             </>
           )}

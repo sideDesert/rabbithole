@@ -8,12 +8,11 @@ interface TrailEdgeData {
   weight?: number;
 }
 
-// Hardcoded colors — CSS variables don't work reliably in SVG stroke
-const EDGE_STYLES: Record<EdgeType, { stroke: string; dasharray?: string }> = {
-  prerequisite_of: { stroke: "#818cf8" },           // indigo-400 — visible on dark
-  part_of:         { stroke: "#94a3b8" },           // slate-400
-  explored_from:   { stroke: "#fbbf24", dasharray: "6 4" },  // amber-400
-  confused_with:   { stroke: "#f87171", dasharray: "4 4" },  // red-400
+const EDGE_STYLES: Record<EdgeType, { color: string; dasharray?: string }> = {
+  prerequisite_of: { color: "var(--graph-edge-gold)" },
+  part_of:         { color: "var(--color-part-of)" },
+  explored_from:   { color: "var(--graph-edge-yellow)", dasharray: "6 4" },
+  confused_with:   { color: "var(--color-confused-with)", dasharray: "4 4" },
 };
 
 export function TrailEdge({
@@ -38,7 +37,8 @@ export function TrailEdge({
   const edgeData = data as TrailEdgeData | undefined;
   const edgeType = edgeData?.edgeType ?? "prerequisite_of";
   const weight = edgeData?.weight ?? 1.0;
-  const style = EDGE_STYLES[edgeType];
+  const config = EDGE_STYLES[edgeType];
+  const stroke = config.color;
 
   // Weight → opacity (0.3 to 1.0) and thickness (1.5 to 3)
   const opacity = 0.3 + weight * 0.7;
@@ -53,12 +53,12 @@ export function TrailEdge({
         id={id}
         d={edgePath}
         fill="none"
-        stroke={style.stroke}
+        stroke={stroke}
         strokeWidth={strokeWidth}
-        strokeDasharray={style.dasharray}
+        strokeDasharray={config.dasharray ?? undefined}
         strokeOpacity={opacity * 0.5}
       />
-      <circle r={strokeWidth} fill={style.stroke} opacity={opacity}>
+      <circle r={strokeWidth} fill={stroke} opacity={opacity}>
         <animateMotion
           dur={animationDuration}
           repeatCount="indefinite"
