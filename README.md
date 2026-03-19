@@ -53,7 +53,7 @@ No more wasting context. No more reading five paragraphs just to get confused by
 
 ![Branching into a rabbit hole mid-conversation — the highlighted text becomes a new focused thread](docs/screenshots/branching.png)
 
-![The conversation tree — every branch is a rabbit hole you explored, and you can jump back to any parent](docs/screenshots/chat%20-%20tree.png)
+![The conversation tree — every branch is a rabbit hole you explored, and you can jump back to any parent](docs/screenshots/chat-tree.png)
 
 ---
 
@@ -63,7 +63,7 @@ You don't just start chatting. Mr. Feynman conducts an interactive interview fir
 
 You review it. Adjust it. Approve it. Then he teaches you through it, one concept at a time — conversationally, not walls of text.
 
-![A structured study plan with phases, concepts, and progress tracking](docs/screenshots/study%20plan.png)
+![A structured study plan with phases, concepts, and progress tracking](docs/screenshots/study-plan.png)
 
 ---
 
@@ -98,9 +98,9 @@ Ms. Ebbinghaus tracks every concept you've learned and generates targeted practi
 
 Stopped caring about a topic? She notices. And she reminds you. Scheduled reviews appear automatically when it's time — no discipline required on your part.
 
-![Practice page — scheduled reviews and self-testing organized by topic and mastery level](docs/screenshots/practice%20tests.png)
+![Practice page — scheduled reviews and self-testing organized by topic and mastery level](docs/screenshots/practice-tests.png)
 
-![A practice test with multiple question types tailored to your mastery tier](docs/screenshots/practice%20test.png)
+![A practice test with multiple question types tailored to your mastery tier](docs/screenshots/practice-test.png)
 
 ---
 
@@ -137,7 +137,7 @@ Every concept you've learned, every connection between them, every mastery score
 
 Click any concept to see your mastery percentage, trend, weak areas, and the threads where you explored it.
 
-![Knowledge graph — all your learned concepts, connections, and mastery levels in one view](docs/screenshots/knowledge%20graph.png)
+![Knowledge graph — all your learned concepts, connections, and mastery levels in one view](docs/screenshots/knowledge-graph.png)
 
 ---
 
@@ -145,7 +145,7 @@ Click any concept to see your mastery percentage, trend, weak areas, and the thr
 
 A separate graph powered by EverMemOS showing the memories extracted about you as a learner — your profile, facts, learning events, and how they connect. This is the cognitive model, made visible.
 
-![Memory graph — the learner profile and extracted memories visualized as a network](docs/screenshots/memory%20graphh.png)
+![Memory graph — the learner profile and extracted memories visualized as a network](docs/screenshots/memory-graph.png)
 
 ---
 
