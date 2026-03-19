@@ -33,7 +33,8 @@ download_archive() {
   tag="$1"
   archive_name="$APP_NAME-$tag.tar.gz"
   url="https://github.com/$REPO_SLUG/releases/download/$tag/$archive_name"
-  curl -fsSL "$url" -o "$TMP_DIR/$archive_name"
+  echo "Downloading $archive_name ..."
+  curl -fL# "$url" -o "$TMP_DIR/$archive_name"
   printf '%s\n' "$TMP_DIR/$archive_name"
 }
 
@@ -43,27 +44,33 @@ require_cmd tar
 require_cmd mktemp
 
 if [ -n "$ARCHIVE_PATH" ]; then
+  echo "Using local release archive: $ARCHIVE_PATH"
   archive_file="$ARCHIVE_PATH"
 else
   if [ -z "$RELEASE_TAG" ]; then
+    echo "Fetching latest release tag for $REPO_SLUG ..."
     RELEASE_TAG="$(fetch_latest_tag)"
   fi
   if [ -z "$RELEASE_TAG" ]; then
     echo "Unable to determine latest release tag for $REPO_SLUG" >&2
     exit 1
   fi
+  echo "Latest release tag: $RELEASE_TAG"
   archive_file="$(download_archive "$RELEASE_TAG")"
 fi
 
+echo "Extracting archive into $INSTALL_ROOT/app ..."
 mkdir -p "$INSTALL_ROOT"
 rm -rf "$INSTALL_ROOT/app"
 mkdir -p "$INSTALL_ROOT/app"
 tar -xzf "$archive_file" -C "$INSTALL_ROOT/app" --strip-components=1
 
 if [ -n "$CONFIG_SOURCE" ]; then
+  echo "Using provided config source: $CONFIG_SOURCE"
   cp "$CONFIG_SOURCE" "$INSTALL_ROOT/app/backend/config.json"
 fi
 
+echo "Starting local install ..."
 (
   cd "$INSTALL_ROOT/app"
   RABBITHOLE_BIN_DIR="$BIN_DIR" \

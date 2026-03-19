@@ -7,10 +7,27 @@ cd "$ROOT_DIR"
 APP_NAME="rabbithole"
 INSTALL_BIN_DIR="${RABBITHOLE_BIN_DIR:-$HOME/.local/bin}"
 INSTALL_LAUNCHER="${RABBITHOLE_INSTALL_LAUNCHER:-1}"
-PYTHON_CMD="${RABBITHOLE_PYTHON_CMD:-python3}"
 SKIP_PREREQ_CHECKS="${RABBITHOLE_SKIP_PREREQ_CHECKS:-0}"
 SKIP_DEP_INSTALL="${RABBITHOLE_SKIP_DEP_INSTALL:-0}"
 SKIP_FRONTEND_BUILD="${RABBITHOLE_SKIP_FRONTEND_BUILD:-0}"
+
+detect_python_cmd() {
+  if [ -n "${RABBITHOLE_PYTHON_CMD:-}" ]; then
+    printf '%s\n' "$RABBITHOLE_PYTHON_CMD"
+    return
+  fi
+
+  for candidate in python3.13 python3.12 python3.11 python3; do
+    if command -v "$candidate" >/dev/null 2>&1; then
+      printf '%s\n' "$candidate"
+      return
+    fi
+  done
+
+  printf '%s\n' python3
+}
+
+PYTHON_CMD="$(detect_python_cmd)"
 
 require_cmd() {
   if ! command -v "$1" >/dev/null 2>&1; then
@@ -53,6 +70,7 @@ EOF
 }
 
 if [ "$SKIP_PREREQ_CHECKS" != "1" ]; then
+  echo "Checking local prerequisites ..."
   require_cmd "$PYTHON_CMD"
   require_python_version
   require_cmd node
@@ -67,6 +85,7 @@ if [ "${RABBITHOLE_SKIP_SETUP:-0}" = "1" ]; then
     exit 1
   fi
 else
+  echo "Starting interactive setup ..."
   "$PYTHON_CMD" ./scripts/setup_local.py
 fi
 

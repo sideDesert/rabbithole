@@ -12,10 +12,11 @@ rm -rf "$STAGING_DIR"
 mkdir -p "$STAGING_DIR"
 mkdir -p "$DIST_DIR"
 
-copy_tree() {
+copy_path() {
   src="$1"
   dest="$2"
-  mkdir -p "$(dirname "$dest")"
+  parent_dir="$(dirname "$dest")"
+  mkdir -p "$parent_dir"
   rsync -a \
     --exclude '.git' \
     --exclude 'node_modules' \
@@ -29,9 +30,20 @@ copy_tree() {
     "$src" "$dest"
 }
 
-copy_tree "$ROOT_DIR/" "$STAGING_DIR/"
+echo "Preparing release staging directory..."
+
+copy_path "$ROOT_DIR/backend" "$STAGING_DIR/"
+copy_path "$ROOT_DIR/client" "$STAGING_DIR/"
+copy_path "$ROOT_DIR/scripts/setup_local.py" "$STAGING_DIR/scripts/"
+copy_path "$ROOT_DIR/install.sh" "$STAGING_DIR/"
+copy_path "$ROOT_DIR/build-local.sh" "$STAGING_DIR/"
+copy_path "$ROOT_DIR/run-local.sh" "$STAGING_DIR/"
+copy_path "$ROOT_DIR/README.md" "$STAGING_DIR/"
+copy_path "$ROOT_DIR/LICENSE" "$STAGING_DIR/"
+copy_path "$ROOT_DIR/package.json" "$STAGING_DIR/"
 
 rm -f "$ARCHIVE_PATH"
+echo "Creating release archive..."
 tar -czf "$ARCHIVE_PATH" -C "$DIST_DIR" "$APP_NAME-$VERSION"
 
 echo "Created release archive:"
