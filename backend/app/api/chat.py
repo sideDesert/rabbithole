@@ -183,7 +183,6 @@ def save_message(
         "tool_result",
         "plan_card",
         "interview_questions",
-        "notification",
     ],
     group_id: str,
     index: int,
@@ -346,7 +345,7 @@ def list_threads():
 def get_all_trees(agent: str | None = None):
     """Return branch trees for all root threads belonging to the user."""
     user_id = "user_001"
-    query: dict = {"user_id": user_id, "is_notification_thread": {"$ne": True}}
+    query: dict = {"user_id": user_id}
     if agent:
         query["agent"] = agent
     all_threads = list(mongo.threads().find(query))
@@ -571,7 +570,7 @@ def get_messages(thread_id: str):
             {
                 "thread_id": thread_id,
                 "type": {
-                    "$in": ["text", "markdown", "plan_card", "interview_questions", "notification"]
+                    "$in": ["text", "markdown", "plan_card", "interview_questions"]
                 },
             }
         )

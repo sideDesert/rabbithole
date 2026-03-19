@@ -29,12 +29,7 @@ export interface ChatMessage {
   id: string;
   role: "user" | "assistant" | "system";
   content: string;
-  type?: "text" | "plan_card" | "phase_divider" | "notification";
-  metadata?: {
-    topicSlug?: string;
-    notificationType?: "overdue_review" | "stale_topic";
-    conceptName?: string;
-  };
+  type?: "text" | "plan_card" | "phase_divider";
   statusMessage?: string;
   toolCalls?: ToolCallEntry[];
 }
@@ -137,20 +132,6 @@ export function useChat({
             role: "system" as const,
             content: "",
             type: "text" as const,
-          };
-        }
-        if (m.type === "notification") {
-          const meta = (m as any).metadata;
-          return {
-            id: m.id,
-            role: m.role as "user" | "assistant",
-            content: m.content,
-            type: "notification" as const,
-            metadata: {
-              notificationType: meta?.notification_type ?? "stale_topic",
-              topicSlug: meta?.topic_slug ?? "",
-              conceptName: meta?.concept_name ?? "",
-            },
           };
         }
         return {

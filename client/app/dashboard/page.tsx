@@ -82,7 +82,7 @@ function TestsSection() {
   const { data, isLoading } = useQuery({
     queryKey: ["practice-pending"],
     queryFn: getPendingTests,
-    refetchInterval: 60_000,
+    refetchInterval: 5 * 60_000,
   });
 
   const tests = data?.tests ?? [];
@@ -256,6 +256,7 @@ export default function Page() {
         <p className="text-muted-foreground mt-1">Overview</p>
       </div>
       <div className="w-full space-y-8">
+        <TestsSection />
         <div>
           <Heading>Continue Learning</Heading>
           {topicsLoading && (
@@ -288,7 +289,6 @@ export default function Page() {
             </div>
           )}
         </div>
-        <TestsSection />
         <div>
           <Heading>Suggestions</Heading>
         </div>

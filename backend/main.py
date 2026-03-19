@@ -20,7 +20,6 @@ from app.api.practice import router as practice_router
 from app.api.feynman import router as feynman_router
 from app.api.graph import router as graph_router
 from app.api.memory_graph import router as memory_graph_router
-from app.api.notify import router as notify_router
 from app.api.config import router as config_router
 
 # --- Validate config ---
@@ -95,7 +94,6 @@ app.include_router(practice_router)
 app.include_router(feynman_router)
 app.include_router(graph_router)
 app.include_router(memory_graph_router)
-app.include_router(notify_router)
 app.include_router(config_router)
 
 

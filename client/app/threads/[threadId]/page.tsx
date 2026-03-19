@@ -18,7 +18,6 @@ import {
   PromptInput,
 } from "@/components/prompt-input";
 import { BranchSuggestionCard } from "@/components/branch-suggestion-card";
-import { NotificationActionCard } from "@/components/notification-action-card";
 import { FeynmanModal } from "@/components/feynman-modal";
 import { PhaseActionButton } from "@/components/phase-action-button";
 import { TextSelectionMenu } from "@/components/text-selection-menu";
@@ -224,25 +223,6 @@ export default function Page({
           </Item>
         )}
         {messages.map((msg, index) => {
-          if (msg.type === "notification") {
-            return (
-              <div key={msg.id} className="flex flex-col gap-2">
-                <ChatMessage
-                  id={msg.id}
-                  role={ROLE_AI}
-                  content={msg.content}
-                  isLast={messages.length - 1 === index}
-                  isStreaming={false}
-                  isLoading={false}
-                  agent={displayAgent}
-                />
-                <NotificationActionCard
-                  notificationType={msg.metadata?.notificationType}
-                  topicSlug={msg.metadata?.topicSlug}
-                />
-              </div>
-            );
-          }
           if (msg.type === "plan_card") {
             return (
               <PlanCreatedCard
@@ -300,7 +280,6 @@ export default function Page({
         })}
         {thread?.depth === 0 &&
           thread?.phase === "teaching" &&
-          thread.topic_slug !== "__notifications__" &&
           !isStreaming &&
           thread.topic_slug &&
           !messages.some((m) => m.type === "plan_card") && (

@@ -18,7 +18,6 @@ import {
   PromptInput,
 } from "@/components/prompt-input";
 import { BranchSuggestionCard } from "@/components/branch-suggestion-card";
-import { NotificationActionCard } from "@/components/notification-action-card";
 import { FeynmanModal } from "@/components/feynman-modal";
 import { TextSelectionMenu } from "@/components/text-selection-menu";
 import { useChat } from "@/hooks/use-chat";
@@ -31,7 +30,6 @@ import { useRouter } from "next/navigation";
 import React, { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useThemePersonality } from "@/components/theme-personality-provider";
-import { useEbbinghausNotifications } from "@/hooks/use-ebbinghaus-notifications";
 import Image from "next/image";
 
 interface ChatPageProps {
@@ -95,9 +93,6 @@ export function ChatPage({ agent, greeting, suggestions }: ChatPageProps) {
   const queryClient = useQueryClient();
   const { feynmanRequested, setFeynmanRequested } = usePlan();
 
-  // Fetch latest notification for Ebbinghaus
-  const { notificationThreadId } = useEbbinghausNotifications();
-
   const [tagged, setTagged] = useState("");
   const [branchMessageId, setBranchMessageId] = useState("");
   const [branchTextPosition, setBranchTextPosition] = useState<
@@ -123,10 +118,7 @@ export function ChatPage({ agent, greeting, suggestions }: ChatPageProps) {
     dismissBranchSuggestion,
     phaseComplete,
     dismissPhaseComplete,
-  } = useChat({
-    agent,
-    threadId: agent === "ebbinghaus" ? notificationThreadId : undefined,
-  });
+  } = useChat({ agent });
 
   // Open Feynman modal when Pen tab is clicked
   useEffect(() => {
@@ -196,25 +188,6 @@ export function ChatPage({ agent, greeting, suggestions }: ChatPageProps) {
       {chatStarted ? (
         <div className="flex flex-col overflow-auto px-4 relative z-0 gap-4 min-h-0 pb-6">
           {messages.map((msg, index) => {
-            if (msg.type === "notification") {
-              return (
-                <div key={msg.id} className="flex flex-col gap-2">
-                  <ChatMessage
-                    id={msg.id}
-                    role={ROLE_AI}
-                    content={msg.content}
-                    isLast={messages.length - 1 === index}
-                    isStreaming={false}
-                    isLoading={false}
-                    agent={agent}
-                  />
-                  <NotificationActionCard
-                    notificationType={msg.metadata?.notificationType}
-                    topicSlug={msg.metadata?.topicSlug}
-                  />
-                </div>
-              );
-            }
             if (msg.type === "plan_card") {
               return (
                 <PlanCreatedCard

@@ -20,8 +20,9 @@ import { ThreadTree } from "@/components/thread-tree";
 import { Settings } from "@/components/settings-menu";
 import Image from "next/image";
 import { Rabbit } from "lucide-react";
-import { useEbbinghausNotifications } from "@/hooks/use-ebbinghaus-notifications";
 import { useThread } from "@/hooks/use-thread";
+import { useQuery } from "@tanstack/react-query";
+import { getPendingTests } from "@/lib/api";
 
 export type Tool = {
   name: string;
@@ -49,8 +50,13 @@ export function AppSidebar({ tools }: { tools: Tool[] }) {
     activeTheme.id === "classic"
       ? "rounded-full"
       : "rounded-none border-2 border-border";
-  const { unreadCount, notificationThreadId, markAsRead } =
-    useEbbinghausNotifications();
+  const { data: pendingData } = useQuery({
+    queryKey: ["practice-pending"],
+    queryFn: getPendingTests,
+    refetchInterval: 5 * 60_000,
+  });
+  const pendingCount = pendingData?.tests?.length ?? 0;
+
   const sidebarAgent = getSidebarAgent(path, thread?.agent);
 
   function handleAgentNav(agentId: AgentId) {
@@ -91,14 +97,7 @@ export function AppSidebar({ tools }: { tools: Tool[] }) {
             <SidebarMenuItem>
               <SidebarMenuButton
                 isActive={sidebarAgent === "ebbinghaus"}
-                onClick={() => {
-                  if (unreadCount > 0 && notificationThreadId) {
-                    markAsRead();
-                    router.push(`/threads/${notificationThreadId}`);
-                  } else {
-                    handleAgentNav("ebbinghaus");
-                  }
-                }}
+                onClick={() => handleAgentNav("ebbinghaus")}
               >
                 <Image
                   src="/ebbinghaus.png"
@@ -109,9 +108,6 @@ export function AppSidebar({ tools }: { tools: Tool[] }) {
                 />
                 <span>Ebbinghaus</span>
               </SidebarMenuButton>
-              {unreadCount > 0 && (
-                <SidebarMenuBadge>{unreadCount}</SidebarMenuBadge>
-              )}
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarGroup>
@@ -131,6 +127,9 @@ export function AppSidebar({ tools }: { tools: Tool[] }) {
                   <ThemeIcon name={tool.iconName} className="h-4 w-4" />
                   <span>{tool.name}</span>
                 </SidebarMenuButton>
+                {tool.href === "/dashboard" && pendingCount > 0 && (
+                  <SidebarMenuBadge>{pendingCount}</SidebarMenuBadge>
+                )}
               </SidebarMenuItem>
             ))}
           </SidebarMenu>
