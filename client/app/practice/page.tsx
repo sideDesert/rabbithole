@@ -185,7 +185,7 @@ function TopicGroup({
             <Button
               onClick={() => {
                 router.push(
-                  `/ebbinghaus/test?concept=${encodeURIComponent(concept.name)}&topic=${encodeURIComponent(topic.topic_slug)}`,
+                  `/practice/test?concept=${encodeURIComponent(concept.name)}&topic=${encodeURIComponent(topic.topic_slug)}`,
                 );
               }}
               variant={"ghost"}

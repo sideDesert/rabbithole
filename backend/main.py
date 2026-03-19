@@ -13,7 +13,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from app.config import MONGO_USER, MONGO_PASSWORD, LLM_API_KEY, PLANS_DIR
+from app.config import PLANS_DIR, get_config
 from app.db.mongo import get_client
 from app.db.indexes import ensure_indexes
 from app.api.chat import router as chat_router
@@ -22,9 +22,11 @@ from app.api.feynman import router as feynman_router
 from app.api.graph import router as graph_router
 from app.api.memory_graph import router as memory_graph_router
 from app.api.notify import router as notify_router
+from app.api.config import router as config_router
 
 # --- Validate env ---
-for name, val in [("MONGO_USER", MONGO_USER), ("MONGO_PASSWORD", MONGO_PASSWORD), ("OPENROUTER_API_KEY", LLM_API_KEY)]:
+_cfg = get_config()
+for name, val in [("MONGO_USER", _cfg.mongo_user), ("MONGO_PASSWORD", _cfg.mongo_password), ("OPENROUTER_API_KEY", _cfg.openrouter_api)]:
     if not val:
         print(f"ERROR: {name} is not set in .env")
         sys.exit(1)
@@ -92,6 +94,7 @@ app.include_router(feynman_router)
 app.include_router(graph_router)
 app.include_router(memory_graph_router)
 app.include_router(notify_router)
+app.include_router(config_router)
 
 
 @app.get("/health")

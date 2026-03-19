@@ -218,6 +218,11 @@ async def notify(user_id: str = "user_001"):
             type="notification",
             group_id=group_id,
             index=0,
+            metadata={
+                "notification_type": item["type"],
+                "topic_slug": item.get("topic_slug", ""),
+                "concept_name": item.get("concept_name") or item.get("next_concept") or "",
+            },
         )
         mongo.messages().insert_one(msg.to_doc())
 

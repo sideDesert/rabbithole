@@ -14,3 +14,4 @@ class Message(MongoBase):
     status: Literal["pending", "streaming", "complete", "error"] = "complete"
     group_id: str = Field(default_factory=new_object_id)
     index: int = 0
+    metadata: dict[str, Any] | None = None

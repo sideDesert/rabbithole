@@ -2,10 +2,10 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { getProgress, type PlanPhase } from "@/lib/api";
-import { usePlan } from "./plan-context";
 import { useRef, useState, useCallback, useEffect } from "react";
 import { CircleCheck, Circle } from "lucide-react";
 import { Button } from "./ui/button";
+import { useParams } from "next/navigation";
 
 function ProgressRing({
   progress,
@@ -84,7 +84,8 @@ function PhaseGroup({
 }
 
 export function TopicProgress() {
-  const { threadId } = usePlan();
+  const params = useParams();
+  const threadId = typeof params?.threadId === "string" ? params.threadId : null;
   const [isPinned, setIsPinned] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const enterTimer = useRef<ReturnType<typeof setTimeout> | null>(null);

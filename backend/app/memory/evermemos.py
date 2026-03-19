@@ -6,7 +6,7 @@ from typing import Any
 
 import httpx
 
-from app.config import EVERMEMOS_API, EVERMEMOS_BASE_URL
+from app.config import get_config
 
 logger = logging.getLogger(__name__)
 
@@ -20,10 +20,11 @@ _meta_initialized: set[str] = set()
 def _get_client() -> httpx.AsyncClient:
     global _client
     if _client is None:
+        cfg = get_config()
         _client = httpx.AsyncClient(
-            base_url=EVERMEMOS_BASE_URL,
+            base_url=cfg.evermemos_base_url,
             headers={
-                "Authorization": f"Bearer {EVERMEMOS_API}",
+                "Authorization": f"Bearer {cfg.evermemos_api}",
                 "Content-Type": "application/json",
             },
             timeout=30.0,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import {
   ListChecks,
   ArrowRight,
@@ -23,8 +23,11 @@ function formatTitle(slug: string) {
 export function PlanCreatedCard({ topicSlug, onStart }: PlanCreatedCardProps) {
   const { setActiveTab } = usePlan();
   const { topics } = useStudyTopics();
+  const params = useParams();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const currentThreadId =
+    typeof params?.threadId === "string" ? params.threadId : null;
 
   const topic = topics.find((t) => t.topic_slug === topicSlug);
   // "Started" means child threads exist (user clicked Start Learning),
@@ -46,6 +49,16 @@ export function PlanCreatedCard({ topicSlug, onStart }: PlanCreatedCardProps) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleViewPlan = () => {
+    const threadId =
+      topic?.latest_thread.id ?? topic?.root_thread_id ?? currentThreadId;
+    if (threadId) {
+      router.push(`/threads/${threadId}?tab=plan-mode`);
+      return;
+    }
+    setActiveTab("plan-mode");
   };
 
   return (
@@ -90,7 +103,7 @@ export function PlanCreatedCard({ topicSlug, onStart }: PlanCreatedCardProps) {
       )}
       <div className="flex gap-2 mt-3">
         <button
-          onClick={() => setActiveTab("plan-mode")}
+          onClick={handleViewPlan}
           className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-md border-2 border-border px-3 py-1.5 text-xs font-medium neo-hover transition-colors cursor-pointer"
         >
           <ListChecks className="size-3" />

@@ -14,15 +14,18 @@ type Filter = "all" | "feynman" | "practice";
 
 const EMPTY_MESSAGES: Record<Filter, string> = {
   all: "No evaluations yet. Complete a Feynman exercise or practice test to see your results here.",
-  feynman: "No Feynman evaluations yet. Complete a Feynman exercise to see your results here.",
-  practice: "No practice evaluations yet. Complete a practice test to see your results here.",
+  feynman:
+    "No Feynman evaluations yet. Complete a Feynman exercise to see your results here.",
+  practice:
+    "No practice evaluations yet. Complete a practice test to see your results here.",
 };
 
 export default function EvaluationsPage() {
   const [filter, setFilter] = useState<Filter>("all");
   const { data, isLoading } = useQuery({
     queryKey: ["evaluations", filter],
-    queryFn: () => getEvaluations(undefined, filter === "all" ? undefined : filter),
+    queryFn: () =>
+      getEvaluations(undefined, filter === "all" ? undefined : filter),
   });
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
@@ -31,7 +34,9 @@ export default function EvaluationsPage() {
 
   return (
     <div className="px-8 py-8 max-w-4xl mx-auto">
-      <h1 className="font-heading text-2xl font-bold tracking-tight mb-6">Evaluations</h1>
+      <h1 className="font-heading text-2xl font-bold tracking-tight mb-6">
+        Evaluations
+      </h1>
 
       {!selected && (
         <Tabs
@@ -53,7 +58,10 @@ export default function EvaluationsPage() {
       {isLoading && (
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-16 w-full rounded-md border-2 border-border" />
+            <Skeleton
+              key={i}
+              className="h-16 w-full rounded-md border-2 border-border"
+            />
           ))}
         </div>
       )}
@@ -76,7 +84,9 @@ export default function EvaluationsPage() {
             >
               <div className="flex flex-col gap-0.5">
                 <div className="flex items-center gap-2">
-                  <span className="font-heading text-base font-semibold">{ev.concept_name}</span>
+                  <span className="font-heading text-base font-semibold">
+                    {ev.concept_name}
+                  </span>
                   <Badge variant="secondary" className="text-[10px] capitalize">
                     {ev.test_type}
                   </Badge>
@@ -109,7 +119,7 @@ export default function EvaluationsPage() {
 
       {selected && (
         <div>
-          <Button variant="outline" onClick={() => setSelectedId(null)}>
+          <Button onClick={() => setSelectedId(null)}>
             <span>&larr;</span> Back to all evaluations
           </Button>
           <div className="border-2 mt-4 shadow-[3px_3px_0px_0px_var(--border)] border-border rounded-md p-6 bg-card">

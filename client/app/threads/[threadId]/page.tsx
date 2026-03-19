@@ -18,6 +18,7 @@ import {
   PromptInput,
 } from "@/components/prompt-input";
 import { BranchSuggestionCard } from "@/components/branch-suggestion-card";
+import { NotificationActionCard } from "@/components/notification-action-card";
 import { FeynmanModal } from "@/components/feynman-modal";
 import { PhaseActionButton } from "@/components/phase-action-button";
 import { TextSelectionMenu } from "@/components/text-selection-menu";
@@ -49,8 +50,7 @@ export default function Page({
   const { threadId } = use(params);
   const { thread } = useThread(threadId);
   const queryClient = useQueryClient();
-  const { feynmanRequested, setFeynmanRequested, setThreadId, setTopicSlug } =
-    usePlan();
+  const { feynmanRequested, setFeynmanRequested } = usePlan();
   const router = useRouter();
   const [tagged, setTagged] = useState("");
   const [branchMessageId, setBranchMessageId] = useState("");
@@ -67,11 +67,10 @@ export default function Page({
   const scrolledRef = useRef(false);
   const promptRef = useRef<null | HTMLInputElement>(null);
 
-  // Sync route param into PlanContext so PlanView can fetch progress
-  useEffect(() => {
-    setThreadId(threadId);
-    if (thread?.topic_slug) setTopicSlug(thread.topic_slug);
-  }, [threadId, setThreadId, thread?.topic_slug, setTopicSlug]);
+  const displayAgent =
+    thread?.agent === "feynman" || thread?.agent === "ebbinghaus"
+      ? thread.agent
+      : "feynman";
 
   const {
     send,
@@ -92,7 +91,6 @@ export default function Page({
     dismissPhaseComplete,
   } = useChat({
     threadId,
-    onPlanCreated: (slug) => setTopicSlug(slug),
   });
 
   const { startPolling } = useFeynmanPolling();
@@ -226,6 +224,25 @@ export default function Page({
           </Item>
         )}
         {messages.map((msg, index) => {
+          if (msg.type === "notification") {
+            return (
+              <div key={msg.id} className="flex flex-col gap-2">
+                <ChatMessage
+                  id={msg.id}
+                  role={ROLE_AI}
+                  content={msg.content}
+                  isLast={messages.length - 1 === index}
+                  isStreaming={false}
+                  isLoading={false}
+                  agent={displayAgent}
+                />
+                <NotificationActionCard
+                  notificationType={msg.metadata?.notificationType}
+                  topicSlug={msg.metadata?.topicSlug}
+                />
+              </div>
+            );
+          }
           if (msg.type === "plan_card") {
             return (
               <PlanCreatedCard
@@ -277,11 +294,13 @@ export default function Page({
               statusMessage={msg.statusMessage}
               toolCalls={msg.toolCalls}
               annotations={annotationsByMessage.get(msg.id)}
+              agent={displayAgent}
             />
           );
         })}
         {thread?.depth === 0 &&
           thread?.phase === "teaching" &&
+          thread.topic_slug !== "__notifications__" &&
           !isStreaming &&
           thread.topic_slug &&
           !messages.some((m) => m.type === "plan_card") && (

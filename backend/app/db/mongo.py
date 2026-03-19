@@ -5,7 +5,7 @@ from pymongo.collection import Collection
 from pymongo.database import Database
 from pymongo.server_api import ServerApi
 
-from app.config import MONGO_URI, MONGO_DB_NAME
+from app.config import get_config
 
 _client: MongoClient | None = None
 _db: Database | None = None
@@ -14,14 +14,14 @@ _db: Database | None = None
 def get_client() -> MongoClient:
     global _client
     if _client is None:
-        _client = MongoClient(MONGO_URI, server_api=ServerApi("1"))
+        _client = MongoClient(get_config().mongo_uri, server_api=ServerApi("1"))
     return _client
 
 
 def get_db() -> Database:
     global _db
     if _db is None:
-        _db = get_client()[MONGO_DB_NAME]
+        _db = get_client()[get_config().mongo_db_name]
     return _db
 
 

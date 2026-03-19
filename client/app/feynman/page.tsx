@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { ChatPage, FeynmanGreeting } from "@/components/chat-page";
 
 const feynmanPrompts = [
@@ -26,11 +25,9 @@ const feynmanPrompts = [
   "How does the human brain process language?",
 ];
 
-export default function Page() {
-  const [suggestions] = useState(() =>
-    [...feynmanPrompts].sort(() => Math.random() - 0.5).slice(0, 4)
-  );
+const suggestions = [...feynmanPrompts].sort(() => Math.random() - 0.5).slice(0, 4);
 
+export default function Page() {
   return (
     <ChatPage
       agent="feynman"

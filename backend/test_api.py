@@ -7,14 +7,15 @@ from openai import OpenAI
 
 load_dotenv()
 
-from app.config import LLM_BASE_URL, LLM_API_KEY, DEFAULT_MODEL
+from app.config import get_config
 
+_cfg = get_config()
 client = OpenAI(
-    base_url=LLM_BASE_URL,
-    api_key=LLM_API_KEY,
+    base_url=_cfg.llm_base_url,
+    api_key=_cfg.openrouter_api,
 )
 
-MODEL = DEFAULT_MODEL
+MODEL = _cfg.default_model
 
 # --- Test 1: Normal response ---
 print("=" * 60)

@@ -5,8 +5,6 @@ import "./globals.css";
 import { AppSidebar, Tool } from "@/components/app-sidebar";
 import { Providers } from "@/components/providers";
 import { MainContent } from "@/components/main-content";
-import { Atom, Dumbbell, LayoutGrid, Network, Pencil, FileText, ListChecks } from "lucide-react";
-import type { IconName } from "@/lib/icon-map";
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
@@ -37,13 +35,13 @@ const firaCode = Fira_Code({
 });
 
 const tools: Tool[] = [
-  { name: "Dashboard", icon: LayoutGrid, href: "/dashboard" },
-  { name: "Study Plans", icon: Pencil, href: "/study-plans" },
-  { name: "Notes", icon: FileText, href: "/notes" },
-  { name: "Evaluations", icon: ListChecks, href: "/evaluations" },
-  { name: "Practice", icon: Dumbbell, href: "/practice" },
-  { name: "Knowledge Graph", icon: Network, href: "/knowledge-graph" },
-  { name: "Memory Graph", icon: Atom, href: "/memory-graph" },
+  { name: "Dashboard", iconName: "layoutGrid", href: "/dashboard" },
+  { name: "Study Plans", iconName: "pencil", href: "/study-plans" },
+  { name: "Notes", iconName: "fileText", href: "/notes" },
+  { name: "Evaluations", iconName: "listChecks", href: "/evaluations" },
+  { name: "Practice", iconName: "dumbbell", href: "/practice" },
+  { name: "Knowledge Graph", iconName: "network", href: "/knowledge-graph" },
+  { name: "Memory Graph", iconName: "atom", href: "/memory-graph" },
 ];
 
 export default function RootLayout({

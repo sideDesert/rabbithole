@@ -17,20 +17,13 @@ from typing import Literal
 from agents import ItemHelpers, Runner
 from fastapi import APIRouter, BackgroundTasks, HTTPException
 from fastapi.responses import StreamingResponse
-from openai import AsyncOpenAI
+
 from openai.types.responses import EasyInputMessageParam, ResponseTextDeltaEvent
 from pydantic import BaseModel
 
 from app.agent.phases import apply_transition, should_transition
 from app.agent_core import build_agent, build_ebbinghaus_agent
-from app.config import (
-    COMPACTION_THRESHOLD,
-    DEFAULT_MODEL,
-    LLM_API_KEY,
-    LLM_BASE_URL,
-    PLANS_DIR,
-    get_model_context_window,
-)
+from app.config import PLANS_DIR, get_config, get_llm, get_model_context_window
 from app.db import mongo
 from app.models.base import new_object_id, utcnow
 from app.models.branch_point import BranchPoint, TextPosition
@@ -45,8 +38,6 @@ MessageRole = Literal["user", "assistant", "system"]
 
 router = APIRouter(prefix="/api", tags=["chat"])
 logger = logging.getLogger(__name__)
-
-llm = AsyncOpenAI(base_url=LLM_BASE_URL, api_key=LLM_API_KEY)
 
 
 # ── Request/Response models ───────────────────────────────────────────────
@@ -128,11 +119,12 @@ def load_parent_context(thread: dict[str, object]) -> list[EasyInputMessageParam
         else 0
     )
     context_window = get_model_context_window()
-    if parent_input_tokens > context_window * COMPACTION_THRESHOLD:
+    compaction = get_config().compaction_threshold
+    if parent_input_tokens > context_window * compaction:
         logger.info(
             "[chat] parent too large (%d tokens > %d threshold), using summary",
             parent_input_tokens,
-            int(context_window * COMPACTION_THRESHOLD),
+            int(context_window * compaction),
         )
         return []
 
@@ -245,8 +237,8 @@ def clean_title(raw: str) -> str:
 async def generate_thread_title(user_msg: str, assistant_msg: str) -> str:
     """Generate a concise thread title from the first exchange."""
     try:
-        response = await llm.chat.completions.create(
-            model=DEFAULT_MODEL,
+        response = await get_llm().chat.completions.create(
+            model=get_config().default_model,
             messages=[
                 {"role": "system", "content": TITLE_GENERATION_PROMPT},
                 {
@@ -285,8 +277,8 @@ async def compact_parent_context(
             lines.append(f"{speaker}: {content}")
 
     transcript = "\n".join(lines)
-    response = await llm.chat.completions.create(
-        model=DEFAULT_MODEL,
+    response = await get_llm().chat.completions.create(
+        model=get_config().default_model,
         messages=[
             {"role": "system", "content": COMPACTION_PROMPT},
             {
@@ -354,7 +346,7 @@ def list_threads():
 def get_all_trees(agent: str | None = None):
     """Return branch trees for all root threads belonging to the user."""
     user_id = "user_001"
-    query: dict = {"user_id": user_id}
+    query: dict = {"user_id": user_id, "is_notification_thread": {"$ne": True}}
     if agent:
         query["agent"] = agent
     all_threads = list(mongo.threads().find(query))
@@ -587,14 +579,15 @@ def get_messages(thread_id: str):
     )
     messages: list[dict[str, object]] = []
     for doc in docs:
-        messages.append(
-            {
-                "id": str(doc.get("_id", "")),
-                "role": str(doc["role"]),
-                "content": str(doc["content"]),
-                "type": str(doc.get("type", "text")),
-            }
-        )
+        entry: dict[str, object] = {
+            "id": str(doc.get("_id", "")),
+            "role": str(doc["role"]),
+            "content": str(doc["content"]),
+            "type": str(doc.get("type", "text")),
+        }
+        if doc.get("metadata"):
+            entry["metadata"] = doc["metadata"]
+        messages.append(entry)
     return {"messages": messages}
 
 

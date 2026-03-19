@@ -9,11 +9,11 @@ from datetime import datetime, timezone
 
 from bson import ObjectId
 from fastapi import APIRouter, HTTPException
-from openai import AsyncOpenAI
+
 from pydantic import BaseModel
 
 from app.agent.prompts import PRACTICE_GENERATE_PROMPT, PRACTICE_SCORING_PROMPT
-from app.config import LLM_API_KEY, LLM_BASE_URL, PLANS_DIR, SCORING_MODEL
+from app.config import PLANS_DIR, get_config, get_llm
 from app.db import mongo
 from app.memory import evermemos
 from app.plan_parser import parse_plan
@@ -23,7 +23,6 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/practice", tags=["practice"])
 
-_oai = AsyncOpenAI(base_url=LLM_BASE_URL, api_key=LLM_API_KEY)
 
 # ---------------------------------------------------------------------------
 # Question count per mastery tier
@@ -230,8 +229,8 @@ async def generate_test(req: GenerateRequest):
         num_questions=num_questions,
     )
 
-    response = await _oai.chat.completions.create(
-        model=SCORING_MODEL,
+    response = await get_llm().chat.completions.create(
+        model=get_config().scoring_model,
         messages=[
             {"role": "system", "content": prompt},
             {"role": "user", "content": "Generate the test questions now. Output ONLY the JSON object."},
@@ -356,8 +355,8 @@ async def submit_test(req: SubmitRequest):
         questions_and_answers="\n\n".join(qa_parts),
     )
 
-    response = await _oai.chat.completions.create(
-        model=SCORING_MODEL,
+    response = await get_llm().chat.completions.create(
+        model=get_config().scoring_model,
         messages=[
             {"role": "system", "content": scoring_prompt},
             {"role": "user", "content": "Score the answers now. Output ONLY the JSON object."},

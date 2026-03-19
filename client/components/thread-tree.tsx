@@ -13,7 +13,12 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
-import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+  TooltipProvider,
+} from "@/components/ui/tooltip";
 import type { ThreadTreeNode } from "@/lib/api";
 import { deleteThread } from "@/lib/api";
 import { useThreadTree } from "@/hooks/use-thread-tree";
@@ -100,7 +105,7 @@ function Node({ node, style, dragHandle }: NodeRendererProps<TreeData>) {
         {node.data.depth === 0 && (
           <Badge
             variant="secondary"
-            className="gap-1 text-[10px] px-1.5 py-0 border-2 bg-background border-border text-foreground dark:bg-black dark:text-white"
+            className="hidden gap-1 text-[10px] px-1.5 py-0 border-2 bg-background border-border text-foreground dark:bg-black dark:text-white"
           >
             <span
               className={cn(
@@ -116,7 +121,7 @@ function Node({ node, style, dragHandle }: NodeRendererProps<TreeData>) {
         {node.data.depth > 0 && (
           <Badge
             variant="secondary"
-            className="gap-1 text-[10px] px-1.5 py-0 border-2 border-border bg-background text-foreground/70"
+            className="hidden gap-1 text-[10px] px-1.5 py-0 border-2 border-border bg-background text-foreground/70"
           >
             <span
               className={cn(
@@ -130,13 +135,13 @@ function Node({ node, style, dragHandle }: NodeRendererProps<TreeData>) {
           </Badge>
         )}
 
-      <button
-        type="button"
-        className="hidden group-hover/node:flex h-5 w-5 shrink-0 items-center justify-center rounded-md hover:bg-destructive/20 text-white hover:text-destructive transition-colors"
-        onClick={handleDelete}
-      >
-        <Trash2 className="h-3 w-3" />
-      </button>
+        <button
+          type="button"
+          className="hidden group-hover/node:flex h-5 w-5 shrink-0 items-center justify-center rounded-md hover:bg-destructive/20 text-white hover:text-destructive transition-colors"
+          onClick={handleDelete}
+        >
+          <Trash2 className="h-3 w-3" />
+        </button>
       </TooltipTrigger>
       <TooltipContent side="right">{node.data.title}</TooltipContent>
     </Tooltip>
@@ -162,23 +167,23 @@ export function ThreadTree({ agent }: { agent?: string }) {
 
   return (
     <TooltipProvider>
-    <Tree<TreeData>
-      data={trees}
-      idAccessor="thread_id"
-      childrenAccessor={(d) => (d.children.length > 0 ? d.children : null)}
-      openByDefault={false}
-      disableDrag
-      disableDrop
-      disableEdit
-      disableMultiSelection
-      indent={16}
-      rowHeight={32}
-      width="100%"
-      padding={0}
-      className="h-fit!"
-    >
-      {Node}
-    </Tree>
+      <Tree<TreeData>
+        data={trees}
+        idAccessor="thread_id"
+        childrenAccessor={(d) => (d.children.length > 0 ? d.children : null)}
+        openByDefault={false}
+        disableDrag
+        disableDrop
+        disableEdit
+        disableMultiSelection
+        indent={16}
+        rowHeight={32}
+        width="100%"
+        padding={0}
+        className="h-fit!"
+      >
+        {Node}
+      </Tree>
     </TooltipProvider>
   );
 }

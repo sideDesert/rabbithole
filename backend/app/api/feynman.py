@@ -8,10 +8,10 @@ from typing import Literal
 
 from bson import ObjectId
 from fastapi import APIRouter, HTTPException
-from openai import AsyncOpenAI
+
 from pydantic import BaseModel
 
-from app.config import LLM_API_KEY, LLM_BASE_URL, DEFAULT_MODEL
+from app.config import get_config, get_llm
 from app.db import mongo
 from app.db.mongo import feynman_notes
 from app.memory import evermemos
@@ -20,8 +20,6 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/feynman", tags=["feynman"])
 
-_oai = AsyncOpenAI(base_url=LLM_BASE_URL, api_key=LLM_API_KEY)
-MODEL = DEFAULT_MODEL
 
 
 # ── Request / Response schemas ──────────────────────────────────────
@@ -86,8 +84,8 @@ async def get_hint(req: HintRequest) -> HintResponse:
         f"{draft_context}"
     )
 
-    response = await _oai.chat.completions.create(
-        model=MODEL,
+    response = await get_llm().chat.completions.create(
+        model=get_config().default_model,
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt},
@@ -156,8 +154,8 @@ async def _score_feynman_submission(submission_id: str, req: SubmitRequest) -> N
             f"Learner's explanation:\n{req.markdown}"
         )
 
-        response = await _oai.chat.completions.create(
-            model=MODEL,
+        response = await get_llm().chat.completions.create(
+            model=get_config().default_model,
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt},

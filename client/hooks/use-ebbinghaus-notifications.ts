@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useParams } from "next/navigation";
 import {
   triggerNotify,
   getNotificationMessages,
@@ -20,6 +21,10 @@ function setLastSeenId(threadId: string, messageId: string) {
 }
 
 export function useEbbinghausNotifications() {
+  const params = useParams();
+  const currentThreadId =
+    typeof params?.threadId === "string" ? params.threadId : null;
+
   // Counter to force re-derive after markAsRead writes to localStorage
   const [, setVersion] = useState(0);
 
@@ -47,6 +52,7 @@ export function useEbbinghausNotifications() {
     const assistantMessages = messages.filter((m) => m.role === "assistant");
     if (assistantMessages.length === 0) return 0;
     const lastSeenId = getLastSeenId(notificationThreadId);
+    if (currentThreadId && currentThreadId === notificationThreadId) return 0;
     if (!lastSeenId) return assistantMessages.length;
     const lastSeenIdx = assistantMessages.findIndex((m) => m.id === lastSeenId);
     if (lastSeenIdx === -1) return assistantMessages.length;
@@ -58,7 +64,7 @@ export function useEbbinghausNotifications() {
     const assistantMessages = messages.filter((m) => m.role === "assistant");
     const last = assistantMessages[assistantMessages.length - 1];
     if (last) {
-      setLastSeenId(notificationThreadId, last._id);
+      setLastSeenId(notificationThreadId, last.id);
       setVersion((v) => v + 1); // trigger re-render to re-derive unreadCount
     }
   }

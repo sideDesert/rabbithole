@@ -5,19 +5,21 @@ They receive context via RunContextWrapper[AgentContext].
 """
 
 import json
+import logging
 import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any
 
 from agents import RunContextWrapper, function_tool
-from openai import AsyncOpenAI
 
-from app.config import PLANS_DIR, LLM_API_KEY, LLM_BASE_URL, PLANNING_MODEL
+from app.config import PLANS_DIR, get_config, get_llm
 from app.db import mongo
 from app.memory import evermemos
 from app.models.base import new_object_id
 from app.plan_parser import parse_plan
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -269,7 +271,7 @@ async def create_plan(
     depth: str = "deep_dive",
 ) -> str:
     """Generate an expert-depth learning plan. Call this when you have enough context from the interview. The plan is saved and the thread transitions to planning phase."""
-    llm = AsyncOpenAI(base_url=LLM_BASE_URL, api_key=LLM_API_KEY)
+    llm = get_llm()
 
     user_message = (
         f"Create a learning plan for: {topic}\n"
@@ -278,7 +280,7 @@ async def create_plan(
     )
 
     response = await llm.chat.completions.create(
-        model=PLANNING_MODEL,
+        model=get_config().planning_model,
         messages=[
             {"role": "system", "content": PLAN_GENERATION_SYSTEM},
             {"role": "user", "content": user_message},
@@ -431,10 +433,10 @@ async def suggest_branches(
     context: str,
 ) -> str:
     """Suggest 2-3 related sub-topics the learner might want to explore as rabbit holes."""
-    llm = AsyncOpenAI(base_url=LLM_BASE_URL, api_key=LLM_API_KEY)
+    llm = get_llm()
 
     response = await llm.chat.completions.create(
-        model=PLANNING_MODEL,
+        model=get_config().planning_model,
         messages=[
             {
                 "role": "system",

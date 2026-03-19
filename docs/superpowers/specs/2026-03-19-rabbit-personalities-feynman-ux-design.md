@@ -61,9 +61,6 @@ The greeting:
 
 Below the greeting, show 4 clickable suggestion chips (randomly sampled from `prompts` on mount). Chips use compact, muted styling (`text-sm`, `border`, `rounded-full`, `hover:bg-muted`).
 
-**Ebbinghaus greeting example:**
-> You're here. Good. I was starting to wonder if you'd forgotten about your studies. So, what do we need to work on? I've got my eye on **{rotating topic}** — but you tell me what's been on your mind.
-
 **Interaction:**
 - Clicking a chip calls `send(chipText)` — the chip text becomes the first user message
 - Chips disappear once `chatStarted` is true (natural, since the `!chatStarted` branch no longer renders)
@@ -74,7 +71,6 @@ Below the greeting, show 4 clickable suggestion chips (randomly sampled from `pr
   - A custom `<FeynmanGreeting>` component styled to look like an assistant message bubble
   - A row of 4 clickable suggestion chips below it
 - The rotating topic inside the greeting text uses the same `index`/`visible` state and fade transition
-- Same pattern for `<EbbinghausGreeting>` on the ebbinghaus page
 
 ## 4. Decouple `/ebbinghaus` from `/feynman`
 
@@ -97,10 +93,9 @@ Below the greeting, show 4 clickable suggestion chips (randomly sampled from `pr
 3. `client/app/ebbinghaus/page.tsx` — replace the current practice UI with a chat page:
    ```tsx
    export default function EbbinghausPage() {
-     return <ChatPage agent="ebbinghaus" greeting={<EbbinghausGreeting />} suggestions={ebbinghausPrompts} />
+     return <ChatPage agent="ebbinghaus" greeting={/*skip for now */} />
    }
    ```
-   - Ebbinghaus gets her own greeting message in her voice and her own set of suggestion prompts
    - The current practice UI content at `/ebbinghaus` is already fully duplicated at `/practice`, so nothing is lost
 
 4. Fix sidebar routing: `handleAgentNav("ebbinghaus")` should route to `/ebbinghaus`, `handleAgentNav("feynman")` to `/feynman`. Also ensure `useAgent()` context stays in sync — when the page mounts, it should set `activeAgent` from the `agent` prop so direct URL navigation works correctly.
@@ -112,7 +107,7 @@ Below the greeting, show 4 clickable suggestion chips (randomly sampled from `pr
 | `backend/app/agent/prompts.py` | Add personality to FEYNMAN_BASE, INTERVIEW_PROMPT, TEACHING_PROMPT, EBBINGHAUS_SYSTEM_PROMPT |
 | `client/components/chat-page.tsx` | **New** — extracted shared chat UI component |
 | `client/app/feynman/page.tsx` | Thin wrapper around ChatPage + FeynmanGreeting |
-| `client/app/ebbinghaus/page.tsx` | Replace practice UI with thin ChatPage wrapper + EbbinghausGreeting |
+| `client/app/ebbinghaus/page.tsx` | Replace practice UI with thin ChatPage wrapper |
 | `client/components/app-sidebar.tsx` | Fix Ebbinghaus nav to route to `/ebbinghaus` |
 
 ## What's NOT changing

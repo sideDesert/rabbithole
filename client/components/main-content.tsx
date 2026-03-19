@@ -1,27 +1,43 @@
 "use client";
 
-import { type ReactNode, useEffect } from "react";
+import { type ReactNode } from "react";
 import { Tabs } from "./ui/tabs";
 import { TopBar } from "./top-bar";
 import { PlanView } from "./plan-view";
 import { usePlan } from "./plan-context";
 import { ThreadMap } from "@/components/graph/thread-map";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { useThread } from "@/hooks/use-thread";
 import { useRootOrigin } from "@/hooks/use-root-origin";
 import { useRouter } from "next/navigation";
+
+function getSelectedTab(
+  threadId: string | undefined,
+  requestedTab: string | null,
+  activeTab: string,
+): string {
+  if (!threadId) return "chat-mode";
+  if (
+    requestedTab === "chat-mode" ||
+    requestedTab === "plan-mode" ||
+    requestedTab === "graph-mode"
+  ) {
+    return requestedTab;
+  }
+  return activeTab;
+}
 
 export function MainContent({ children }: { children: ReactNode }) {
   const { activeTab, setActiveTab, setFeynmanRequested } = usePlan();
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
 
   const threadId = params?.threadId as string;
+  const requestedTab = searchParams.get("tab");
+  const selectedTab = getSelectedTab(threadId, requestedTab, activeTab);
   const { thread } = useThread(threadId);
   const { rootOrigin } = useRootOrigin(threadId);
-  useEffect(() => {
-    return () => setActiveTab("chat-mode");
-  }, [threadId, setActiveTab]);
 
   const hasThread = !!threadId;
   const config = {
@@ -40,7 +56,7 @@ export function MainContent({ children }: { children: ReactNode }) {
 
   return (
     <Tabs
-      value={activeTab}
+      value={selectedTab}
       onValueChange={(val) => {
         if (val === "feynman-mode") {
           setFeynmanRequested(true);
@@ -76,11 +92,11 @@ export function MainContent({ children }: { children: ReactNode }) {
         />
         {/* Keep page content mounted but hidden when plan or graph tab is active
             so chat state isn't lost on tab switch */}
-        <div className={activeTab !== "chat-mode" ? "hidden" : ""}>
+        <div className={selectedTab !== "chat-mode" ? "hidden" : ""}>
           {children}
         </div>
-        {activeTab === "plan-mode" && <PlanView />}
-        {activeTab === "graph-mode" && threadId && (
+        {selectedTab === "plan-mode" && <PlanView />}
+        {selectedTab === "graph-mode" && threadId && (
           <ThreadMap threadId={threadId} />
         )}
       </main>

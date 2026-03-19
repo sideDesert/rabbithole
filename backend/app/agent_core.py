@@ -6,9 +6,9 @@ env var (nvidia / openrouter).
 """
 
 from agents import Agent, OpenAIChatCompletionsModel, set_default_openai_api, set_tracing_disabled
-from openai import AsyncOpenAI
 
-from app.config import DEFAULT_MODEL, LLM_API_KEY, LLM_BASE_URL
+
+from app.config import get_config, get_llm
 from app.agent.prompts import EBBINGHAUS_SYSTEM_PROMPT, build_phase_prompt
 from app.tools_impl import (
     AgentContext,
@@ -29,15 +29,11 @@ from app.tools_impl import (
 set_default_openai_api("chat_completions")
 set_tracing_disabled(True)
 
-_llm_client = AsyncOpenAI(
-    base_url=LLM_BASE_URL,
-    api_key=LLM_API_KEY,
-)
-
-_model = OpenAIChatCompletionsModel(
-    model=DEFAULT_MODEL,
-    openai_client=_llm_client,
-)
+def _get_model() -> OpenAIChatCompletionsModel:
+    return OpenAIChatCompletionsModel(
+        model=get_config().default_model,
+        openai_client=get_llm(),
+    )
 
 PHASE_TOOLS = {
     "interview": [recall_memory, store_memory, present_interview, create_plan],
@@ -82,7 +78,7 @@ def build_agent(
     return Agent(
         name="Feynman",
         instructions=instructions,
-        model=_model,
+        model=_get_model(),
         tools=tools,
     )
 
@@ -91,14 +87,11 @@ def build_agent(
 # Ebbinghaus agent — memory-powered chat (singleton)
 # ---------------------------------------------------------------------------
 
-_ebbinghaus_agent: Agent[AgentContext] = Agent(
-    name="Ebbinghaus",
-    instructions=EBBINGHAUS_SYSTEM_PROMPT,
-    model=_model,
-    tools=[recall_memory_agentic],
-)
-
-
 def build_ebbinghaus_agent() -> Agent[AgentContext]:
-    """Return the singleton Ebbinghaus agent."""
-    return _ebbinghaus_agent
+    """Return an Ebbinghaus agent with current config."""
+    return Agent(
+        name="Ebbinghaus",
+        instructions=EBBINGHAUS_SYSTEM_PROMPT,
+        model=_get_model(),
+        tools=[recall_memory_agentic],
+    )

@@ -9,9 +9,9 @@ import json
 import logging
 from datetime import datetime, timezone
 
-from openai import AsyncOpenAI
 
-from app.config import LLM_API_KEY, LLM_BASE_URL, DEFAULT_MODEL
+
+from app.config import get_config, get_llm
 from app.db import mongo
 from app.models.base import new_object_id
 
@@ -97,9 +97,9 @@ async def _do_extraction(
     transcript = "\n".join(transcript_lines)
 
     # Call LLM for extraction
-    llm = AsyncOpenAI(base_url=LLM_BASE_URL, api_key=LLM_API_KEY)
+    llm = get_llm()
     response = await llm.chat.completions.create(
-        model=DEFAULT_MODEL,
+        model=get_config().default_model,
         messages=[
             {"role": "system", "content": EXTRACTION_PROMPT},
             {"role": "user", "content": transcript},

@@ -2,6 +2,8 @@ import clsx from "clsx";
 import React, { useEffect, useRef, useState } from "react";
 import { Streamdown } from "streamdown";
 import { ThinkingOrb } from "./thought-trail";
+import { useThemePersonality } from "@/components/theme-personality-provider";
+import Image from "next/image";
 import type { Branch } from "@/lib/api";
 import type { ToolCallEntry } from "@/hooks/use-chat";
 import { useAnnotations } from "@/hooks/use-annotations";
@@ -34,6 +36,7 @@ interface ChatMessageInterface {
   statusMessage?: string;
   toolCalls?: ToolCallEntry[];
   annotations?: Branch[];
+  agent?: string;
 }
 
 function lastMessageRef(id: string) {
@@ -242,7 +245,12 @@ export function ChatMessage({
   statusMessage,
   toolCalls,
   annotations,
+  agent = "feynman",
 }: ChatMessageInterface) {
+  const { activeTheme } = useThemePersonality();
+  const logoClass = activeTheme.id === "classic" ? "rounded-full" : "rounded-none border-2 border-border";
+  const agentLabel = agent === "ebbinghaus" ? "Ms. Ebbinghaus" : "Mr. Feynman";
+  const agentLogo = agent === "ebbinghaus" ? "/ebbinghaus.png" : "/feynman.png";
   const articleRef = useRef<HTMLElement | null>(null);
   useAnnotations(
     articleRef,
@@ -280,6 +288,10 @@ export function ChatMessage({
           }
         }}
       >
+        <div className="flex items-center gap-3 mb-3">
+          <Image src={agentLogo} alt={agentLabel} width={36} height={36} className={`h-9 w-9 object-cover object-top ${logoClass}`} />
+          <span className="text-lg font-bold text-foreground">{agentLabel}</span>
+        </div>
         {isLoading && (
           <ThinkingOrb />
         )}

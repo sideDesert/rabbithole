@@ -7,10 +7,11 @@ import {
   type PlanPhase,
   type PlanConcept,
 } from "@/lib/api";
-import { usePlan } from "./plan-context";
+import { useThread } from "@/hooks/use-thread";
 import { ListChecks, ChevronDown, ChevronRight, CircleCheck, TestTube } from "lucide-react";
 import { useState } from "react";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 
 function ProgressBar({ value }: { value: number }) {
   return (
@@ -133,7 +134,10 @@ function PhaseSection({
 }
 
 export function PlanView() {
-  const { threadId, topicSlug } = usePlan();
+  const params = useParams();
+  const threadId = typeof params?.threadId === "string" ? params.threadId : null;
+  const { thread } = useThread(threadId);
+  const topicSlug = thread?.topic_slug ?? null;
   const { data, isLoading } = useQuery({
     queryKey: ["progress", threadId],
     queryFn: () => getProgress(threadId!),

@@ -10,6 +10,11 @@ export interface NotificationMessage {
   role: "assistant" | "user" | "system";
   content: string;
   type: string;
+  metadata?: {
+    notification_type: "overdue_review" | "stale_topic";
+    topic_slug: string;
+    concept_name: string;
+  };
 }
 
 export async function triggerNotify(): Promise<NotifyResponse> {

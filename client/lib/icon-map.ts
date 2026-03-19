@@ -11,6 +11,7 @@ import {
   Pencil as LucidePencil,
   FileText as LucideFileText,
   ListChecks as LucideListChecks,
+  Dumbbell as LucideDumbbell,
 } from "lucide-react";
 
 // Solar icons
@@ -24,6 +25,7 @@ import {
   Pen2BoldDuotone,
   DocumentTextBoldDuotone,
   ChecklistBoldDuotone,
+  DumbbellBoldDuotone,
 } from "solar-icon-set";
 
 type IconProps = { className?: string; size?: number };
@@ -37,7 +39,8 @@ export type IconName =
   | "network"
   | "pencil"
   | "fileText"
-  | "listChecks";
+  | "listChecks"
+  | "dumbbell";
 
 export const iconMaps: Record<string, Record<IconName, ComponentType<IconProps>>> = {
   lucide: {
@@ -50,6 +53,7 @@ export const iconMaps: Record<string, Record<IconName, ComponentType<IconProps>>
     pencil: LucidePencil,
     fileText: LucideFileText,
     listChecks: LucideListChecks,
+    dumbbell: LucideDumbbell,
   },
   solar: {
     search: MagniferBoldDuotone,
@@ -61,5 +65,6 @@ export const iconMaps: Record<string, Record<IconName, ComponentType<IconProps>>
     pencil: Pen2BoldDuotone,
     fileText: DocumentTextBoldDuotone,
     listChecks: ChecklistBoldDuotone,
+    dumbbell: DumbbellBoldDuotone,
   },
 };
