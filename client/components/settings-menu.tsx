@@ -53,6 +53,7 @@ const CONFIG_FIELDS: Array<{
   { key: "llm_base_url", label: "LLM Base URL" },
   { key: "evermemos_base_url", label: "Evermemos Base URL" },
   { key: "mongo_db_name", label: "Mongo Database Name" },
+  { key: "frontend_origin", label: "Frontend Origin" },
   { key: "max_tool_rounds", label: "Max Tool Rounds", type: "number" },
   {
     key: "compaction_threshold",
@@ -85,12 +86,17 @@ const CONFIG_SECTIONS: Array<{
   {
     title: "Infrastructure",
     description: "Base URLs and database settings used by the backend.",
-    fields: [CONFIG_FIELDS[7], CONFIG_FIELDS[8], CONFIG_FIELDS[9]],
+    fields: [
+      CONFIG_FIELDS[7],
+      CONFIG_FIELDS[8],
+      CONFIG_FIELDS[9],
+      CONFIG_FIELDS[10],
+    ],
   },
   {
     title: "Runtime",
     description: "Tune tool execution depth and compaction behavior.",
-    fields: [CONFIG_FIELDS[10], CONFIG_FIELDS[11]],
+    fields: [CONFIG_FIELDS[11], CONFIG_FIELDS[12]],
   },
 ];
 
@@ -119,6 +125,7 @@ function configToFormValues(config: AppConfig): ConfigFormValues {
     llm_base_url: config.llm_base_url,
     evermemos_base_url: config.evermemos_base_url,
     mongo_db_name: config.mongo_db_name,
+    frontend_origin: config.frontend_origin,
     max_tool_rounds: String(config.max_tool_rounds),
     compaction_threshold: String(config.compaction_threshold),
   };
@@ -255,6 +262,7 @@ export function Settings() {
         llm_base_url: formValues.llm_base_url,
         evermemos_base_url: formValues.evermemos_base_url,
         mongo_db_name: formValues.mongo_db_name,
+        frontend_origin: formValues.frontend_origin,
         max_tool_rounds: maxToolRounds,
         compaction_threshold: compactionThreshold,
       });
@@ -272,7 +280,7 @@ export function Settings() {
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger
         render={
-          <button
+          <Button
             className={buttonVariants({
               variant: "ghost",
               size: "sm",

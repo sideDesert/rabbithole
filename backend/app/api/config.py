@@ -24,6 +24,7 @@ class ConfigUpdateRequest(BaseModel):
     llm_base_url: str | None = None
     evermemos_base_url: str | None = None
     mongo_db_name: str | None = None
+    frontend_origin: str | None = None
     max_tool_rounds: int | None = None
     compaction_threshold: float | None = None
 
@@ -39,6 +40,7 @@ class ConfigUpdateRequest(BaseModel):
             llm_base_url=self.llm_base_url,
             evermemos_base_url=self.evermemos_base_url,
             mongo_db_name=self.mongo_db_name,
+            frontend_origin=self.frontend_origin,
             max_tool_rounds=self.max_tool_rounds,
             compaction_threshold=self.compaction_threshold,
         )

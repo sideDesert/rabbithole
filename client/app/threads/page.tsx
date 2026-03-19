@@ -1,9 +1,10 @@
 import { listThreads } from "@/lib/api";
 import { ThreadCard } from "./thread-card";
 
+export const dynamic = "force-dynamic";
+
 export default async function Page() {
   const { threads } = await listThreads();
-  console.log({ threads });
   return (
     <div className="px-6 py-6 w-3xl mx-auto">
       <h1 className="text-xl font-semibold tracking-tight mb-4">Threads</h1>

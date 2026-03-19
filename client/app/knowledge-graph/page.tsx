@@ -117,8 +117,16 @@ function EdgeLegend() {
           </p>
           <LegendItem color="var(--graph-edge-gold)" label="Prerequisite" />
           <LegendItem color="var(--color-part-of)" label="Part of" />
-          <LegendItem color="var(--graph-edge-yellow)" label="Explored from" dashed />
-          <LegendItem color="var(--color-confused-with)" label="Confused with" dashed />
+          <LegendItem
+            color="var(--graph-edge-yellow)"
+            label="Explored from"
+            dashed
+          />
+          <LegendItem
+            color="var(--color-confused-with)"
+            label="Confused with"
+            dashed
+          />
         </div>
         <div className="border-t border-border pt-2 space-y-2">
           <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
@@ -255,8 +263,12 @@ function KnowledgeGraphInner() {
   const focusParam = searchParams.get("focus");
   const [domainFilter, setDomainFilter] = useState<string | undefined>();
   const { data, isLoading, error, refetch } = useKnowledgeGraph(domainFilter);
-  const [selectedConcept, setSelectedConcept] =
-    useState<KnowledgeConcept | null>(null);
+  const [selectedConceptId, setSelectedConceptId] = useState<string | null>(
+    null,
+  );
+  const [dismissedFocusParam, setDismissedFocusParam] = useState<string | null>(
+    null,
+  );
   const focusHandledRef = useRef(false);
   const [nodes, setNodes, onNodesChange] = useNodesState([] as Node[]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([] as Edge[]);
@@ -309,6 +321,29 @@ function KnowledgeGraphInner() {
     setEdges(layouted.edges);
   }, [layouted, setNodes, setEdges]);
 
+  const focusedConcept = useMemo(() => {
+    if (!focusParam || dismissedFocusParam === focusParam) {
+      return null;
+    }
+
+    return (
+      data?.nodes.find(
+        (concept) => concept.name.toLowerCase() === focusParam.toLowerCase(),
+      ) ?? null
+    );
+  }, [data?.nodes, dismissedFocusParam, focusParam]);
+
+  const selectedConcept = useMemo(() => {
+    if (selectedConceptId) {
+      return (
+        data?.nodes.find((concept) => concept.name === selectedConceptId) ??
+        null
+      );
+    }
+
+    return focusedConcept;
+  }, [data?.nodes, focusedConcept, selectedConceptId]);
+
   useEffect(() => {
     if (
       focusParam &&
@@ -316,23 +351,20 @@ function KnowledgeGraphInner() {
       data?.nodes &&
       nodes.length > 0
     ) {
-      const target = data.nodes.find(
-        (c) => c.name.toLowerCase() === focusParam.toLowerCase(),
+      const node = nodes.find(
+        (n) => n.id.toLowerCase() === focusParam.toLowerCase(),
       );
-      if (target) {
-        setSelectedConcept(target);
-        const node = nodes.find(
-          (n) => n.id.toLowerCase() === focusParam.toLowerCase(),
-        );
-        if (node) {
-          requestAnimationFrame(() => {
-            reactFlowInstance.setCenter(
-              node.position.x + 125,
-              node.position.y + 40,
-              { zoom: 1.2, duration: 500 },
-            );
-          });
-        }
+      if (node) {
+        requestAnimationFrame(() => {
+          reactFlowInstance.setCenter(
+            node.position.x + 125,
+            node.position.y + 40,
+            {
+              zoom: 1.2,
+              duration: 500,
+            },
+          );
+        });
       }
       focusHandledRef.current = true;
     }
@@ -340,13 +372,16 @@ function KnowledgeGraphInner() {
 
   const onNodeClick = useCallback(
     (_: React.MouseEvent, node: Node) => {
-      const concept = data?.nodes.find((c) => c.name === node.id);
-      setSelectedConcept(concept ?? null);
+      setSelectedConceptId(node.id);
+      setDismissedFocusParam(focusParam);
     },
-    [data],
+    [focusParam],
   );
 
-  const closePanel = useCallback(() => setSelectedConcept(null), []);
+  const closePanel = useCallback(() => {
+    setSelectedConceptId(null);
+    setDismissedFocusParam(focusParam);
+  }, [focusParam]);
 
   if (isLoading) {
     return (
@@ -410,7 +445,11 @@ function KnowledgeGraphInner() {
           zoomable
           style={{ width: 140, height: 100 }}
           className="bg-card/80! border-border! rounded-lg! shadow-lg!"
-          maskColor={resolvedTheme === "dark" ? "rgba(0, 0, 0, 0.3)" : "rgba(0, 0, 0, 0.08)"}
+          maskColor={
+            resolvedTheme === "dark"
+              ? "rgba(0, 0, 0, 0.3)"
+              : "rgba(0, 0, 0, 0.08)"
+          }
           nodeColor={(node) => {
             if (node.type === "memory_hub") return "var(--color-kg-memory-hub)";
             if (node.type === "topic_hub") return "var(--color-kg-topic-hub)";

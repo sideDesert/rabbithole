@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 import { Tabs } from "./ui/tabs";
 import { TopBar } from "./top-bar";
 import { PlanView } from "./plan-view";
@@ -28,6 +28,14 @@ function getSelectedTab(
 }
 
 export function MainContent({ children }: { children: ReactNode }) {
+  return (
+    <Suspense fallback={<main className="grow bg-background">{children}</main>}>
+      <MainContentInner>{children}</MainContentInner>
+    </Suspense>
+  );
+}
+
+function MainContentInner({ children }: { children: ReactNode }) {
   const { activeTab, setActiveTab, setFeynmanRequested } = usePlan();
   const router = useRouter();
   const params = useParams();

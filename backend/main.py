@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import sys
 from contextlib import asynccontextmanager
 
 logging.basicConfig(
@@ -13,7 +12,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from app.config import PLANS_DIR, get_config
+from app.config import PLANS_DIR, get_config, get_missing_config_fields
 from app.db.mongo import get_client
 from app.db.indexes import ensure_indexes
 from app.api.chat import router as chat_router
@@ -24,22 +23,25 @@ from app.api.memory_graph import router as memory_graph_router
 from app.api.notify import router as notify_router
 from app.api.config import router as config_router
 
-# --- Validate env ---
+# --- Validate config ---
 _cfg = get_config()
-for name, val in [("MONGO_USER", _cfg.mongo_user), ("MONGO_PASSWORD", _cfg.mongo_password), ("OPENROUTER_API_KEY", _cfg.openrouter_api)]:
-    if not val:
-        print(f"ERROR: {name} is not set in .env")
-        sys.exit(1)
+_missing_config = get_missing_config_fields(_cfg)
 
 # --- Init ---
-try:
-    get_client().admin.command("ping")
-    print("\033[34m[SYSTEM]\033[0m: Connected to MongoDB!")
-except Exception as e:
-    print(f"MongoDB connection failed: {e}")
-
-ensure_indexes()
 PLANS_DIR.mkdir(parents=True, exist_ok=True)
+
+if _missing_config:
+    print(
+        "Setup required: missing backend/config.json values for "
+        + ", ".join(_missing_config)
+    )
+else:
+    try:
+        get_client().admin.command("ping")
+        print("\033[34m[SYSTEM]\033[0m: Connected to MongoDB!")
+        ensure_indexes()
+    except Exception as e:
+        print(f"MongoDB connection failed: {e}")
 
 # --- Foresight polling background loop ---
 
@@ -73,7 +75,7 @@ app = FastAPI(title="Rabbithole", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=[_cfg.frontend_origin],
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -85,7 +87,7 @@ async def global_exception_handler(request: Request, exc: Exception):
     return JSONResponse(
         status_code=500,
         content={"detail": "Internal server error"},
-        headers={"Access-Control-Allow-Origin": "http://localhost:3000"},
+        headers={"Access-Control-Allow-Origin": _cfg.frontend_origin},
     )
 
 app.include_router(chat_router)
@@ -99,4 +101,8 @@ app.include_router(config_router)
 
 @app.get("/health")
 def health():
-    return {"status": "ok"}
+    return {
+        "status": "ok" if not _missing_config else "setup_required",
+        "configured": not _missing_config,
+        "missing_config": _missing_config,
+    }

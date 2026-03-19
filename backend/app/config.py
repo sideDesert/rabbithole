@@ -5,7 +5,7 @@ import logging
 from dataclasses import asdict, dataclass, fields
 from functools import lru_cache
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 import httpx
 
@@ -31,6 +31,7 @@ class Config:
     llm_base_url: str = "https://openrouter.ai/api/v1"
     evermemos_base_url: str = "https://api.evermind.ai"
     mongo_db_name: str = "rabbithole"
+    frontend_origin: str = "http://localhost:3000"
     max_tool_rounds: int = 5
     compaction_threshold: float = 0.4
 
@@ -61,6 +62,7 @@ class ConfigUpdate:
     llm_base_url: str | None = None
     evermemos_base_url: str | None = None
     mongo_db_name: str | None = None
+    frontend_origin: str | None = None
     max_tool_rounds: int | None = None
     compaction_threshold: float | None = None
 
@@ -68,6 +70,12 @@ class ConfigUpdate:
 _config: Config | None = None
 _llm: AsyncOpenAI | None = None
 _CONFIG_FIELDS = {f.name for f in fields(Config)}
+_REQUIRED_CONFIG_FIELDS = (
+    "openrouter_api",
+    "evermemos_api",
+    "mongo_user",
+    "mongo_password",
+)
 
 
 @dataclass
@@ -79,19 +87,109 @@ class OpenRouterModel:
     pricing_completion: str | None = None
 
 
+def _coerce_str(value: object, default: str) -> str:
+    return value if isinstance(value, str) else default
+
+
+def _coerce_int(value: object, default: int) -> int:
+    if isinstance(value, bool):
+        return int(value)
+    if isinstance(value, int):
+        return value
+    if isinstance(value, str):
+        try:
+            return int(value)
+        except ValueError:
+            return default
+    return default
+
+
+def _coerce_float(value: object, default: float) -> float:
+    if isinstance(value, bool):
+        return float(value)
+    if isinstance(value, (int, float)):
+        return float(value)
+    if isinstance(value, str):
+        try:
+            return float(value)
+        except ValueError:
+            return default
+    return default
+
+
+def _load_config_from_dict(data: object) -> Config:
+    defaults = Config()
+
+    if not isinstance(data, dict):
+        logger.warning("Invalid config payload, falling back to defaults")
+        return defaults
+
+    raw_config = cast(dict[object, object], data)
+    filtered: dict[str, object] = {
+        key: value
+        for key, value in raw_config.items()
+        if isinstance(key, str) and key in _CONFIG_FIELDS
+    }
+    return Config(
+        openrouter_api=_coerce_str(
+            filtered.get("openrouter_api"), defaults.openrouter_api
+        ),
+        evermemos_api=_coerce_str(
+            filtered.get("evermemos_api"), defaults.evermemos_api
+        ),
+        mongo_user=_coerce_str(filtered.get("mongo_user"), defaults.mongo_user),
+        mongo_password=_coerce_str(
+            filtered.get("mongo_password"), defaults.mongo_password
+        ),
+        default_model=_coerce_str(
+            filtered.get("default_model"), defaults.default_model
+        ),
+        planning_model=_coerce_str(
+            filtered.get("planning_model"), defaults.planning_model
+        ),
+        scoring_model=_coerce_str(
+            filtered.get("scoring_model"), defaults.scoring_model
+        ),
+        llm_base_url=_coerce_str(filtered.get("llm_base_url"), defaults.llm_base_url),
+        evermemos_base_url=_coerce_str(
+            filtered.get("evermemos_base_url"),
+            defaults.evermemos_base_url,
+        ),
+        mongo_db_name=_coerce_str(
+            filtered.get("mongo_db_name"), defaults.mongo_db_name
+        ),
+        frontend_origin=_coerce_str(
+            filtered.get("frontend_origin"), defaults.frontend_origin
+        ),
+        max_tool_rounds=_coerce_int(
+            filtered.get("max_tool_rounds"), defaults.max_tool_rounds
+        ),
+        compaction_threshold=_coerce_float(
+            filtered.get("compaction_threshold"), defaults.compaction_threshold
+        ),
+    )
+
+
+def _write_config(config: Config) -> None:
+    with open(CONFIG_PATH, "w") as f:
+        json.dump(
+            {field.name: getattr(config, field.name) for field in fields(config)},
+            f,
+            indent=2,
+        )
+
+
 def get_config() -> Config:
     global _config
     if _config is not None:
         return _config
     if CONFIG_PATH.exists():
         with open(CONFIG_PATH) as f:
-            data: dict[str, str | int | float] = json.load(f)
-        _config = Config(**{k: v for k, v in data.items() if k in _CONFIG_FIELDS})  # type: ignore[arg-type]
+            data = json.load(f)
+        _config = _load_config_from_dict(data)
     else:
         _config = Config()
-        # Write default config so save_config and other readers always find the file
-        with open(CONFIG_PATH, "w") as f:
-            json.dump({field.name: getattr(_config, field.name) for field in fields(_config)}, f, indent=2)
+        _write_config(_config)
     return _config
 
 
@@ -109,14 +207,19 @@ def save_config(update: ConfigUpdate) -> Config:
     """Merge update into config.json and reload."""
     global _config, _llm
     new_config = get_config().merge(update)
-    with open(CONFIG_PATH, "w") as f:
-        data = {
-            field.name: getattr(new_config, field.name) for field in fields(new_config)
-        }
-        json.dump(data, f, indent=2)
+    _write_config(new_config)
     _config = new_config
     _llm = None  # invalidate so next get_llm() picks up new keys
     return _config
+
+
+def get_missing_config_fields(config: Config | None = None) -> list[str]:
+    current = config or get_config()
+    return [
+        field_name
+        for field_name in _REQUIRED_CONFIG_FIELDS
+        if not str(getattr(current, field_name, "")).strip()
+    ]
 
 
 def list_openrouter_models() -> list[OpenRouterModel]:

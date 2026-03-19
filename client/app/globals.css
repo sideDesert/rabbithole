@@ -72,6 +72,12 @@
     --shadow-opacity: var(--shadow-opacity);
     --color-shadow-color: var(--shadow-color);
     --color-destructive-foreground: var(--destructive-foreground);
+    --color-success: var(--success);
+    --color-success-foreground: var(--success-foreground);
+    --color-warning: var(--warning);
+    --color-warning-foreground: var(--warning-foreground);
+    --color-info: var(--info);
+    --color-info-foreground: var(--info-foreground);
 }
 
 .theme-neo {
@@ -101,6 +107,12 @@
     --accent-foreground: #1a1a1a;
     --destructive: #dc2626;
     --destructive-foreground: #ffffff;
+    --success: #dcfce7;
+    --success-foreground: #14532d;
+    --warning: #fef9c3;
+    --warning-foreground: #713f12;
+    --info: #dbeafe;
+    --info-foreground: #1e3a5f;
     --border: #1a1a1a;
     --input: #1a1a1a;
     --ring: #e85d3a;
@@ -198,6 +210,12 @@
     --accent-foreground: #1a1a1a;
     --destructive: #ff936f;
     --destructive-foreground: black;
+    --success: #14532d;
+    --success-foreground: #dcfce7;
+    --warning: #713f12;
+    --warning-foreground: #fef9c3;
+    --info: #1e3a5f;
+    --info-foreground: #dbeafe;
     --border: #ffffff21;
     --input: #444444;
     --ring: #e85d3a;
@@ -283,6 +301,12 @@
     --accent-foreground: oklch(0.3394 0.0441 1.7583);
     --destructive: oklch(0.6332 0.1578 22.6734);
     --destructive-foreground: oklch(0.9777 0.0041 301.4256);
+    --success: #dcfce7;
+    --success-foreground: #14532d;
+    --warning: #fef9c3;
+    --warning-foreground: #713f12;
+    --info: #dbeafe;
+    --info-foreground: #1e3a5f;
     --border: oklch(0.9 0.01 300);
     --input: oklch(0.9329 0.0124 301.2783);
     --ring: oklch(0.6104 0.0767 299.7335);
@@ -386,6 +410,12 @@
     --accent-foreground: oklch(0.8391 0.0692 2.6681);
     --destructive: oklch(0.6875 0.142 21.4566);
     --destructive-foreground: oklch(0.2166 0.0215 292.8474);
+    --success: #14532d;
+    --success-foreground: #dcfce7;
+    --warning: #713f12;
+    --warning-foreground: #fef9c3;
+    --info: #1e3a5f;
+    --info-foreground: #dbeafe;
     --border: oklch(0.3063 0.0359 293.3367);
     --input: oklch(0.2847 0.0346 291.2726);
     --ring: oklch(0.7058 0.0777 302.0489);
