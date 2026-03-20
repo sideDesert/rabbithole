@@ -867,7 +867,6 @@ def list_branches(thread_id: str):
 def get_branch_tree(thread_id: str):
     from app.api.tree_helpers import load_thread_tree
     from app.plan_parser import parse_plan
-    from pathlib import Path
 
     root_id, thread_map, by_parent = load_thread_tree(thread_id)
     if not root_id:
@@ -883,7 +882,7 @@ def get_branch_tree(thread_id: str):
         progress = None
         topic_slug = getattr(t, "topic_slug", "") or ""
         if topic_slug:
-            plan_path = Path(f"plans/{topic_slug}/plan.md")
+            plan_path = PLANS_DIR / topic_slug / "plan.md"
             if plan_path.exists():
                 tree = parse_plan(plan_path.read_text())
                 progress = tree.overall_progress
@@ -1091,6 +1090,7 @@ async def chat(thread_id: str, req: ChatRequest):
             agent,
             input=input_messages,  # pyright: ignore[reportArgumentType]
             context=agent_ctx,
+            max_turns=get_config().max_tool_rounds,
         )
 
         try:
