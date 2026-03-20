@@ -457,7 +457,19 @@ async def suggest_branches(
     if not response.choices:
         return json.dumps({"suggestions": [], "note": "No suggestions available"})
 
-    return response.choices[0].message.content or "[]"
+    raw = response.choices[0].message.content or "[]"
+
+    # Strip markdown code fences if the LLM wrapped its JSON output
+    match = re.search(r"```(?:json)?\s*\n?(.*?)```", raw, re.DOTALL)
+    cleaned = match.group(1).strip() if match else raw.strip()
+
+    try:
+        suggestions = json.loads(cleaned)
+    except json.JSONDecodeError:
+        logger.warning("suggest_branches returned invalid JSON: %s", cleaned[:200])
+        return json.dumps({"suggestions": [], "note": "Failed to parse suggestions"})
+
+    return json.dumps({"suggestions": suggestions})
 
 
 @function_tool
