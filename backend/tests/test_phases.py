@@ -5,12 +5,15 @@ from unittest.mock import MagicMock
 from app.agent.phases import apply_transition, should_transition
 
 
-def test_interview_create_plan_transitions_to_planning():
-    assert should_transition(current_phase="interview", tool_called="create_plan") == "planning"
+def test_interview_no_tool_transition():
+    """Interview -> planning is handled in chat.py, not via should_transition."""
+    assert should_transition(current_phase="interview", tool_called="recall_memory") is None
 
 
-def test_interview_other_tool_no_transition():
-    assert should_transition(current_phase="interview", tool_called="recall_about_user") is None
+def test_planning_tool_no_transition():
+    """Tools in planning phase should not trigger transitions."""
+    assert should_transition(current_phase="planning", tool_called="create_plan") is None
+    assert should_transition(current_phase="planning", tool_called="recall_memory") is None
 
 
 def test_planning_user_approved_transitions_to_teaching():

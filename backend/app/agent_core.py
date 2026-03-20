@@ -36,8 +36,8 @@ def _get_model() -> OpenAIChatCompletionsModel:
     )
 
 PHASE_TOOLS = {
-    "interview": [recall_memory, store_memory, present_interview, create_plan],
-    "planning": [recall_memory, store_memory, create_plan],
+    "interview": [recall_memory, store_memory, present_interview],
+    "planning": [recall_memory, store_memory, create_plan, read_plan],
     "teaching": [
         recall_memory,
         store_memory,

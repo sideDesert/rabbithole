@@ -36,6 +36,9 @@ from app.tools_impl import AgentContext
 
 MessageRole = Literal["user", "assistant", "system"]
 
+# Protocol token prefixed to interview answer messages by the frontend.
+INTERVIEW_ANSWERS_PREFIX = "[Interview Answers]"
+
 router = APIRouter(prefix="/api", tags=["chat"])
 logger = logging.getLogger(__name__)
 
@@ -976,6 +979,18 @@ async def chat(thread_id: str, req: ChatRequest):
         topic_slug = str(thread.get("topic_slug", ""))
         user_id = str(thread["user_id"])
         group_id = str(thread.get("evermemos_group_id", thread_id))
+
+        # Auto-transition: interview → planning when answers arrive
+        if phase == "interview" and req.content.startswith(INTERVIEW_ANSWERS_PREFIX):
+            phase = "planning"
+            apply_transition(
+                db_threads=mongo.threads(),
+                thread_id=thread_id,
+                new_phase="planning",
+            )
+            logger.info("[chat] auto-transition: interview → planning (answers received)")
+            yield sse({"type": "phase_change", "from": "interview", "to": "planning"})
+
         logger.info(
             "[chat] thread loaded: phase=%s topic=%s user=%s group=%s",
             phase,
@@ -1360,6 +1375,7 @@ async def chat(thread_id: str, req: ChatRequest):
                     thread_id=thread_id,
                     new_phase="teaching",
                 )
+                phase = "teaching"
                 yield sse(
                     {"type": "phase_change", "from": "planning", "to": "teaching"}
                 )

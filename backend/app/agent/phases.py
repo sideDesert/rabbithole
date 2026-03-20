@@ -13,9 +13,11 @@ def should_transition(
     tool_called: str | None = None,
     user_approved_plan: bool = False,
 ) -> str | None:
-    """Return new phase name if a transition should occur, else None."""
-    if current_phase == "interview" and tool_called == "create_plan":
-        return "planning"
+    """Return new phase name if a transition should occur, else None.
+
+    Note: interview -> planning is handled directly in chat.py when
+    [Interview Answers] are detected, before the agent is built.
+    """
     if current_phase == "planning" and user_approved_plan:
         return "teaching"
     return None

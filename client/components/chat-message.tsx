@@ -56,18 +56,6 @@ function lastMessageRef(id: string) {
   };
 }
 
-export function PhaseDivider({ label }: { label: string }) {
-  return (
-    <div className="flex items-center gap-3 my-2 animate-in fade-in duration-300">
-      <div className="flex-1 border-t border-border" />
-      <span className="text-xs text-muted-foreground tracking-widest uppercase">
-        {label}
-      </span>
-      <div className="flex-1 border-t border-border" />
-    </div>
-  );
-}
-
 const TOOL_ICONS: Record<
   string,
   React.ComponentType<{ className?: string }>

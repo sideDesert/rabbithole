@@ -4,7 +4,6 @@ import {
   ChatMessage,
   ROLE_AI,
   ROLE_USER,
-  PhaseDivider,
 } from "@/components/chat-message";
 import { InterviewAnswersCard } from "@/components/interview-answers-card";
 import { InterviewWidget } from "@/components/interview-modal";
@@ -212,9 +211,6 @@ export function ChatPage({ agent, greeting, suggestions }: ChatPageProps) {
                   }
                 />
               );
-            }
-            if (msg.type === "phase_divider") {
-              return <PhaseDivider key={msg.id} label={msg.content} />;
             }
             if (
               msg.role === "user" &&

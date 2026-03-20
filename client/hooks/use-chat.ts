@@ -29,7 +29,7 @@ export interface ChatMessage {
   id: string;
   role: "user" | "assistant" | "system";
   content: string;
-  type?: "text" | "plan_card" | "phase_divider";
+  type?: "text" | "plan_card";
   statusMessage?: string;
   toolCalls?: ToolCallEntry[];
 }
@@ -287,15 +287,6 @@ export function useChat({
             queryClient.invalidateQueries({ queryKey: ["thread", threadId] });
             queryClient.invalidateQueries({ queryKey: ["threads"] });
             queryClient.invalidateQueries({ queryKey: ["thread-tree"] });
-            setMessages((prev) => [
-              ...prev,
-              {
-                id: `phase-${++msgCounter.current}`,
-                role: "system",
-                content: event.to,
-                type: "phase_divider",
-              },
-            ]);
             break;
           case "interview_questions":
             clearStatus();
@@ -323,12 +314,6 @@ export function useChat({
             const slug = event.topic_slug;
             setMessages((prev) => [
               ...prev,
-              {
-                id: `phase-${++msgCounter.current}`,
-                role: "system",
-                content: "plan created",
-                type: "phase_divider",
-              },
               {
                 id: `plan-card-${++msgCounter.current}`,
                 role: "system",

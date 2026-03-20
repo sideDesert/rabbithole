@@ -2,7 +2,7 @@
 
 from app.agent.prompts import (
     INTERVIEW_PROMPT,
-    PLAN_GENERATION_PROMPT,
+    PLAN_REVIEW_PROMPT,
     TEACHING_PROMPT,
     build_phase_prompt,
 )
@@ -14,16 +14,16 @@ def test_interview_prompt_mentions_memory():
     assert "memory" in INTERVIEW_PROMPT.lower()
 
 
-def test_interview_prompt_mentions_assess():
-    assert "assess" in INTERVIEW_PROMPT.lower()
+def test_interview_prompt_mentions_present_interview():
+    assert "present_interview" in INTERVIEW_PROMPT
 
 
-def test_planning_prompt_mentions_curriculum():
-    assert "curriculum" in PLAN_GENERATION_PROMPT.lower()
+def test_planning_prompt_mentions_create_plan():
+    assert "create_plan" in PLAN_REVIEW_PROMPT
 
 
-def test_planning_prompt_mentions_expert():
-    assert "expert" in PLAN_GENERATION_PROMPT.lower()
+def test_planning_prompt_mentions_learner():
+    assert "learner" in PLAN_REVIEW_PROMPT.lower()
 
 
 def test_teaching_prompt_mentions_feynman():
@@ -39,12 +39,12 @@ def test_teaching_prompt_mentions_intuition():
 def test_build_phase_prompt_returns_base_for_interview():
     result = build_phase_prompt(phase="interview")
     assert "Memory" in result
-    assert "Interview" in result
+    assert "present_interview" in result
 
 
 def test_build_phase_prompt_returns_base_for_planning():
     result = build_phase_prompt(phase="planning")
-    assert "curriculum" in result.lower()
+    assert "create_plan" in result
 
 
 def test_build_phase_prompt_returns_base_for_teaching():
