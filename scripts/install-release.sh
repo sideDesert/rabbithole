@@ -33,7 +33,7 @@ download_archive() {
   tag="$1"
   archive_name="$APP_NAME-$tag.tar.gz"
   url="https://github.com/$REPO_SLUG/releases/download/$tag/$archive_name"
-  echo "Downloading $archive_name ..."
+  echo "Downloading $archive_name ..." >&2
   curl -fL# "$url" -o "$TMP_DIR/$archive_name"
   printf '%s\n' "$TMP_DIR/$archive_name"
 }
@@ -63,7 +63,7 @@ echo "Extracting archive into $INSTALL_ROOT/app ..."
 mkdir -p "$INSTALL_ROOT"
 rm -rf "$INSTALL_ROOT/app"
 mkdir -p "$INSTALL_ROOT/app"
-tar -xzf "$archive_file" -C "$INSTALL_ROOT/app" --strip-components=1
+tar -xzf "$archive_file" -C "$INSTALL_ROOT/app" --strip-components=1 --warning=no-unknown-keyword
 
 if [ -n "$CONFIG_SOURCE" ]; then
   echo "Using provided config source: $CONFIG_SOURCE"

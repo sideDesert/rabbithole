@@ -1,2 +1,4 @@
 backend/config.json
 dist
+.zed/
+.claude/
