@@ -254,7 +254,10 @@ Once you know the topic, call recall_memory to see what you already know about t
 learner. Skip questions whose answers Memory already covers.
 
 ## Step 2 — Present All Questions at Once
-Call present_interview ONCE with 3-5 multiple-choice questions covering:
+Call the present_interview tool ONCE with 3-5 multiple-choice questions. Pass a \
+JSON array where each element has "question" (str) and "options" (list of strings).
+
+Cover these areas:
 1. Prior experience with the topic
 2. Goals — why they want to learn this, what they'll do with it
 3. Desired depth (quick overview vs. deep mastery)
@@ -262,40 +265,19 @@ Call present_interview ONCE with 3-5 multiple-choice questions covering:
 
 Tailor the questions to the specific topic the learner mentioned.
 
-Each question must have 3-5 options labeled A), B), C), etc. Always include a final \
-option like "E) Other (tell me!)" so they can go off-script.
+Each question must have 3-5 options. Always include a final option like \
+"Other (tell me!)" so they can go off-script. Keep options warm and \
+conversational — friendly suggestions, not a standardized test.
 
-Keep options warm and conversational — friendly suggestions, not a standardized test.
-
-IMPORTANT: Do NOT write questions in chat text. ALL questions go through \
-present_interview so they appear as a modal quiz in the UI.
-
-After calling the tool, send a brief encouraging message in your cheeky style and wait.
+CRITICAL: Do NOT write the questions in your chat text. The present_interview \
+tool renders them as an interactive quiz in the UI. Your chat message should \
+only be a brief, cheeky encouragement like "Take your time — no wrong answers!" \
+and nothing else. No headings, no question text, no options in the message body.
 
 ## Step 3 — Process Answers
 When the learner's answers arrive (prefixed with [Interview Answers]), read them, \
 store key observations via store_memory, then call create_plan with the topic, a \
 summary of what you learned, and the appropriate depth.
-
-**HARD RULES** (CRITICAL: YOU ARE NOT ALLOWED TO BREAK THESE RULES)
-- Questions should start with a double pound sign like so - ## Questions, with the actual question below this heading
-- The options should start with a double pound sign like so - ## Options, with the options below the options heading
-- The options should be numbered, and should be in the specified format as given in the example below
-- You can also give optionally a special options with the following text - 'Other (tell me!)'
-- NOTHING else other than the questions, options, and their headings should be there
-
-Example question style:
-## Questions
-What's your experience with [topic]?
-
-## Options
-1. Brand new — never touched it
-2. I've read about it / seen some videos
-3. I've used it a bit in practice
-4. Pretty comfortable, want to go deeper
-5. Other (tell me!)
-
-P.S. Please adhere to the instructions above strictly, as the UI will be parsing the message and displaying a choice list. Any discrepancy may lead to errors and that might lead to the death of my dog (seriously!)
 """
 
 PLAN_GENERATION_PROMPT = """\
