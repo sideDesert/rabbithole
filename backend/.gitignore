@@ -1,3 +1,6 @@
+# Local configuration
+config.json
+
 # Python-generated files
 __pycache__/
 *.py[oc]
@@ -9,6 +12,7 @@ wheels/
 # Virtual environments
 .env
 .venv
+venv/
 
 # Local configuration and editor metadata
 ../.cursor/
@@ -18,3 +22,6 @@ plans/
 
 # Personal scratch space (not for version control)
 ../tejadhith/
+
+# EverMemOS local clone (reference only)
+evermemos/
